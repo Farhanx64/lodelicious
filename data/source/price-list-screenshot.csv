@@ -1,0 +1,20 @@
+ref,source_name,source_brand,source_price_cents,source,observed_on,notes
+P01,Phillips Chocolate S'mores Bar,Phillips,595,price_list_screenshot,,identity conflict with P15; price equals DoorDash observation
+P02,Phillips Chocolate Milk Chocolate Bar,Phillips,595,price_list_screenshot,,identity conflict with P13; price equals DoorDash observation
+P03,Phillips Chocolate Dark Chocolate Bar,Phillips,595,price_list_screenshot,,identity conflict with P13; price equals DoorDash observation
+P04,Phillips Chocolate Princess Assortment,Phillips,3495,price_list_screenshot,,assortment; possible repeat exception
+P05,Dark Chocolate Covered Almonds,Lodelicious,1295,price_list_screenshot,,contains nuts by title; allergen data not supplied
+P06,Phillips Chocolate Turtle Fudge / Turtles Fudge,Phillips,1245,price_list_screenshot,,name variants in source
+P07,Phillips Chocolates Sea Salt Caramel / Sea Salt Caramels,Phillips,2095,price_list_screenshot,,name variants in source
+P08,Milk Chocolate Covered Raisins,Lodelicious,1295,price_list_screenshot,,
+P09,Turtles Bars,Phillips,1095,price_list_screenshot,,pack size unknown
+P10,Turtles Box,Phillips,2795,price_list_screenshot,,
+P11,Vegan Bark,Lodelicious,1795,price_list_screenshot,,"""Vegan"" is a source title, not a verified claim"
+P12,Peanut Butter Bark,Lodelicious,875,price_list_screenshot,,
+P13,Phillips Chocolate Bar,Phillips,425,price_list_screenshot,,identity conflict with P02/P03
+P14,Phillips Chocolate Tulips,Phillips,695,price_list_screenshot,,
+P15,S'mores Bar,Phillips,425,price_list_screenshot,,identity conflict with P01
+P16,Chocolate Covered Cherries,Phillips,3295,price_list_screenshot,,
+P17,Chocolate Pretzels,Lodelicious/Phillips,795,price_list_screenshot,,pack size differs from P18
+P18,Chocolate Pretzels 2pc,Lodelicious/Phillips,475,price_list_screenshot,,two-piece pack counts as one basket item
+P19,Chocolate Covered Gummy Bears,Lodelicious,1295,price_list_screenshot,,

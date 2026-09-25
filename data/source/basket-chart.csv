@@ -1,0 +1,10 @@
+code,source_name,contents,min_items,max_items,basket_size_in,notes
+small,Small Gift Basket,"Gourmet cheese & crackers; premium chocolates; coffee or tea; selection of famous delights",6,8,12,
+medium,Medium Gift Basket,"Sweet & savory snacks; premium tea or coffee; gourmet chocolates; gourmet cheese & crackers",10,12,14,
+large,Large Gift Basket,"Premium chocolates; gourmet pretzels; gourmet snacks; premium coffee or tea",12,14,18,
+extra_large,Extra Large Gift Basket,"Gourmet cheese & crackers; savory salami; chocolates; truffles; candies; sweet & savory treats",18,20,18-20,size is a range in source
+large_birthday,Large Birthday Basket,"Sweet & savory treats; gourmet snacks; chocolates; birthday card; festive birthday letters",12,14,16,
+large_savory,Large Savory Basket,"Cheese; crackers; assortment of nuts; olives; pretzels; salami",12,14,16,
+small_sympathy,Small Sympathy Basket,"Premium chocolates such as Phillips Chocolate; fresh fruit; savory crackers; variety of treats",6,8,12,
+medium_sympathy,Medium Sympathy Basket,"Premium chocolates such as Phillips Chocolate; fresh fruit; savory crackers; variety of treats",10,12,14,
+large_sympathy,Large Sympathy Basket,"Premium chocolates such as Phillips Chocolate; fresh fruit; savory crackers; variety of treats",13,16,16,intentional exception to standard large 12-14

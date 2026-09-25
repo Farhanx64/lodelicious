@@ -1,0 +1,21 @@
+ref,source_name,source_price_cents,source,observed_on,notes
+C01,10 Piece Pancakes,1000,clover_public,2026-09-22,prepared food; fulfillment/modifier review
+C02,Biscoff Pancakes 10(pc),1000,clover_public,2026-09-22,prepared food; fulfillment/modifier review
+C03,Cards,295,clover_public,2026-09-22,
+C04,Dr Suess Books,625,clover_public,2026-09-22,source spelling preserved
+C05,Dubai Chocolate,2995,clover_public,2026-09-22,
+C06,Dubai Pancakes 10(pc),1200,clover_public,2026-09-22,prepared food; fulfillment/modifier review
+C07,Extra Large gift basket,19999,clover_public,2026-09-22,curated; price includes packaging per owner
+C08,Large Birthday Basket,13995,clover_public,2026-09-22,curated; price includes packaging per owner
+C09,Large Gift Basket,13995,clover_public,2026-09-22,curated; price includes packaging per owner
+C10,Large Savory Basket,13995,clover_public,2026-09-22,curated; price includes packaging per owner
+C11,Large Strawberry Dubai Cup,1895,clover_public,2026-09-22,prepared food; fulfillment/modifier review
+C12,Large Sympathy Gift Basket,13995,clover_public,2026-09-22,curated; price includes packaging per owner
+C13,Medium Gift Basket,9895,clover_public,2026-09-22,curated; price includes packaging per owner
+C14,Medium Nut Free Basket,9895,clover_public,2026-09-22,"curated; ""Nut Free"" is a source title, not a verified allergen claim"
+C15,Medium sympathy gift basket,9895,clover_public,2026-09-22,curated; price includes packaging per owner
+C16,Oreo Pancakes 10(pc),1000,clover_public,2026-09-22,prepared food; fulfillment/modifier review
+C17,Small Gift Basket,7995,clover_public,2026-09-22,curated; price includes packaging per owner
+C18,Small Strawberry Dubai Cup,995,clover_public,2026-09-22,prepared food; fulfillment/modifier review
+C19,Small sympathy basket,7995,clover_public,2026-09-22,curated; price includes packaging per owner
+C20,Teddy Bear,1095,clover_public,2026-09-22,counts as one basket item
