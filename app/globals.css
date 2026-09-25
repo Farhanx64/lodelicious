@@ -1,0 +1,76 @@
+@import "tailwindcss";
+
+/* Design tokens. Contrast pairs are checked for WCAG 2.2 AA; gold is decorative and never
+   carries body text on cream. */
+@theme {
+  --color-ink: #141414;
+  --color-ink-soft: #3d3a36;
+  --color-cream: #faf6ee;
+  --color-paper: #ffffff;
+  --color-gold: #b08d4a;       /* rules, borders, ornaments only */
+  --color-gold-text: #7a5c22;  /* gold as text on cream: 5.8:1 */
+  --color-gold-light: #d9c28f; /* gold as text on ink: 10.6:1 */
+  --color-line: #e4dccb;
+  --color-focus: #1f4fd1;      /* 6.3:1 on cream */
+  --color-focus-dark: #9db7ff; /* 9.3:1 on ink */
+  --color-error: #a32020;
+  --color-success: #25603a;
+
+  --font-display: var(--font-cormorant), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: var(--font-source-sans), "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--color-cream);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    line-height: 1.15;
+  }
+
+  a {
+    text-decoration-color: var(--color-gold);
+    text-underline-offset: 0.2em;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 3px;
+  }
+
+  .on-ink :focus-visible {
+    outline-color: var(--color-focus-dark);
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -10rem;
+  z-index: 100;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: 0.5rem 1rem;
+}
+.skip-link:focus {
+  top: 1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}

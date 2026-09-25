@@ -1,9 +1,27 @@
-.env
-.local/
-vendor/
-node_modules/
-.phpunit.cache/
-.phpunit.result.cache
-*.log
+# dependencies
+/node_modules
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+*.tsbuildinfo
+
+# env files (never commit secrets)
+.env*
+!.env.example
+
+# payload / local data (DB + media live outside the repo in production)
+/.data
+/payload-types.ts
+/tmp
+
+# build artifacts
+*.zip
+*.tar.gz
+
+# test / tooling
+/coverage
+/test-results
 .DS_Store
-/screenshots/tmp/
+*.log

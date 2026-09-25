@@ -2,52 +2,60 @@
 
 Reversible choices made during implementation. Each notes what would change it.
 
-## D1 — WordPress 7.1.2 + WooCommerce 11.1.2, pinned (2026-09-25)
+## D9 — Payload 3 + Next.js 16 instead of the PRD's WooCommerce baseline (2026-09-25)
 
-Latest stable tags on 2026-09-25. Both require PHP ≥ 7.4 and MySQL ≥ 5.5.5; the plugin sets its own
-floor at PHP 8.1 (readonly properties, enums, `match`). Namecheap's PHP selector must be set to
-8.1+ (8.3 preferred). Revisit: before launch, re-check for security releases and bump the pins.
+**Decision (project lead):** build on Payload 3.90.2 + Next 16.3.6 with SQLite, the stack already
+running in production for `Farhanx64/pasto-hair` on cPanel/Passenger. The PRD (INF 02) lists
+WordPress/WooCommerce as a proposed engineering baseline, not a client requirement; the build
+prompt requires the migration implications to be recorded. They are:
 
-## D2 — Custom plugin + classic theme, no paid extensions
+| Area | WooCommerce gave us | Now |
+| --- | --- | --- |
+| Cart, checkout, orders, refunds, order emails, tax | Built in | Built here (milestones 4–6). `@payloadcms/plugin-ecommerce` exists but ships only a Stripe adapter and generic carts; gift snapshots, BOM reservations and price approval need our own collections |
+| Clover payments | Third-party gateway plugins (not evaluated) | Custom integration with Clover's tokenized fields (same PRD rules) |
+| Database | MySQL (host native) | SQLite via libSQL — Payload has no MySQL adapter. Single writer, which makes atomic stock reservations simpler; backups will be taken with SQLite's online backup (planned in the deployment milestone; a plain file copy of a live database is not safe) |
+| Memory | Per-request PHP | Resident Node process: measured **~215 MB RSS** after admin + storefront use, with the V8 heap capped at 768 MB (`NODE_OPTIONS=--max-old-space-size=768`) inside the 2 GB account limit |
+| Builds | None | `next build` is OOM-killed by the host's limits (pasto-hair runbook) → build on GitHub Actions, deploy source + `.next` tarball |
+| Maintainers | Large WordPress pool | TypeScript/Payload developers |
 
-Business rules live in `plugins/lodelicious-gifts`; the theme is presentation only. Domain classes
-(`src/Domain`) do not call WordPress, so rules are unit-tested without a database. No paid
-WooCommerce extension is assumed. Classic PHP templates (not a block theme) keep markup
-predictable for the builder UI and accessibility work.
+Owner impact to tell Lody: no change to what she approves or pays for; the admin is at `/admin`
+instead of `/wp-admin`.
 
-## D3 — Plugin ships without Composer vendor code
+## D10 — In-house Clover inventory sync instead of SKU IQ (2026-09-25)
 
-A small PSR-4 autoloader (`src/autoload.php`) means the host never runs Composer. Composer is dev-only
-(PHPUnit). Revisit if a runtime library becomes necessary; then commit a production `vendor/`
-built with `--no-dev`.
+SKU IQ is a paid subscription and its connector targets WooCommerce. We sync directly with the
+Clover REST API using a merchant-scoped API token: Clover inventory webhooks (to be verified in a
+Clover sandbox) plus a cPanel cron poll as a safety net, an outbox for website sales, and our own
+component (BOM) deductions. Recorded against PRD INF 01–06; the reconciliation, freshness and
+"unknown stock blocks purchase" rules are unchanged.
 
-## D4 — Custom tables for audit log and jobs, versioned with dbDelta
+## D11 — Source evidence is immutable; review is audited
 
-`wp_ldl_audit_log` (append-only commercial changes, OPS 03) and `wp_ldl_jobs` (lock + checkpoint per
-restartable job, INF 03/04). Schema version in option `ldl_schema_version`; upgrades run on
-`plugins_loaded` when the stored version is older.
+`source-records` evidence fields (ref, source, name, brand, price, dates) cannot be edited through
+the admin or API by anyone, including the owner. Re-importing a changed file reports a conflict
+instead of overwriting (PRD CAT 02). Disposition, duplicate link and review notes are editable by
+owner/manager only; each change stamps the reviewer and writes an `audit-log` entry.
 
-## D5 — Configured vs effective PHP memory limit
+## D12 — First account becomes owner
 
-WP-CLI raises `memory_limit` to `-1` after startup, so cron jobs run through WP-CLI report an
-effective limit that differs from php.ini. `wp lodelicious doctor` checks the configured value
-(`get_cfg_var`) against 512M and shows the effective value separately. Background jobs will enforce
-their own 384 MB / 60 s checkpoint regardless (PRD INF 04).
+Payload's create-first-user screen bypasses access control, so a hook forces the first account's
+role to `owner`. Afterwards only the owner creates staff and changes roles. Price/refund rights
+(`canManageCommerce`) are owner + manager only (PRD OPS 01).
 
-## D6 — Local preview without Docker
+## D13 — Bundled fonts, no third-party requests
 
-This build environment has no Docker daemon and blocks wordpress.org. Setup fetches WordPress from
-its official GitHub mirror and WooCommerce from its GitHub release asset, and runs MariaDB from
-`.local/`. PHP's built-in server stands in for LiteSpeed/Apache locally; production uses the host's
-web server and `.htaccess` rewrites.
+Cormorant Garamond and Source Sans 3 (SIL OFL) are committed as latin woff2 files and loaded with
+`next/font/local`. No Google Fonts request at build or run time; the admin uses Payload's built-in
+avatar instead of Gravatar, so staff email hashes never leave the site.
 
-## D7 — Tax off until configured
+## D14 — Lockfile written by npm 11
 
-`woocommerce_calc_taxes` is `no` locally. "Use Massachusetts settings" is not a numeric
-configuration (PRD). Checkout must not go live until owner-approved tax classes are entered.
+npm 10 crashes resolving this dependency tree; vite 8's optional peers (`esbuild`, `yaml`) are
+declared as dev dependencies so the hoisted versions are valid. `npm ci` works with npm 10 and 11.
 
-## D8 — Typography
+## Superseded (WooCommerce build, commit 5c36c77)
 
-Headings use Cormorant Garamond with Georgia/Palatino fallbacks; body uses Source Sans 3 with system
-fallbacks. Fonts are not loaded yet; when added they will be self-hosted (no third-party font
-requests from the storefront). Revisit if Lody's logo files specify brand typefaces.
+D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,
+MariaDB local preview). Superseded by D9. Still applicable in spirit: integer cents (D5 → `money.ts`),
+configured-vs-effective runtime checks (now `system-check.ts`), tax off until owner-approved classes
+exist (D7), bundled/self-hosted fonts (D8 → D13).

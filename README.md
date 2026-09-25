@@ -1,59 +1,61 @@
 # Lodelicious Gifts & Sweets — online store
 
-Source for the souset-pink.com store: a WooCommerce site with a custom theme and a separate
-gift-builder plugin, targeting Namecheap Stellar Business (cPanel, PHP 8.1+, MySQL/MariaDB).
+Source for the souset-pink.com store: **Payload 3 + Next.js 16** on SQLite, run as a cPanel Node.js
+app (Passenger/LiteSpeed) on Namecheap Stellar Business. Same architecture as `Farhanx64/pasto-hair`.
 
-Requirements come from `Lodelicious-Gifts-and-Sweets-PRD.docx` v2.0 (September 25, 2026). Current
-progress, assumptions and open inputs are in [`STATUS.md`](STATUS.md); engineering decisions are in
-[`docs/decisions.md`](docs/decisions.md).
+Requirements: `Lodelicious-Gifts-and-Sweets-PRD.docx` v2.0 (September 25, 2026). Progress, test
+results and open inputs: [`STATUS.md`](STATUS.md). Engineering decisions, including why this is not
+the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 
 ## Layout
 
-| Path | What it is | Deployed? |
-| --- | --- | --- |
-| `plugins/lodelicious-gifts/` | Gift rules, catalog reconciliation, inventory, operations. `src/Domain` is plain PHP with no WordPress dependency and is unit-tested. | Yes, as `wp-content/plugins/lodelicious-gifts` |
-| `themes/lodelicious/` | Presentation only: templates, styles, store contact details. | Yes, as `wp-content/themes/lodelicious` |
-| `data/source/` | Verbatim source observations (Clover, price screenshot, DoorDash, basket chart). Evidence, not approved prices. | No |
-| `bin/` | Local preview scripts. | No |
-| `docs/` | Decisions, screenshots, and later the deployment checklist and reconciliation report. | No |
+| Path | What it is |
+| --- | --- |
+| `app/(frontend)/` | Customer storefront (server components) |
+| `app/(payload)/` | Payload admin (`/admin`) and REST/GraphQL API — generated, do not hand-edit |
+| `app/healthz`, `app/ops/system-check` | Health probe (public) and runtime checks (owner/manager only) |
+| `collections/`, `globals/` | Payload schema and access rules |
+| `src/lib/` | Framework-free logic (money in cents, CSV, system checks, audit diff, import) with unit tests |
+| `src/access/roles.ts` | Staff roles: owner (Lody), manager (Faisal), fulfillment |
+| `migrations/` | Database migrations — production never auto-pushes schema |
+| `data/source/` | Verbatim source evidence (Clover, price screenshot, DoorDash, basket chart) |
+| `scripts/` | `doctor.ts`, `seed-source-records.ts` (run via `payload run`) |
+| `tests/` | Source-data guard tests and Payload integration tests |
+| `server.js` | Passenger/LiteSpeed entry point (no top-level await — see comment) |
 
-WordPress core and WooCommerce are not committed; setup downloads the pinned releases.
+## Local development
 
-## Local preview
-
-Requirements: PHP 8.1+ (with mysqli, mbstring, intl, curl, openssl, zip), MariaDB 10.6+ binaries
-(`mariadbd`, `mariadb-install-db`), git, curl, unzip. No Docker, no system database service: the
-database runs from `.local/mysql` on port 3307.
+Node ≥ 20.9 (22 recommended).
 
 ```bash
-cp .env.example .env        # optional; setup copies it if missing
-bin/setup-local.sh          # downloads WP 7.1.2 + WooCommerce 11.1.2 + WP-CLI, installs, activates
-bin/serve.sh                # http://localhost:8080 with memory_limit=512M, max_execution_time=300
-bin/db.sh stop              # stop the local database
+npm ci
+cp .env.example .env               # then set PAYLOAD_SECRET
+npm run dev                        # http://localhost:3000, admin at /admin (first account becomes owner)
+npm run seed:sources               # import the 51 source observations (safe to re-run)
 ```
 
-Setup prints a generated admin password once, or uses `LDL_ADMIN_PASSWORD` from `.env`. Reset
-it with `.local/bin/wp --path=.local/wordpress --allow-root user reset-password admin --show-password`.
+Production-like run: `npm run build && NODE_ENV=production npx payload migrate && npm run serve`.
 
-`wp-cli` shortcut: `php -d memory_limit=512M .local/bin/wp --path=.local/wordpress --allow-root <command>`
-
-The local site is `WP_ENVIRONMENT_TYPE=local` and shows a staging banner on every page.
+**Dependencies:** change them with `npx npm@11 install <pkg>`. npm 10 (bundled with Node 22) crashes
+while resolving this tree (`edgesOut` of null), but `npm ci` works with either npm version against
+the committed lockfile — including on the cPanel host.
 
 ## Checks
 
 ```bash
-cd plugins/lodelicious-gifts
-composer install
-vendor/bin/phpunit          # unit tests (no WordPress needed)
-composer lint               # php -l on all plugin files
+npm run typecheck
+npm run lint
+npm test                 # unit + integration (each test file gets a throwaway SQLite DB)
+npm run doctor           # this shell's runtime vs host requirements + DB reachability
 ```
 
-Runtime settings: `wp lodelicious doctor` (CLI/cron context) and **Tools → Lodelicious system check**
-in wp-admin (web context). cPanel configures these separately, so check both on the host.
+The web process can have different env/NODE_OPTIONS from SSH: log in to `/admin`, then open
+`/ops/system-check`.
 
 ## Rules this codebase follows
 
-- Money is integer cents (`Domain\Money`). No floats in prices, budgets or packaging.
-- Source prices (Clover, screenshot, DoorDash) are never website prices until approved.
-- No secrets in the repository. Provider credentials go in `wp-config.php` on the host.
-- Nothing here activates live payments, changes DNS, buys extensions or replaces the live site.
+- Money is integer cents (`src/lib/money.ts`). No floats in prices, budgets or packaging.
+- Source prices (Clover, screenshot, DoorDash) are evidence, never website prices, until approved.
+- Source evidence is immutable after import; only review fields change, and every change is audited.
+- No secrets in the repository. Production env lives in the cPanel Node app settings.
+- Nothing here activates live payments, changes DNS, buys services or replaces the live site.

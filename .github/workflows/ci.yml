@@ -9,31 +9,27 @@ permissions:
   contents: read
 
 jobs:
-  plugin:
+  check:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php: ['8.1', '8.3']
-    defaults:
-      run:
-        working-directory: plugins/lodelicious-gifts
+    env:
+      NEXT_TELEMETRY_DISABLED: "1"
+      # Build-time placeholders only; never used at runtime.
+      PAYLOAD_SECRET: ci-placeholder-secret-not-used-at-runtime-000
+      DATABASE_URI: file:./.data/ci.db
+      DATA_DIR: ./.data
+      MEDIA_DIR: ./.data/media
     steps:
       - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
+      - uses: actions/setup-node@v4
         with:
-          php-version: ${{ matrix.php }}
-          coverage: none
-      - run: composer install --no-interaction --no-progress
-      - run: composer lint
-      - run: vendor/bin/phpunit
-
-  theme-and-scripts:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: shivammathur/setup-php@v2
-        with:
-          php-version: '8.1'
-          coverage: none
-      - run: find themes bin -name '*.php' -print0 | xargs -0 -n1 php -l > /dev/null
-      - run: bash -n bin/*.sh
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: mkdir -p .data/media
+      - run: npm run generate:types
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - name: Migrations apply to an empty database
+        run: NODE_ENV=production DATABASE_URI=file:./.data/migrate-check.db npx payload migrate
+      - run: npm run build
