@@ -48,10 +48,37 @@ Cormorant Garamond and Source Sans 3 (SIL OFL) are committed as latin woff2 file
 `next/font/local`. No Google Fonts request at build or run time; the admin uses Payload's built-in
 avatar instead of Gravatar, so staff email hashes never leave the site.
 
-## D14 — Lockfile written by npm 11
+## D14 — Node 24; lockfile written by npm 11
 
-npm 10 crashes resolving this dependency tree; vite 8's optional peers (`esbuild`, `yaml`) are
-declared as dev dependencies so the hoisted versions are valid. `npm ci` works with npm 10 and 11.
+The host runs Node 24 (pasto-hair's live `/healthz` reports v24.16.0 on the same Namecheap cPanel
+setup), which bundles npm 11; CI uses Node 24 too. npm 10 crashes resolving this dependency tree,
+so dependencies are changed with npm 11; vite 8's optional peers (`esbuild`, `yaml`) are declared
+as dev dependencies so the hoisted versions are valid. `npm ci` works with npm 10 and 11.
+
+## D15 — Sympathy baskets reuse standard packaging and premium caps (assumption)
+
+The chart gives sympathy counts (small 6–8, medium 10–12, large 13–16) but no separate packaging
+fee or premium cap. Sympathy uses the standard size's fee and cap (large sympathy: $29.95, 3
+premium items, 13–16 items). Editable in **Gift builder rules**; confirm with Lody.
+
+## D16 — Premium is a verified per-product flag
+
+The engine never infers premium status (or anything else) from a product name or brand text
+(PRD GFT 05); a test renames a product and expects identical results. Whether OMNIYA conflicts with
+the in-store-only Lebanese chocolates is still open.
+
+## D17 — Fit = product fit units vs optional container capacity
+
+Each product has `fitUnits` (default 1) and each size/presentation an optional capacity. Until
+products are measured, capacity stays empty and only counts apply — the builder never claims a
+physical fit it hasn't been told about.
+
+## D18 — Special presentations: pricing basis configurable, purchase blocked until priced
+
+Cowboy and Baby White have no price, premium cap or confirmed pricing basis (base + chosen items vs
+fixed). They are inquiry-only; the settings screen refuses to mark one "available" without a price
+and premium maximum. Filled ceramics are disabled until the empty-vs-filled basis is confirmed. No
+special presentation is ever charged the standard packaging fee.
 
 ## Superseded (WooCommerce build, commit 5c36c77)
 

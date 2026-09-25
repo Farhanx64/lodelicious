@@ -16,6 +16,7 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 | `app/healthz`, `app/ops/system-check` | Health probe (public) and runtime checks (owner/manager only) |
 | `collections/`, `globals/` | Payload schema and access rules |
 | `src/lib/` | Framework-free logic (money in cents, CSV, system checks, audit diff, import) with unit tests |
+| `src/lib/gifts/` | Gift-builder rules engine: counts, packaging, premium caps, budget, repeats, stock, fit, special presentations |
 | `src/access/roles.ts` | Staff roles: owner (Lody), manager (Faisal), fulfillment |
 | `migrations/` | Database migrations — production never auto-pushes schema |
 | `data/source/` | Verbatim source evidence (Clover, price screenshot, DoorDash, basket chart) |
@@ -25,7 +26,7 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 
 ## Local development
 
-Node ≥ 20.9 (22 recommended).
+Node 24 (what the cPanel host runs; anything ≥ 20.9 works).
 
 ```bash
 npm ci
@@ -36,9 +37,12 @@ npm run seed:sources               # import the 51 source observations (safe to 
 
 Production-like run: `npm run build && NODE_ENV=production npx payload migrate && npm run serve`.
 
-**Dependencies:** change them with `npx npm@11 install <pkg>`. npm 10 (bundled with Node 22) crashes
-while resolving this tree (`edgesOut` of null), but `npm ci` works with either npm version against
-the committed lockfile — including on the cPanel host.
+**Dependencies:** change them with npm 11 (bundled with Node 24; on older Node use
+`npx npm@11 install <pkg>`). npm 10 crashes while resolving this tree, but `npm ci` works with
+either version against the committed lockfile.
+
+**Migrations:** after `payload migrate`, always confirm with `npx payload migrate:status` — during
+milestone 2 one run printed nothing and applied nothing, and the rerun succeeded.
 
 ## Checks
 

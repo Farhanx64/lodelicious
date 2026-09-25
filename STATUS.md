@@ -2,8 +2,8 @@
 
 Last updated: 2026-09-25 · Branch: `claude/sweet-meitner-2hnl84`
 
-**Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app (see `docs/decisions.md`
-D9). Replaces the first WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an
+**Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
+(confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an
 in-house Clover sync (D10).
 
 ## Milestones
@@ -11,8 +11,8 @@ in-house Clover sync (D10).
 | # | Milestone | State |
 | --- | --- | --- |
 | 1 | Project setup | **Done** (rebuilt on Payload) |
-| 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | Next |
-| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | Not started |
+| 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | **Done** |
+| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | Next |
 | 4 | Cart, checkout, order snapshots, staff assembly views | Not started |
 | 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | Not started |
 | 6 | Clover embedded payments, USPS rates — fixture-tested until credentials exist | Not started |
@@ -27,7 +27,35 @@ in-house Clover sync (D10).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
 
-## Test results (2026-09-25)
+## Milestone 2 — completed
+
+- `src/lib/gifts/` (no framework imports; integer cents):
+  - `validateGift` — one server-authoritative check for preview, add-to-cart and checkout. Returns `valid` (no rule broken) and `complete` (ready for the cart), totals (items, premium, contents, packaging, total, remaining budget, fit used) and explainable violations.
+  - `checkProduct` / `checkForPicker` — why a product can't be chosen (in-store only, hidden, inquiry only, exclusive to Baby White, price not confirmed, stock unknown/stale/out, wrong gift type/category, already chosen, premium limit, over budget). Customers see "Currently unavailable" for stock/approval causes, never internal detail.
+  - `assessFeasibility` — cheapest valid fill for a size/type/budget; suggests the minimum budget and smaller sizes that fit.
+  - `defaults.ts` + `parseSettings` — PRD/chart defaults and validation of admin edits.
+- Admin **Gift builder → Gift builder rules** (`gift-builder-settings` global): sizes, fees, premium caps, fit capacity, count exceptions (large sympathy 13–16), special presentations (Cowboy, Baby White: inquiry; filled ceramics: disabled), customer budget notice. Owner/manager edit; every save validated by the engine and audited. Migration `20260925_184633_gift_builder_settings`.
+- CI on Node 24; decisions D14–D18 recorded.
+
+## Milestone 2 test results (2026-09-25)
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 13 files, **125 tests pass** (79 new for gift rules incl. 6 Payload integration) |
+| Mutation: remove the sympathy 13–16 override | 4 tests fail |
+| Mutation: premium cap off by one | 5 tests fail |
+| Mutation: charge packaging on curated/special | 3 tests fail (first attempt survived → fixed by routing specials through `packagingFor` and adding direct tests) |
+| Performance: 2,000-product catalog, 20-item gift | well under the 50 ms/validation guard (PRD target p95 < 1 s) |
+| HTTP (production `server.js`): anonymous read / write of rules | 200 / 403 |
+| HTTP: owner saves min 15 > max 14 | 400 "Basket size 3: minimum (15) is above maximum (14)" |
+| HTTP: owner changes small packaging to 2095 | 200; audit entry with before/after |
+| Migration on existing milestone-1 DB | Applied on rerun; first run silently applied nothing (not reproduced) → README now requires `migrate:status` check |
+| `npm ci` with npm 10 and 11 | Both install a valid tree |
+| typecheck, lint, build | Clean |
+
+Screenshot: `docs/screenshots/m2-admin-gift-rules.png`.
+
+## Milestone 1 test results (2026-09-25)
 
 | Check | Result |
 | --- | --- |
@@ -56,13 +84,16 @@ Screenshots: `docs/screenshots/m1-home-desktop.png`, `m1-home-mobile.png`, `m1-h
 - Price conflict: screenshot P01–P03 ($5.95) equal DoorDash prices while P13/P15 are $4.25; observed DoorDash gaps are 30–40%, not the stated 3%.
 - Physical fit: only basket sizes are known; per-product sizes are not, so fit limits will be staff-configurable counts.
 - OMNIYA: confirm it is not one of the in-store-only Lebanese chocolates.
-- Node version offered by the cPanel Node.js selector on this account (needs ≥ 20.9).
+- Sympathy packaging and premium caps: assumed equal to the standard size (D15) — confirm with Lody.
+- Cowboy / Baby White: price, premium cap, and whether chosen items are charged on top of the base price (D18).
+- Product categories for Baby White choices (defaults "candy", "chocolate") must match milestone-3 product categories.
 - All other PRD "Remaining inputs" (cowboy/Baby White prices, ceramic basis, scheduling cutoffs, shipping data, fountain terms, tax/policies).
 
 ## Next concrete step
 
-Milestone 2: `src/lib/gifts/` — presentation definitions seeded from `data/source/basket-chart.csv`
-plus cowboy/Baby White/ceramic special rules, a validator returning explainable violations
-(count range, premium cap, budget incl. packaging, repeat groups, exclusions, unknown stock), a
-`presentations` collection so Lody can edit rules, and vitest coverage for PRD AC 02/AC 03
-(large sympathy 13–16, no duplicate packaging on curated baskets).
+Milestone 3: a `products` collection (approved direct-site price in cents, channel, gift types,
+premium flag, category, max per gift, fit units, stock state, link to reviewed source records) whose
+documents map to the engine's `BuilderProduct`; curated baskets as products with bills of
+materials (price includes packaging); storefront pages (Home, Shop with search/filters, Gift
+Baskets, Build a Basket UI on `validateGift`/`checkForPicker`/`assessFeasibility`, Baby Gifts,
+Events, About, Contact, policies).

@@ -11,6 +11,7 @@ import { Media } from "./collections/Media";
 import { SourceRecords } from "./collections/SourceRecords";
 import { SyncJobs } from "./collections/SyncJobs";
 import { Users } from "./collections/Users";
+import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { StoreSettings } from "./globals/StoreSettings";
 
 const filename = fileURLToPath(import.meta.url);
@@ -33,7 +34,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, SourceRecords, AuditLog, SyncJobs],
-  globals: [StoreSettings],
+  globals: [StoreSettings, GiftBuilderSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
