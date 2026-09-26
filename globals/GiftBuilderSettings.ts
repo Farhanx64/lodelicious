@@ -127,6 +127,7 @@ export const GiftBuilderSettings: GlobalConfig = {
             { name: "size", type: "select", required: true, options: SIZE_OPTIONS },
             whole("minItems", "Minimum items"),
             whole("maxItems", "Maximum items"),
+            { name: "basketSizeIn", label: "Basket size (inches)", type: "text", admin: { description: "Only if different from the standard size." } },
           ],
         },
       ],

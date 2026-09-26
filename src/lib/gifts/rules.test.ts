@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { DEFAULT_GIFT_SETTINGS as settings } from "./defaults";
-import { packagingFor, resolveCountRange } from "./rules";
+import { packagingFor, resolveBasketSize, resolveCountRange } from "./rules";
 
 describe("packagingFor (AC 03)", () => {
   it("charges the size fee only for custom baskets", () => {
@@ -24,5 +24,13 @@ describe("resolveCountRange", () => {
     expect(resolveCountRange(settings, "large", "sympathy")).toEqual({ min: 13, max: 16 });
     expect(resolveCountRange(settings, "large", "sweet_savory")).toEqual({ min: 12, max: 14 });
     expect(resolveCountRange(settings, "extra_large", "sympathy")).toEqual({ min: 18, max: 20 });
+  });
+});
+
+describe("resolveBasketSize", () => {
+  it("uses the chart's 16-inch basket for large sympathy and the standard size otherwise", () => {
+    expect(resolveBasketSize(settings, "large", "sympathy")).toBe("16");
+    expect(resolveBasketSize(settings, "large", "sweet")).toBe("18");
+    expect(resolveBasketSize(settings, "small", "sympathy")).toBe("12");
   });
 });

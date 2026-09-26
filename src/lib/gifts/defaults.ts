@@ -22,7 +22,7 @@ export const DEFAULT_SIZES: SizeRule[] = [
 
 /** The chart's large sympathy basket is 13–16 items, an intentional exception (PRD AC 02). */
 export const DEFAULT_COUNT_OVERRIDES: CountOverride[] = [
-  { giftType: "sympathy", size: "large", minItems: 13, maxItems: 16 },
+  { giftType: "sympathy", size: "large", minItems: 13, maxItems: 16, basketSizeIn: "16" },
 ];
 
 export const DEFAULT_SPECIAL_PRESENTATIONS: SpecialPresentation[] = [
@@ -177,6 +177,7 @@ export function parseSettings(doc: Row): GiftSettings {
       size: oneOf(r.size, SIZE_CODES, `${where} size`),
       minItems: count(r.minItems, `${where} minimum items`),
       maxItems: count(r.maxItems, `${where} maximum items`),
+      basketSizeIn: typeof r.basketSizeIn === "string" && r.basketSizeIn.trim() !== "" ? r.basketSizeIn : null,
     };
     range(o.minItems, o.maxItems, where);
     return o;

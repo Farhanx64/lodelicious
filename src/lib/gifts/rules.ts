@@ -30,3 +30,9 @@ export function packagingFor(settings: GiftSettings, kind: "custom" | "special" 
   if (!size) throw new RangeError("A custom basket needs a size");
   return sizeRule(settings, size).packagingCents;
 }
+
+/** Basket size shown to customers: a gift-type override (sympathy 16") wins over the standard size. */
+export function resolveBasketSize(settings: GiftSettings, size: SizeCode, giftType: GiftType): string {
+  const override = settings.countOverrides.find((o) => o.size === size && o.giftType === giftType);
+  return override?.basketSizeIn ?? sizeRule(settings, size).basketSizeIn;
+}

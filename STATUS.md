@@ -12,7 +12,7 @@ in-house Clover sync (D10).
 | --- | --- | --- |
 | 1 | Project setup | **Done** (rebuilt on Payload) |
 | 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | **Done** |
-| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **In progress** — catalog, Shop, product pages, Baby Gifts done; Build a Basket UI, Gift Baskets, Events, About, Contact, policies next |
+| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **In progress** — catalog, Shop, product pages, Baby Gifts, **Build a Basket** done; Gift Baskets, Events, About, Contact, policies next |
 | 4 | Cart, checkout, order snapshots, staff assembly views | Not started |
 | 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | Not started |
 | 6 | Clover embedded payments, USPS rates — fixture-tested until credentials exist | Not started |
@@ -26,6 +26,18 @@ in-house Clover sync (D10).
 - Initial migration (`migrations/20260925_182201_initial.ts`).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
+
+## Milestone 3 (part 2) — Build a Basket, 2026-09-26
+
+- `/build-a-basket`: gift type → size (item range, basket size, packaging, premium cap) → optional budget (budget rule shown first; "needs at least $X" / smaller-size suggestions) → item picker with reasons for unavailable items → gift message and requests (not guarantees). Live summary (items, premium, contents, packaging, total, budget left) announced to screen readers; "Review my basket" re-validates on the server with fresh data (`checkBasket` server action → `validateGift`). No cart yet (milestone 4): a valid basket tells the customer to call.
+- Staging-only `PREVIEW_ASSUME_STOCK=true` lets Lody try the builder before stock is counted (ignored in production; the page says it's a preview).
+- Large sympathy now shows the chart's 16" basket (count overrides carry a basket size; migration `sympathy_basket_size`).
+- Staging is `noindex` (robots.txt + meta) so shared preview links stay out of search.
+- Docs: `docs/preview-and-sharing.md` (free tunnel preview; Namecheap staging), `docs/clover-sync-needs.md` (sync status + what Lody must provide).
+
+Browser test (Playwright, preview stock): small basket, $100 budget → "$80.05 for contents"; 2nd premium item blocked with reason; 6 items = $62.00 + $19.95 = $81.95, budget left $18.05; server check agrees; $60 budget → "$21.95 over your budget"; mobile 390 px and 200% text: no horizontal scroll, every input labelled. 169 tests pass.
+
+Content gap found: **Extra large can't be completed** — it needs 18 distinct items and the catalog has ~14 sweet items; **Savory has no products at all**. The builder says so instead of failing.
 
 ## Milestone 3 (part 1) — 2026-09-26
 
@@ -108,6 +120,7 @@ Screenshots (home shell since replaced by `m3-*`):
 - Price conflict: screenshot P01–P03 ($5.95) equal DoorDash prices while P13/P15 are $4.25; observed DoorDash gaps are 30–40%, not the stated 3%.
 - Physical fit: only basket sizes are known; per-product sizes are not, so fit limits will be staff-configurable counts.
 - OMNIYA: confirm it is not one of the in-store-only Lebanese chocolates.
+- **Savory products** (crackers, nuts, olives, salami per the chart) and more sweet items — XL baskets need 18 distinct items.
 - **Stock counts** for every product (and each pink/blue option) — nothing is purchasable until entered.
 - Ceramic prices (bowl/block $14.95, shoes $19.95) and whether they are empty-container prices; item counts for filled ceramics.
 - Publishing rights for supplier photos (bassinet, planters).
@@ -121,6 +134,6 @@ Screenshots (home shell since replaced by `m3-*`):
 
 ## Next concrete step
 
-Milestone 3 (part 2): Build a Basket UI on `validateGift` / `checkForPicker` / `assessFeasibility`
-(reading products through `toBuilderProducts`), curated Gift Baskets as products, Events (fountain
-inquiry), About, Contact and policy pages, and an inquiry form for Baby White / Cowboy / filled ceramics.
+Milestone 3 (part 3): curated Gift Baskets as products, Events (fountain inquiry), About, Contact
+and policy pages, and an inquiry form for Baby White / Cowboy / filled ceramics. Then milestone 4
+(cart, checkout, order snapshots) so a built basket can be added to a cart.

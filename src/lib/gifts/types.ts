@@ -32,6 +32,8 @@ export type CountOverride = {
   size: SizeCode;
   minItems: number;
   maxItems: number;
+  /** Basket size for this gift type when it differs from the standard size (chart: sympathy 16"). */
+  basketSizeIn: string | null;
 };
 
 export type PresentationStatus = "available" | "inquiry" | "disabled";
