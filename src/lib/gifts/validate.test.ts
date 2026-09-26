@@ -96,7 +96,7 @@ describe("repeats (GFT 04)", () => {
     expect(codes(r)).toEqual(["REPEAT_LIMIT"]);
   });
 
-  it("treats distinct flavours as separate selections", () => {
+  it("treats distinct flavors as separate selections", () => {
     // Milk and dark bars are separate products.
     expect(validateGift(custom("small", ["P02", "P03", ...plainItems(4)]), { ...SETTINGS, sizes: SETTINGS.sizes.map((s) => ({ ...s, premiumCap: 2 })) }, catalog).complete).toBe(true);
   });
@@ -213,8 +213,29 @@ describe("special presentations", () => {
     }
   });
 
-  it("keeps filled ceramics disabled", () => {
-    expect(codes(validateGift({ kind: "special", presentation: "ceramic_filled", selections: sel("P19") }, SETTINGS, catalog))).toContain("PRESENTATION_UNAVAILABLE");
+  it("keeps the filled baby ceramics disabled until item counts are confirmed", () => {
+    for (const presentation of ["ceramic_bowl", "ceramic_shoes", "ceramic_block"] as const) {
+      const r = validateGift({ kind: "special", presentation, variant: "pink", selections: sel("P19") }, SETTINGS, catalog);
+      expect(codes(r)).toContain("PRESENTATION_UNAVAILABLE");
+      expect(r.totals.packagingCents).toBe(0);
+    }
+  });
+
+  it("requires a valid colour for the ceramics", () => {
+    const settings: GiftSettings = {
+      ...SETTINGS,
+      specialPresentations: SETTINGS.specialPresentations.map((p) =>
+        p.code === "ceramic_shoes" ? { ...p, status: "available", premiumCap: 1 } : p,
+      ),
+    };
+    const req = (variant?: string) => validateGift({ kind: "special", presentation: "ceramic_shoes", variant, selections: sel("P19", "FX-SWEET-1") }, settings, catalog);
+    expect(codes(req())).toEqual(["VARIANT_REQUIRED"]);
+    expect(codes(req("green"))).toEqual(["UNKNOWN_VARIANT"]);
+    const ok = req("blue");
+    expect(ok.complete).toBe(true);
+    // Shoes: $19.95 container + chosen items, never the standard packaging fee.
+    expect(ok.totals.totalCents).toBe(1995 + ok.totals.contentsCents);
+    expect(ok.totals.packagingCents).toBe(0);
   });
 
   it("Cowboy takes 3–5 selections, not standard basket counts", () => {

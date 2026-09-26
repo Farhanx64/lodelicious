@@ -39,6 +39,13 @@ export function validateGift(request: GiftRequest, settings: GiftSettings, catal
     countRange = { min: p.minSelections, max: p.maxSelections };
     premiumCap = p.premiumCap;
     capacity = p.capacityUnits;
+    if (p.variants.length > 0) {
+      if (!request.variant) {
+        add({ code: "VARIANT_REQUIRED", message: `Choose a colour for the ${p.name}: ${p.variants.join(" or ")}.` });
+      } else if (!p.variants.includes(request.variant)) {
+        add({ code: "UNKNOWN_VARIANT", message: `"${request.variant}" isn't available for the ${p.name}.` });
+      }
+    }
     if (p.status !== "available" || p.basePriceCents === null || p.premiumCap === null) {
       presentationUnavailable = true;
       add({

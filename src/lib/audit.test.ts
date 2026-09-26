@@ -23,4 +23,11 @@ describe("diffFields", () => {
   it("treats undefined and null as equal", () => {
     expect(diffFields({ note: null }, { note: undefined }, ["note"])).toEqual([]);
   });
+
+  it("treats a missing nested property like null (new columns don't fake a change)", () => {
+    const before = { rows: [{ id: "a", code: "cowboy" }] };
+    const after = { rows: [{ id: "a", code: "cowboy", image: null }] };
+    expect(diffFields(before, after, ["rows"])).toEqual([]);
+    expect(diffFields(before, { rows: [{ id: "a", code: "cowboy", image: 5 }] }, ["rows"])).toHaveLength(1);
+  });
 });

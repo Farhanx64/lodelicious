@@ -10,7 +10,7 @@ export type GiftType = (typeof GIFT_TYPES)[number];
 export const SIZE_CODES = ["small", "medium", "large", "extra_large"] as const;
 export type SizeCode = (typeof SIZE_CODES)[number];
 
-export const SPECIAL_CODES = ["cowboy", "baby_white", "ceramic_filled"] as const;
+export const SPECIAL_CODES = ["cowboy", "baby_white", "ceramic_bowl", "ceramic_shoes", "ceramic_block"] as const;
 export type SpecialCode = (typeof SPECIAL_CODES)[number];
 
 /** Standard custom-builder basket size. Packaging is the builder fee, not a curated price. */
@@ -57,6 +57,10 @@ export type SpecialPresentation = {
   includedComponents: string[];
   /** Product categories customers may choose from; empty = any basket-eligible product. */
   allowedCategories: string[];
+  /** Container options the customer must pick from (e.g. pink, blue); empty = no choice. */
+  variants: string[];
+  /** Container description with supplier dimensions, verbatim. */
+  container: string | null;
 };
 
 export type GiftSettings = {
@@ -99,7 +103,7 @@ export type Selection = { productId: string; quantity: number };
 
 export type GiftRequest =
   | { kind: "custom"; size: SizeCode; giftType: GiftType; budgetCents: Cents | null; selections: Selection[] }
-  | { kind: "special"; presentation: SpecialCode; selections: Selection[] };
+  | { kind: "special"; presentation: SpecialCode; variant?: string; selections: Selection[] };
 
 export type ViolationCode =
   | "UNKNOWN_PRODUCT"
@@ -114,6 +118,8 @@ export type ViolationCode =
   | "BUDGET_BELOW_PACKAGING"
   | "FIT_EXCEEDED"
   | "PRESENTATION_UNAVAILABLE"
+  | "VARIANT_REQUIRED"
+  | "UNKNOWN_VARIANT"
   | "SPECIAL_CATEGORY";
 
 export type Violation = { code: ViolationCode; message: string; productId?: string };

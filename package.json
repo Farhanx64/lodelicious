@@ -7,7 +7,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "npm run migrate && next dev",
     "build": "next build --webpack",
     "start": "next start",
     "serve": "node server.js",
@@ -16,11 +16,13 @@
     "payload": "payload",
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
-    "migrate": "payload migrate",
+    "migrate": "payload migrate && payload run scripts/check-migrations.ts",
     "doctor": "payload run scripts/doctor.ts",
-    "seed:sources": "payload run scripts/seed-source-records.ts",
+    "seed:sources": "npm run migrate && payload run scripts/seed-source-records.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed:catalog": "npm run migrate && payload run scripts/seed-catalog.ts",
+    "migrate:check": "payload run scripts/check-migrations.ts"
   },
   "dependencies": {
     "@payloadcms/db-sqlite": "3.90.2",

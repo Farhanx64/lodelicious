@@ -33,11 +33,19 @@ describe("defaults", () => {
     expect(resolveCountRange(DEFAULT_GIFT_SETTINGS, "large", "sympathy")).toEqual(expect_("large_sympathy"));
   });
 
-  it("keep unpriced special presentations out of direct purchase", () => {
-    for (const p of DEFAULT_GIFT_SETTINGS.specialPresentations) {
-      expect(p.status).not.toBe("available");
-      expect(p.basePriceCents).toBeNull();
-    }
+  it("keep every special presentation out of direct purchase until confirmed", () => {
+    for (const p of DEFAULT_GIFT_SETTINGS.specialPresentations) expect(p.status).not.toBe("available");
+    const byCode = Object.fromEntries(DEFAULT_GIFT_SETTINGS.specialPresentations.map((p) => [p.code, p]));
+    expect(byCode.cowboy.basePriceCents).toBeNull();
+    expect(byCode.baby_white.basePriceCents).toBeNull();
+  });
+
+  it("model the supplied baby containers", () => {
+    const byCode = Object.fromEntries(DEFAULT_GIFT_SETTINGS.specialPresentations.map((p) => [p.code, p]));
+    expect(byCode.baby_white.container).toContain('10"H X 6 3/4"W X 12"D');
+    expect(byCode.baby_white.includedComponents).toEqual(["Baby blanket", "Teddy bear"]); // no rattle
+    expect([byCode.ceramic_bowl.basePriceCents, byCode.ceramic_shoes.basePriceCents, byCode.ceramic_block.basePriceCents]).toEqual([1495, 1995, 1495]);
+    for (const code of ["ceramic_bowl", "ceramic_shoes", "ceramic_block"]) expect(byCode[code].variants).toEqual(["pink", "blue"]);
   });
 });
 
@@ -61,6 +69,7 @@ describe("parseSettings", () => {
     ["duplicate size", (d: ReturnType<typeof doc>) => { d.sizes[1].code = "small"; }, /only once/],
     ["unknown gift type", (d: ReturnType<typeof doc>) => { (d.countOverrides[0] as { giftType: string }).giftType = "birthday"; }, /gift type must be one of/],
     ["available without a price", (d: ReturnType<typeof doc>) => { d.specialPresentations[0].status = "available"; }, /set a price and premium maximum/],
+    ["duplicate presentation", (d: ReturnType<typeof doc>) => { d.specialPresentations[3].code = "ceramic_bowl"; }, /special presentation may appear only once/],
   ])("rejects %s", (_label, mutate, message) => {
     const d = doc();
     mutate(d);

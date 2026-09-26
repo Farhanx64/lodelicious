@@ -22,7 +22,9 @@ const SIZE_OPTIONS = [
 const SPECIAL_OPTIONS = [
   { label: "Cowboy Basket", value: "cowboy" },
   { label: "Baby White Basket", value: "baby_white" },
-  { label: "Filled ceramic basket", value: "ceramic_filled" },
+  { label: "Baby ceramic bowl", value: "ceramic_bowl" },
+  { label: "Baby ceramic shoes", value: "ceramic_shoes" },
+  { label: "Baby ceramic block", value: "ceramic_block" },
 ] satisfies { label: string; value: (typeof SPECIAL_CODES)[number] }[];
 
 const cents = (name: string, label: string, required = true): Field => ({
@@ -137,10 +139,11 @@ export const GiftBuilderSettings: GlobalConfig = {
         ...p,
         includedComponents: p.includedComponents.map((value) => ({ value })),
         allowedCategories: p.allowedCategories.map((value) => ({ value })),
+        variants: p.variants.map((value) => ({ value })),
       })),
       admin: {
         description:
-          "Cowboy, Baby White and filled ceramics have their own rules and never get the standard packaging fee. They stay inquiry-only until a price and premium maximum are set.",
+          "Cowboy, Baby White and the filled baby ceramics (bowl, shoes, block) have their own rules and never get the standard packaging fee. They stay inquiry-only or disabled until a price and premium maximum are set.",
       },
       fields: [
         {
@@ -185,6 +188,23 @@ export const GiftBuilderSettings: GlobalConfig = {
             whole("premiumCap", "Premium maximum", false),
             whole("capacityUnits", "Fit capacity", false),
           ],
+        },
+        {
+          name: "container",
+          type: "textarea",
+          admin: { description: "Container description and dimensions shown to customers and staff." },
+        },
+        {
+          name: "image",
+          type: "upload",
+          relationTo: "media",
+        },
+        {
+          name: "variants",
+          type: "array",
+          labels: { singular: "Colour / option", plural: "Colour / options" },
+          admin: { description: "If set, the customer must choose one (e.g. pink or blue)." },
+          fields: [{ name: "value", label: "Option", type: "text", required: true }],
         },
         {
           name: "includedComponents",

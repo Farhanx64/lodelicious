@@ -52,6 +52,11 @@
   .on-ink :focus-visible {
     outline-color: var(--color-focus-dark);
   }
+
+  /* Long unbroken addresses must wrap at 200% text on a phone (WCAG 1.4.4 / 1.4.10). */
+  a[href^="mailto:"] {
+    overflow-wrap: anywhere;
+  }
 }
 
 .skip-link {

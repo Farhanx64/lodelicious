@@ -14,3 +14,5 @@ export async function getStoreSettings(): Promise<StoreSetting> {
 export function isStaging(): boolean {
   return process.env.APP_ENV !== "production";
 }
+
+export { isImagePublishable } from "./media";

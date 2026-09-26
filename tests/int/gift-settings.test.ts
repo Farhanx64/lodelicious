@@ -1,9 +1,10 @@
 /**
  * Gift-builder rules stored in Payload: defaults, validation on save, access and audit.
  */
-import config from "@payload-config";
-import { getPayload, type Payload } from "payload";
+import type { Payload } from "payload";
 import { beforeAll, describe, expect, it } from "vitest";
+
+import { getTestPayload } from "./payload-instance";
 
 import type { User } from "@/payload-types";
 import { DEFAULT_GIFT_SETTINGS } from "@/src/lib/gifts/defaults";
@@ -17,7 +18,7 @@ let manager: User;
 let fulfillment: User;
 
 beforeAll(async () => {
-  payload = await getPayload({ config });
+  payload = await getTestPayload();
   const make = (email: string, roles: User["roles"]) =>
     payload.create({ collection: "users", data: { email, password: "test-password-123", roles }, overrideAccess: true });
   await make("lody@example.test", ["owner"]);

@@ -39,6 +39,8 @@ export const DEFAULT_SPECIAL_PRESENTATIONS: SpecialPresentation[] = [
     capacityUnits: null,
     includedComponents: [],
     allowedCategories: [],
+    variants: [],
+    container: 'Cowboy basket, 10" x 8" including handle',
   },
   {
     code: "baby_white",
@@ -52,20 +54,59 @@ export const DEFAULT_SPECIAL_PRESENTATIONS: SpecialPresentation[] = [
     capacityUnits: null,
     includedComponents: ["Baby blanket", "Teddy bear"],
     allowedCategories: ["candy", "chocolate"],
+    variants: [],
+    container: 'White wicker baby gift bassinet, white gloss willow. 10"H X 6 3/4"W X 12"D. The rattle in the photo is for display only and is not included.',
   },
   {
-    code: "ceramic_filled",
-    name: "Filled ceramic basket (pink or blue)",
-    // Empty-vs-filled price basis and stock per colour/size are unconfirmed.
+    code: "ceramic_bowl",
+    name: 'Baby ceramic bowl (pink or blue)',
+    // Filled ceramics: item counts for this opening are unconfirmed, so it stays disabled.
+    // Price is the project lead's 2026-09-26 assumption for the empty container (D19).
     status: "disabled",
-    basePriceCents: null,
+    basePriceCents: 1495,
     pricing: "base_plus_contents",
     minSelections: 1,
-    maxSelections: 5,
+    maxSelections: 3,
     premiumCap: null,
     capacityUnits: null,
     includedComponents: [],
-    allowedCategories: [],
+    allowedCategories: ["candy", "chocolate"],
+    variants: ["pink", "blue"],
+    container: 'Ceramic baby bowl with bow. 3.5"H X 3" opening',
+  },
+  {
+    code: "ceramic_shoes",
+    name: 'Baby ceramic shoes (pink or blue)',
+    // Filled ceramics: item counts for this opening are unconfirmed, so it stays disabled.
+    // Price is the project lead's 2026-09-26 assumption for the empty container (D19).
+    status: "disabled",
+    basePriceCents: 1995,
+    pricing: "base_plus_contents",
+    minSelections: 1,
+    maxSelections: 3,
+    premiumCap: null,
+    capacityUnits: null,
+    includedComponents: [],
+    allowedCategories: ["candy", "chocolate"],
+    variants: ["pink", "blue"],
+    container: 'Ceramic pair of baby shoes with bow. 3"H X 5.75"W X 5"D, opening 2.5"H X 5"W X 3.25"D',
+  },
+  {
+    code: "ceramic_block",
+    name: 'Baby ceramic "BABY" block (pink or blue)',
+    // Filled ceramics: item counts for this opening are unconfirmed, so it stays disabled.
+    // Price is the project lead's 2026-09-26 assumption for the empty container (D19).
+    status: "disabled",
+    basePriceCents: 1495,
+    pricing: "base_plus_contents",
+    minSelections: 1,
+    maxSelections: 3,
+    premiumCap: null,
+    capacityUnits: null,
+    includedComponents: [],
+    allowedCategories: ["candy", "chocolate"],
+    variants: ["pink", "blue"],
+    container: 'Ceramic gingham block that spells BABY. 4"H X 3.5"W X 3" opening',
   },
 ];
 
@@ -157,6 +198,8 @@ export function parseSettings(doc: Row): GiftSettings {
       capacityUnits: nullableCount(r.capacityUnits, `${where} capacity`),
       includedComponents: strings(r.includedComponents),
       allowedCategories: strings(r.allowedCategories),
+      variants: strings(r.variants),
+      container: typeof r.container === "string" && r.container.trim() !== "" ? r.container : null,
     };
     range(p.minSelections, p.maxSelections, where);
     if (p.status === "available" && (p.basePriceCents === null || p.premiumCap === null)) {
@@ -164,6 +207,9 @@ export function parseSettings(doc: Row): GiftSettings {
     }
     return p;
   });
+
+  const specialCodes = specialPresentations.map((p) => p.code);
+  if (new Set(specialCodes).size !== specialCodes.length) throw new GiftSettingsError("Each special presentation may appear only once");
 
   return { sizes, countOverrides, specialPresentations };
 }

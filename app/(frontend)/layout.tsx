@@ -42,7 +42,7 @@ export default async function FrontendLayout({ children }: Readonly<{ children: 
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <SiteHeader staging={staging} />
+        <SiteHeader staging={staging} storeName={store.name} />
         <main id="main" tabIndex={-1} className="flex-1 py-10">
           {children}
         </main>

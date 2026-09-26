@@ -31,5 +31,5 @@ jobs:
       - run: npm run lint
       - run: npm test
       - name: Migrations apply to an empty database
-        run: NODE_ENV=production DATABASE_URI=file:./.data/migrate-check.db npx payload migrate
+        run: NODE_ENV=production DATABASE_URI=file:./.data/migrate-check.db npm run migrate
       - run: npm run build
