@@ -1,9 +1,10 @@
 /**
  * Integration tests against a real Payload instance on a throwaway SQLite database.
  */
-import config from "@payload-config";
-import { getPayload, type Payload } from "payload";
+import type { Payload } from "payload";
 import { beforeAll, describe, expect, it } from "vitest";
+
+import { getTestPayload } from "./payload-instance";
 
 import type { User } from "@/payload-types";
 import { importSourceRecords } from "@/src/lib/source-import";
@@ -26,7 +27,7 @@ async function createUser(email: string, roles: User["roles"]): Promise<User> {
 }
 
 beforeAll(async () => {
-  payload = await getPayload({ config });
+  payload = await getTestPayload();
   // Submitted as fulfillment on purpose: the first account must still become owner.
   owner = await createUser("lody@example.test", ["fulfillment"]);
   manager = await createUser("faisal@example.test", ["manager"]);
@@ -67,18 +68,18 @@ describe("users", () => {
 });
 
 describe("source records import", () => {
-  it("imports all 51 observations as unreviewed, then is idempotent", async () => {
+  it("imports all 73 observations as unreviewed, then is idempotent", async () => {
     const rows = readSourceRows();
     const first = await importSourceRecords(payload, rows);
-    expect(first.created).toHaveLength(51);
+    expect(first.created).toHaveLength(73);
     expect(first.conflicts).toEqual([]);
 
     const second = await importSourceRecords(payload, rows);
     expect(second.created).toEqual([]);
-    expect(second.unchanged).toHaveLength(51);
+    expect(second.unchanged).toHaveLength(73);
 
     const { totalDocs } = await payload.count({ collection: "source-records", where: { disposition: { equals: "unreviewed" } } });
-    expect(totalDocs).toBe(51);
+    expect(totalDocs).toBe(73);
   });
 
   it("reports changed evidence as a conflict instead of overwriting it", async () => {

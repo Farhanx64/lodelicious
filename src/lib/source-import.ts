@@ -7,7 +7,7 @@ export type SourceRow = {
   source: SourceRecord["source"];
   sourceName: string;
   sourceBrand?: string;
-  sourcePriceCents: number;
+  sourcePriceCents: number | null;
   observedOn?: string;
   sourceNotes?: string;
 };
@@ -35,7 +35,7 @@ export async function importSourceRecords(payload: Payload, rows: readonly Sourc
   const report: ImportReport = { created: [], unchanged: [], conflicts: [] };
 
   for (const row of rows) {
-    if (!Number.isSafeInteger(row.sourcePriceCents) || row.sourcePriceCents < 0) {
+    if (row.sourcePriceCents !== null && (!Number.isSafeInteger(row.sourcePriceCents) || row.sourcePriceCents < 0)) {
       throw new RangeError(`${row.ref}: price must be non-negative integer cents`);
     }
     const existing = await payload.find({

@@ -8,6 +8,8 @@ export const SOURCES = [
   { label: "Clover (authorized export)", value: "clover_export" },
   { label: "Owner price-list screenshot", value: "price_list_screenshot" },
   { label: "DoorDash (channel price)", value: "doordash" },
+  { label: "Owner product card", value: "owner_product_card" },
+  { label: "Supplier specification", value: "supplier_spec" },
 ] as const;
 
 export const DISPOSITIONS = [
@@ -68,10 +70,9 @@ export const SourceRecords: CollectionConfig = {
     {
       name: "sourcePriceCents",
       type: "number",
-      required: true,
       min: 0,
       access: { update: immutable },
-      admin: { description: "Observed price in cents (e.g. 1295 = $12.95). Evidence only." },
+      admin: { description: "Observed price in cents (e.g. 1295 = $12.95); empty when the source gave none. Evidence only." },
     },
     { name: "cloverId", type: "text", index: true, access: { update: immutable } },
     { name: "observedOn", type: "date", access: { update: immutable } },
