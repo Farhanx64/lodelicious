@@ -46,6 +46,17 @@ export const Media: CollectionConfig = {
       },
     },
     {
+      name: "sourceFile",
+      type: "text",
+      index: true,
+      admin: { readOnly: true, position: "sidebar", description: "Set by the catalog seed; prevents duplicate uploads." },
+    },
+    {
+      name: "credit",
+      type: "text",
+      admin: { description: "Who made the photo, e.g. \"Lodelicious\" or \"Supplier catalog image\"." },
+    },
+    {
       name: "approvedForLaunch",
       type: "checkbox",
       defaultValue: false,

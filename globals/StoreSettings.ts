@@ -18,7 +18,7 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "street", "locality", "phone", "email", "timezone", "hours", "closedDays"])],
+    afterChange: [auditGlobal(["name", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice"])],
   },
   fields: [
     { name: "name", type: "text", required: true, defaultValue: "Lodelicious Gifts & Sweets" },
@@ -56,6 +56,14 @@ export const StoreSettings: GlobalConfig = {
           ],
         },
       ],
+    },
+    {
+      name: "allergyNotice",
+      type: "textarea",
+      required: true,
+      defaultValue:
+        "Our chocolates and fudge contain common allergens and may be made in facilities that process nuts and other allergens. We cannot guarantee products are completely free from traces of nuts or other allergens. Please contact us before ordering if you have a food allergy or specific dietary requirement so we can check current product information.",
+      admin: { description: "Shown on every product page. From Lody's allergen chart (2026-09-26)." },
     },
     {
       name: "closedDays",

@@ -1,0 +1,716 @@
+{
+  "_comment": "Starting catalog, created once by `npm run seed:catalog`. After seeding, /admin is the source of truth: the seed never updates or deletes existing records. Texts are copied verbatim from Lody's product cards (data/assets/product-cards) and allergen chart (data/source/allergen-chart-2026-09-26.csv).",
+  "categories": [
+    {
+      "slug": "chocolate",
+      "name": "Chocolates",
+      "sortOrder": 10,
+      "description": "Phillips Chocolates bars, boxes and turtles, and chocolate-covered treats."
+    },
+    {
+      "slug": "fudge",
+      "name": "Fudge",
+      "sortOrder": 20,
+      "description": "Chocolate-covered turtle fudge and Cape Cod fudge."
+    },
+    {
+      "slug": "candy",
+      "name": "Candy",
+      "sortOrder": 30,
+      "description": "Swedish candy and other sweets."
+    },
+    {
+      "slug": "fresh-treats",
+      "name": "Fresh treats",
+      "sortOrder": 40,
+      "description": "Freshly made treats for pickup and local delivery."
+    },
+    {
+      "slug": "baby-gifts",
+      "name": "Baby gifts",
+      "sortOrder": 50,
+      "description": "Keepsake ceramics and baby gift presentations."
+    },
+    {
+      "slug": "gift-add-ons",
+      "name": "Gift add-ons",
+      "sortOrder": 60,
+      "description": "Teddy bears, children's books and greeting cards."
+    }
+  ],
+  "media": [
+    {
+      "file": "products/phillips-dark-chocolate-bar.jpg",
+      "alt": "Phillips Chocolates Classic Dark chocolate bar, unwrapped pieces beside the wrapper",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/phillips-milk-chocolate-bar.jpg",
+      "alt": "Phillips Chocolates Classic Milk chocolate bar, unwrapped pieces beside the wrapper",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/phillips-smores-bar.jpg",
+      "alt": "Phillips Chocolates Old Fashioned S'mores bar cut open to show marshmallow and graham cracker",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/phillips-princess-assortment-box.jpg",
+      "alt": "Phillips Chocolates assortment in a red window box beside the classic burgundy gift box",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/milk-chocolate-covered-raisins.jpg",
+      "alt": "Lodelicious 7 oz bag of milk chocolate covered raisins with a dish of raisins",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/chocolate-covered-gummy-bears.jpg",
+      "alt": "Gold Lodelicious bag of chocolate covered gummy bears",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/phillips-turtle-fudge.jpg",
+      "alt": "Phillips Chocolates chocolate covered turtle fudge box with pecans",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/phillips-turtles-9pc-assortment-box.jpg",
+      "alt": "Nine chocolate turtles in a red Phillips Chocolates window box",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/phillips-peanut-butter-bark.jpg",
+      "alt": "Two pieces of Phillips peanut butter bark in a clear pack",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/phillips-sea-salt-caramels-9pc.jpg",
+      "alt": "Nine milk and dark chocolate sea salt caramels in red Phillips Chocolates boxes",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/swedish-candy-bag.jpg",
+      "alt": "Pink Lodelicious bag of Swedish candy mix with Bubs",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/mini-pancakes-10pc.jpg",
+      "alt": "Two containers of ten mini pancakes topped with whipped cream and chocolate fudge drizzle",
+      "credit": "Owner-supplied product photo",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/teddy-bear.jpg",
+      "alt": "Rows of brown, cream and tan teddy bears with ribbon bows",
+      "credit": "Owner-supplied image; bear style may vary",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/dr-seuss-book.jpg",
+      "alt": "Assorted Dr. Seuss children's book covers",
+      "credit": "Owner-supplied image; selection varies",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "products/greeting-cards.jpg",
+      "alt": "Assorted greeting cards for birthdays, thanks, holidays and other occasions",
+      "credit": "Owner-supplied image; selection varies",
+      "approvedForLaunch": true
+    },
+    {
+      "file": "supplied/baby-planters-pink.jpg",
+      "alt": "Pink and white ceramic baby planters: gingham bowl with bow, pair of baby shoes, and a BABY block",
+      "credit": "Supplier catalog image — staging only",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "supplied/baby-planters-blue.jpg",
+      "alt": "Blue and white ceramic baby planters: gingham bowl with bow, pair of baby shoes, and a BABY block",
+      "credit": "Supplier catalog image — staging only",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "supplied/white-wicker-bassinet.jpg",
+      "alt": "White woven wicker baby bassinet basket",
+      "credit": "Supplier catalog image — staging only",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "supplied/baby-ceramic-bowl-pink.jpg",
+      "alt": "Pink and white ceramic gingham bowl with a bow",
+      "credit": "Supplier catalog image (cropped) — staging only",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "supplied/baby-ceramic-bowl-blue.jpg",
+      "alt": "Blue and white ceramic gingham bowl with a bow",
+      "credit": "Supplier catalog image (cropped) — staging only",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "supplied/baby-ceramic-shoes-pink.jpg",
+      "alt": "Pink and white ceramic pair of baby shoes with a bow and ruffle rim",
+      "credit": "Supplier catalog image (cropped) — staging only",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "supplied/baby-ceramic-shoes-blue.jpg",
+      "alt": "Blue and white ceramic pair of baby shoes with a bow and ruffle rim",
+      "credit": "Supplier catalog image (cropped) — staging only",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "supplied/baby-ceramic-block-pink.jpg",
+      "alt": "Pink and white ceramic gingham block that spells BABY",
+      "credit": "Supplier catalog image (cropped) — staging only",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "supplied/baby-ceramic-block-blue.jpg",
+      "alt": "Blue and white ceramic gingham block that spells BABY",
+      "credit": "Supplier catalog image (cropped) — staging only",
+      "approvedForLaunch": false
+    }
+  ],
+  "products": [
+    {
+      "slug": "phillips-dark-chocolate-bar",
+      "title": "Phillips Chocolate Dark Chocolate Bar",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 425,
+      "priceSource": "Owner product card 2026-09-26 (K01)",
+      "shortDescription": "Rich, smooth dark chocolate bar made with high-quality cocoa.",
+      "images": [
+        "products/phillips-dark-chocolate-bar.jpg"
+      ],
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Phillips Chocolate Dark Chocolate Bar",
+      "sources": [
+        "K01",
+        "P03",
+        "P13",
+        "D09"
+      ],
+      "featured": true
+    },
+    {
+      "slug": "phillips-milk-chocolate-bar",
+      "title": "Phillips Chocolate Milk Chocolate Bar",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 425,
+      "priceSource": "Owner product card 2026-09-26 (K02)",
+      "shortDescription": "Creamy milk chocolate bar with a smooth and rich texture.",
+      "images": [
+        "products/phillips-milk-chocolate-bar.jpg"
+      ],
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Phillips Chocolate Milk Chocolate Bar",
+      "sources": [
+        "K02",
+        "P02",
+        "P13",
+        "D08"
+      ]
+    },
+    {
+      "slug": "phillips-smores-bar",
+      "title": "Phillips Chocolate S'mores Bar",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 425,
+      "priceSource": "Owner product card 2026-09-26 (K03)",
+      "shortDescription": "A rich chocolate bar layered with gooey marshmallow cream and crunchy graham cracker pieces.",
+      "images": [
+        "products/phillips-smores-bar.jpg"
+      ],
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Phillips Chocolate S'mores Bar",
+      "sources": [
+        "K03",
+        "P01",
+        "P15",
+        "D07"
+      ],
+      "featured": true
+    },
+    {
+      "slug": "phillips-princess-assortment-box",
+      "title": "Phillips Chocolate Princess Assortment Box",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "sizeLabel": "11 oz",
+      "priceCents": 3095,
+      "priceSource": "Owner product card 2026-09-26 (K04)",
+      "shortDescription": "A beautiful assortment of handmade Phillips chocolates.",
+      "description": "A beautiful assortment of handmade Phillips chocolates featuring a delicious variety of creamy milk chocolate, rich dark chocolate, caramel-filled favorites, nutty turtles, and assorted chocolate-covered confections. Each piece offers its own irresistible combination of smooth, rich, and crunchy flavors perfect for gifting or enjoying yourself.",
+      "images": [
+        "products/phillips-princess-assortment-box.jpg"
+      ],
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "variants": [
+        {
+          "key": "window",
+          "label": "Window style"
+        },
+        {
+          "key": "classic",
+          "label": "Classic style"
+        }
+      ],
+      "allergen": "Phillips Chocolate Princess Assortment Box",
+      "sources": [
+        "K04",
+        "P04"
+      ],
+      "featured": true
+    },
+    {
+      "slug": "milk-chocolate-covered-raisins",
+      "title": "Milk Chocolate Covered Raisins",
+      "category": "chocolate",
+      "brand": "Lodelicious",
+      "sizeLabel": "7 oz",
+      "priceCents": 995,
+      "priceSource": "Owner product card 2026-09-26 (K05)",
+      "shortDescription": "Raisins generously coated in smooth, creamy milk chocolate for the perfect balance of rich sweetness and fruity goodness.",
+      "images": [
+        "products/milk-chocolate-covered-raisins.jpg"
+      ],
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "sources": [
+        "K05",
+        "P08",
+        "D12"
+      ]
+    },
+    {
+      "slug": "chocolate-covered-gummy-bears",
+      "title": "Chocolate Covered Gummy Bears",
+      "category": "candy",
+      "brand": "Lodelicious",
+      "priceCents": 995,
+      "priceSource": "Owner product card 2026-09-26 (K06)",
+      "shortDescription": "A bold twist on a classic favorite—these Chocolate Covered Gummy Bears take soft, fruity gummies and wrap them in a smooth, velvety layer of rich chocolate for the ultimate indulgence.",
+      "images": [
+        "products/chocolate-covered-gummy-bears.jpg"
+      ],
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory"
+      ],
+      "sources": [
+        "K06",
+        "P19",
+        "D10"
+      ]
+    },
+    {
+      "slug": "phillips-turtle-fudge",
+      "title": "Phillips Chocolate Covered Turtle Fudge",
+      "category": "fudge",
+      "brand": "Phillips Chocolates",
+      "priceCents": 1245,
+      "priceSource": "Owner product card 2026-09-26 (K07)",
+      "shortDescription": "Rich, creamy fudge packed with the irresistible flavors of a classic turtle.",
+      "description": "Rich, creamy fudge packed with the irresistible flavors of a classic turtle—smooth chocolate, buttery caramel, and crunchy pecans, all finished with a decadent chocolate coating. A rich and indulgent treat in every bite.",
+      "images": [
+        "products/phillips-turtle-fudge.jpg"
+      ],
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Phillips Chocolate Covered Turtle Fudge",
+      "sources": [
+        "K07",
+        "P06"
+      ]
+    },
+    {
+      "slug": "phillips-turtles-9pc-assortment-box",
+      "title": "Turtles 9pc Assortment Box",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "sizeLabel": "9 pieces",
+      "priceCents": 2795,
+      "priceSource": "Owner product card 2026-09-26 (K08)",
+      "shortDescription": "A decadent assortment of 9 classic chocolate turtles.",
+      "description": "A decadent assortment of 9 classic chocolate turtles, featuring three irresistible varieties: 3 milk chocolate cashew turtles, 3 dark chocolate almond turtles, and 3 milk chocolate pecan turtles. Each one combines buttery caramel, crunchy roasted nuts, and smooth, luxurious chocolate for the perfect balance of rich, nutty, and melt-in-your-mouth goodness. Beautifully packaged and ready to gift—or enjoy all to yourself.",
+      "images": [
+        "products/phillips-turtles-9pc-assortment-box.jpg"
+      ],
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Turtles 9pc Assortment Box",
+      "sources": [
+        "K08",
+        "P09",
+        "P10"
+      ],
+      "featured": true
+    },
+    {
+      "slug": "phillips-peanut-butter-bark",
+      "title": "Peanut Butter Bark",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "sizeLabel": "2 pieces",
+      "priceCents": 875,
+      "priceSource": "Owner product card 2026-09-26 (K09)",
+      "shortDescription": "Indulge in the perfect balance of sweet, salty, and crunchy with Phillips Peanut Butter Bark.",
+      "description": "Indulge in the perfect balance of sweet, salty, and crunchy with Phillips Peanut Butter Bark. Each pack includes two generous pieces of milk chocolate bark layered with a rich, crunchy chocolate peanut butter filling.",
+      "images": [
+        "products/phillips-peanut-butter-bark.jpg"
+      ],
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory"
+      ],
+      "allergen": "Peanut Butter Bark",
+      "sources": [
+        "K09",
+        "P12"
+      ]
+    },
+    {
+      "slug": "phillips-sea-salt-caramels-9pc",
+      "title": "Sea Salt Chocolate Caramels (9 pc)",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "sizeLabel": "9 pieces, 4.5 oz",
+      "priceCents": 2095,
+      "priceSource": "Owner product card 2026-09-26 (K10)",
+      "shortDescription": "A delicious assortment of 9 handcrafted sea salt caramels.",
+      "description": "A delicious assortment of 9 handcrafted sea salt caramels—featuring 5 pieces of smooth milk chocolate and 4 pieces of rich dark chocolate. Each buttery, melt-in-your-mouth caramel is coated in luxurious chocolate and finished with a delicate sprinkle of sea salt. Beautifully presented in a classic window box, it's an irresistible treat for gifting or indulging yourself.",
+      "images": [
+        "products/phillips-sea-salt-caramels-9pc.jpg"
+      ],
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "9 Pack Sea Salt Caramels",
+      "sources": [
+        "K10",
+        "P07"
+      ]
+    },
+    {
+      "slug": "swedish-candy-bag",
+      "title": "Swedish Candy Bag",
+      "category": "candy",
+      "brand": "Lodelicious",
+      "sizeLabel": "8 oz",
+      "priceCents": 1495,
+      "priceSource": "Owner product card 2026-09-26 (K11)",
+      "shortDescription": "Swedish Candy Mix with Bubs (8 oz).",
+      "description": "This mix is packed with soft, pillowy gummies and foamy, melt-in-your mouth bites, delivering the perfect balance of sweet, tangy, and fruity flavors in every handful.",
+      "images": [
+        "products/swedish-candy-bag.jpg"
+      ],
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory"
+      ],
+      "sources": [
+        "K11",
+        "D06"
+      ],
+      "featured": true
+    },
+    {
+      "slug": "mini-pancakes-10pc",
+      "title": "10 Pieces Mini Pancakes",
+      "category": "fresh-treats",
+      "brand": "Lodelicious",
+      "sizeLabel": "10 pieces",
+      "priceCents": 1000,
+      "priceSource": "Owner product card 2026-09-26 (K12)",
+      "shortDescription": "Fluffy, golden-bite mini pancakes stacked to perfection—10 pieces of pure comfort in every order.",
+      "description": "Fluffy, golden-bite mini pancakes stacked to perfection—10 pieces of pure comfort in every order. Each mini pancake is light, soft, and freshly made, then generously topped with a cloud of airy whipped cream. To finish, we drizzle our rich, homemade warm chocolate fudge over the top, melting slightly into every layer for that perfect sweet bite.",
+      "images": [
+        "products/mini-pancakes-10pc.jpg"
+      ],
+      "basketEligible": false,
+      "perishable": true,
+      "sources": [
+        "K12",
+        "C01",
+        "D03"
+      ]
+    },
+    {
+      "slug": "teddy-bear",
+      "title": "Teddy Bear",
+      "category": "gift-add-ons",
+      "priceCents": 1495,
+      "priceSource": "Owner product card 2026-09-26 (K13)",
+      "shortDescription": "A cute teddy bear gift item that makes a sweet addition to children's gift baskets and themed gifts.",
+      "images": [
+        "products/teddy-bear.jpg"
+      ],
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "savory",
+        "sweet_savory"
+      ],
+      "sources": [
+        "K13",
+        "C20"
+      ]
+    },
+    {
+      "slug": "dr-seuss-book",
+      "title": "Dr. Seuss Book",
+      "category": "gift-add-ons",
+      "priceCents": 795,
+      "priceSource": "Owner product card 2026-09-26 (K14)",
+      "shortDescription": "A fun Dr. Seuss children's book, perfect for adding a thoughtful and playful touch to a child's gift basket. Selection may vary based on the theme.",
+      "images": [
+        "products/dr-seuss-book.jpg"
+      ],
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "savory",
+        "sweet_savory"
+      ],
+      "sources": [
+        "K14",
+        "C04"
+      ]
+    },
+    {
+      "slug": "greeting-cards",
+      "title": "Greeting Cards",
+      "category": "gift-add-ons",
+      "priceCents": 395,
+      "priceSource": "Owner product card 2026-09-26 (K15)",
+      "shortDescription": "A selection of cards available for different occasions and celebrations, perfect for adding a personal message to any gift.",
+      "images": [
+        "products/greeting-cards.jpg"
+      ],
+      "basketEligible": false,
+      "sources": [
+        "K15",
+        "C03"
+      ]
+    },
+    {
+      "slug": "baby-ceramic-bowl",
+      "title": "Baby Ceramic Bowl",
+      "category": "baby-gifts",
+      "sizeLabel": "3.5\"H × 3\" opening",
+      "priceCents": 1495,
+      "priceApproved": false,
+      "priceSource": "Project-lead assumption 2026-09-26 (empty container) — confirm with Lody",
+      "shortDescription": "A ceramic baby keepsake bowl with a bow, in pink or blue.",
+      "description": "Pink: pink and white gingham bowl with a pink bow. Blue: blue and white gingham bowl with a blue bow. 3.5\"H × 3\" opening. Available empty; filled versions by inquiry.",
+      "images": [
+        "supplied/baby-ceramic-bowl-pink.jpg",
+        "supplied/baby-ceramic-bowl-blue.jpg"
+      ],
+      "variants": [
+        {
+          "key": "pink",
+          "label": "Pink",
+          "image": "supplied/baby-ceramic-bowl-pink.jpg"
+        },
+        {
+          "key": "blue",
+          "label": "Blue",
+          "image": "supplied/baby-ceramic-bowl-blue.jpg"
+        }
+      ],
+      "sources": [
+        "S02",
+        "S05"
+      ]
+    },
+    {
+      "slug": "baby-ceramic-shoes",
+      "title": "Baby Ceramic Shoes",
+      "category": "baby-gifts",
+      "sizeLabel": "3\"H × 5.75\"W × 5\"D",
+      "priceCents": 1995,
+      "priceApproved": false,
+      "priceSource": "Project-lead assumption 2026-09-26 (empty container) — confirm with Lody",
+      "shortDescription": "A ceramic pair of baby shoes with a bow and ruffle rim, in pink or blue.",
+      "description": "3\"H × 5.75\"W × 5\"D; opening 2.5\"H × 5\"W × 3.25\"D. Pink: white shoes with a pink bow and ruffle rim. Available empty; filled versions by inquiry.",
+      "images": [
+        "supplied/baby-ceramic-shoes-pink.jpg",
+        "supplied/baby-ceramic-shoes-blue.jpg"
+      ],
+      "variants": [
+        {
+          "key": "pink",
+          "label": "Pink",
+          "image": "supplied/baby-ceramic-shoes-pink.jpg"
+        },
+        {
+          "key": "blue",
+          "label": "Blue",
+          "image": "supplied/baby-ceramic-shoes-blue.jpg"
+        }
+      ],
+      "sources": [
+        "S03",
+        "S06"
+      ]
+    },
+    {
+      "slug": "baby-ceramic-block",
+      "title": "Baby Ceramic \"BABY\" Block",
+      "category": "baby-gifts",
+      "sizeLabel": "4\"H × 3.5\"W × 3\" opening",
+      "priceCents": 1495,
+      "priceApproved": false,
+      "priceSource": "Project-lead assumption 2026-09-26 (empty container) — confirm with Lody",
+      "shortDescription": "A ceramic gingham block that spells \"BABY\", in pink or blue.",
+      "description": "4\"H × 3.5\"W × 3\" opening. Available empty; filled versions by inquiry.",
+      "images": [
+        "supplied/baby-ceramic-block-pink.jpg",
+        "supplied/baby-ceramic-block-blue.jpg"
+      ],
+      "variants": [
+        {
+          "key": "pink",
+          "label": "Pink",
+          "image": "supplied/baby-ceramic-block-pink.jpg"
+        },
+        {
+          "key": "blue",
+          "label": "Blue",
+          "image": "supplied/baby-ceramic-block-blue.jpg"
+        }
+      ],
+      "sources": [
+        "S04",
+        "S07"
+      ]
+    },
+    {
+      "slug": "cape-cod-chocolate-sea-salt-caramel-fudge",
+      "title": "Cape Cod Provisions Chocolate Sea Salt Caramel Fudge",
+      "category": "fudge",
+      "brand": "Cape Cod Provisions",
+      "status": "draft",
+      "shortDescription": "From the allergen chart; price, size and photo still needed.",
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Chocolate Sea Salt caramel"
+    },
+    {
+      "slug": "cape-cod-penuche-fudge",
+      "title": "Cape Cod Provisions Penuche Fudge (no nuts)",
+      "category": "fudge",
+      "brand": "Cape Cod Provisions",
+      "status": "draft",
+      "shortDescription": "From the allergen chart (\"Penuche not nuts\"); price, size and photo still needed.",
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Penuche not nuts"
+    },
+    {
+      "slug": "cape-cod-chocolate-fudge",
+      "title": "Cape Cod Provisions Chocolate Fudge",
+      "category": "fudge",
+      "brand": "Cape Cod Provisions",
+      "status": "draft",
+      "shortDescription": "From the allergen chart; price, size and photo still needed.",
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Chocolate"
+    },
+    {
+      "slug": "cape-cod-pistachio-fudge",
+      "title": "Cape Cod Provisions Pistachio Fudge",
+      "category": "fudge",
+      "brand": "Cape Cod Provisions",
+      "status": "draft",
+      "shortDescription": "From the allergen chart; price, size and photo still needed.",
+      "premium": true,
+      "basketEligible": true,
+      "giftTypes": [
+        "sweet",
+        "sweet_savory",
+        "sympathy"
+      ],
+      "allergen": "Pistachio"
+    }
+  ]
+}

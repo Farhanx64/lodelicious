@@ -7,10 +7,13 @@ import { buildConfig } from "payload";
 import sharp from "sharp";
 
 import { AuditLog } from "./collections/AuditLog";
+import { Categories } from "./collections/Categories";
 import { Media } from "./collections/Media";
+import { Products } from "./collections/Products";
 import { SourceRecords } from "./collections/SourceRecords";
 import { SyncJobs } from "./collections/SyncJobs";
 import { Users } from "./collections/Users";
+import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { StoreSettings } from "./globals/StoreSettings";
 
 const filename = fileURLToPath(import.meta.url);
@@ -32,8 +35,8 @@ export default buildConfig({
       titleSuffix: " — Lodelicious admin",
     },
   },
-  collections: [Users, Media, SourceRecords, AuditLog, SyncJobs],
-  globals: [StoreSettings],
+  collections: [Products, Categories, Media, SourceRecords, Users, AuditLog, SyncJobs],
+  globals: [StoreSettings, GiftBuilderSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
@@ -44,6 +47,10 @@ export default buildConfig({
       url: process.env.DATABASE_URI || `file:${path.resolve(dataDir, "lodelicious.db")}`,
     },
     migrationDir: path.resolve(dirname, "migrations"),
+    // Never auto-push schema, even in development. Dev push on SQLite re-creates existing
+    // indexes and fails on alternate runs, and it marks the database so that a later
+    // non-interactive `payload migrate` silently exits 0 without migrating (D23).
+    push: false,
   }),
   sharp,
   telemetry: false,

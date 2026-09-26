@@ -28,6 +28,8 @@ export const metadata: Metadata = {
     template: "%s — Lodelicious Gifts & Sweets",
   },
   description: "Gift baskets, chocolates and sweets from a family-owned shop in Plymouth, Massachusetts.",
+  // Staging previews shared with the client must not end up in search results.
+  robots: process.env.APP_ENV === "production" ? undefined : { index: false, follow: false },
 };
 
 export const dynamic = "force-dynamic";
@@ -42,7 +44,7 @@ export default async function FrontendLayout({ children }: Readonly<{ children: 
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <SiteHeader staging={staging} />
+        <SiteHeader staging={staging} storeName={store.name} />
         <main id="main" tabIndex={-1} className="flex-1 py-10">
           {children}
         </main>

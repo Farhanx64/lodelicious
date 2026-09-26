@@ -4,10 +4,19 @@
 
 export type FieldChange = { field: string; before: unknown; after: unknown };
 
+/**
+ * Canonical JSON: object keys sorted, and null/undefined properties dropped — a field that is
+ * missing and the same field set to null mean the same thing (e.g. a column added by a later
+ * migration), so neither may produce an audit entry on its own.
+ */
 function stable(value: unknown): string {
   return JSON.stringify(value ?? null, (_key, v) =>
     v && typeof v === "object" && !Array.isArray(v)
-      ? Object.fromEntries(Object.entries(v).sort(([a], [b]) => a.localeCompare(b)))
+      ? Object.fromEntries(
+          Object.entries(v)
+            .filter(([, inner]) => inner !== null && inner !== undefined)
+            .sort(([a], [b]) => a.localeCompare(b)),
+        )
       : v,
   );
 }

@@ -1,0 +1,16 @@
+ref,source_name,source_brand,source_price_cents,source,observed_on,notes
+K01,Phillips Chocolate Dark Chocolate Bar,Phillips,425,owner_product_card,2026-09-26,card: product-cards/phillips-dark-chocolate-bar.jpg; settles P03 vs P13 ($5.95 is the DoorDash price)
+K02,Phillips Chocolate Milk Chocolate Bar,Phillips,425,owner_product_card,2026-09-26,card: product-cards/phillips-milk-chocolate-bar.jpg; settles P02 vs P13
+K03,Phillips Chocolate S'mores Bar,Phillips,425,owner_product_card,2026-09-26,card: product-cards/phillips-smores-bar.jpg; settles P01 vs P15
+K04,Philips Chocolate Princess Assortment Box,Phillips,3095,owner_product_card,2026-09-26,"card spelling ""Philips""; ""Window or Classic Style""; box shows NET WT 11 oz; screenshot P04 said $34.95"
+K05,Milk Chocolate Covered Raisins,Lodelicious,995,owner_product_card,2026-09-26,7 oz bag; screenshot P08 said $12.95; DoorDash $12.95
+K06,Chocolate Covered Gummy Bears,Lodelicious,995,owner_product_card,2026-09-26,screenshot P19 said $12.95; DoorDash $12.95
+K07,Phillips chocolate covered turtle fudge,Phillips,1245,owner_product_card,2026-09-26,matches screenshot P06
+K08,Turtles 9pc Assortment box,Phillips,2795,owner_product_card,2026-09-26,3 milk cashew + 3 dark almond + 3 milk pecan turtles; matches screenshot P10
+K09,Peanut Butter Bark,Phillips,875,owner_product_card,2026-09-26,"card: ""philips Peanut Butter Bark""; two pieces per pack; matches screenshot P12"
+K10,Sea Salt Chocolate Caramels (9 pc),Phillips,2095,owner_product_card,2026-09-26,"card has no title; box label ""Sea Salt Chocolate Ca[ramels]"" NET WT 4.5 oz; allergen chart ""9 Pack Sea Salt Caramels""; 5 milk + 4 dark; matches screenshot P07"
+K11,Swedish Candy Bag,Lodelicious,1495,owner_product_card,2026-09-26,Swedish Candy Mix with Bubs (8 oz); DoorDash D06 $17.95
+K12,10 Pieces Mini Pancakes,Lodelicious,1000,owner_product_card,2026-09-26,prepared food; matches Clover C01
+K13,Teddy Bear,,1495,owner_product_card,2026-09-26,Clover C20 said $10.95
+K14,Dr. Seuss Book,,795,owner_product_card,2026-09-26,selection may vary based on the theme; Clover C04 said $6.25
+K15,Greeting Cards,,395,owner_product_card,2026-09-26,selection of occasions; Clover C03 said $2.95

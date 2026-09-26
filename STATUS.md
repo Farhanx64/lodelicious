@@ -1,9 +1,9 @@
 # Project status
 
-Last updated: 2026-09-25 · Branch: `claude/sweet-meitner-2hnl84`
+Last updated: 2026-09-26 · Branch: `claude/sweet-meitner-2hnl84`
 
-**Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app (see `docs/decisions.md`
-D9). Replaces the first WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an
+**Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
+(confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an
 in-house Clover sync (D10).
 
 ## Milestones
@@ -11,8 +11,8 @@ in-house Clover sync (D10).
 | # | Milestone | State |
 | --- | --- | --- |
 | 1 | Project setup | **Done** (rebuilt on Payload) |
-| 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | Next |
-| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | Not started |
+| 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | **Done** |
+| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **In progress** — catalog, Shop, product pages, Baby Gifts, **Build a Basket** done; Gift Baskets, Events, About, Contact, policies next |
 | 4 | Cart, checkout, order snapshots, staff assembly views | Not started |
 | 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | Not started |
 | 6 | Clover embedded payments, USPS rates — fixture-tested until credentials exist | Not started |
@@ -27,7 +27,71 @@ in-house Clover sync (D10).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
 
-## Test results (2026-09-25)
+## Milestone 3 (part 2) — Build a Basket, 2026-09-26
+
+- `/build-a-basket`: gift type → size (item range, basket size, packaging, premium cap) → optional budget (budget rule shown first; "needs at least $X" / smaller-size suggestions) → item picker with reasons for unavailable items → gift message and requests (not guarantees). Live summary (items, premium, contents, packaging, total, budget left) announced to screen readers; "Review my basket" re-validates on the server with fresh data (`checkBasket` server action → `validateGift`). No cart yet (milestone 4): a valid basket tells the customer to call.
+- Staging-only `PREVIEW_ASSUME_STOCK=true` lets Lody try the builder before stock is counted (ignored in production; the page says it's a preview).
+- Large sympathy now shows the chart's 16" basket (count overrides carry a basket size; migration `sympathy_basket_size`).
+- Staging is `noindex` (robots.txt + meta) so shared preview links stay out of search.
+- Docs: `docs/preview-and-sharing.md` (free tunnel preview; Namecheap staging), `docs/clover-sync-needs.md` (sync status + what Lody must provide).
+
+Browser test (Playwright, preview stock): small basket, $100 budget → "$80.05 for contents"; 2nd premium item blocked with reason; 6 items = $62.00 + $19.95 = $81.95, budget left $18.05; server check agrees; $60 budget → "$21.95 over your budget"; mobile 390 px and 200% text: no horizontal scroll, every input labelled. 169 tests pass.
+
+Content gap found: **Extra large can't be completed** — it needs 18 distinct items and the catalog has ~14 sweet items; **Savory has no products at all**. The builder says so instead of failing.
+
+## Milestone 3 (part 1) — 2026-09-26
+
+- **Logo** from `Sticker_2.5_inch.pdf` → header, home hero, favicon and apple icon (D21).
+- **Catalog in /admin**: `products` (drafts + 25 versions; tabs for details, price, availability & stock with pink/blue-style options, gift builder, allergens, fulfillment, records) and `categories`; owner/manager edit, fulfillment read-only; changes audited; prices shown as dollars in lists.
+- **22 products seeded** from Lody's product zip: 15 from her product cards (prices, descriptions, photos), 3 baby ceramics (pink/blue options, assumed unapproved prices, per-shape photos), 4 Cape Cod Provisions fudge flavors as drafts (from the allergen chart; no price/photo). 6 categories, 24 photos. Seed is create-only (D24).
+- **Allergen chart** transcribed per product (nut-free / vegan / notes); store-wide allergy notice editable in Store settings.
+- **Baby line**: white wicker bassinet = Baby White container (no rattle); ceramics split into bowl/shoes/block presentations with pink/blue variants (engine: `VARIANT_REQUIRED` / `UNKNOWN_VARIANT`).
+- **Storefront**: Home (favorites), Shop (category filter + search), product pages (options, allergens), Baby Gifts. Supplier photos are staging-only (D20). Everything shows "Currently unavailable" until stock is counted.
+- **Reliability fixes**: schema push disabled, `npm run migrate` verifies every migration (D23); audit diff no longer logs null-vs-missing as a change.
+- **Reconciliation**: `docs/reconciliation.md` lists every card price that differs from the screenshot/Clover/DoorDash.
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 17 files, **155 tests pass** (incl. catalog seed idempotency, admin-edit survives re-seed, drafts hidden, fulfillment blocked, fractional cents rejected) |
+| typecheck, lint, build | Clean |
+| Fresh DB: `npm run seed:catalog` twice | 73 source records, 6 categories, 24 media, 22 products; second run creates nothing |
+| `migrate:check` on an unmigrated DB | exits 1 (as intended); after `npm run migrate` exits 0 |
+| Storefront HTTP | `/`, `/shop`, filters, search, product pages, `/baby-gifts`, `/icon.png` 200; draft product 404; 18 published products listed |
+| Accessibility (1280 & 390 px) | 1 h1 per page, no images without alt, no broken images, skip link first, no horizontal scroll incl. 200% text (two reflow bugs found and fixed) |
+| Third-party requests | None |
+| Server memory (RSS) | ~197 MB after storefront + admin use |
+
+Screenshots: `docs/screenshots/m3-*` (home, shop, product, baby gifts × desktop/mobile; admin product list and editor).
+
+## Milestone 2 — completed
+
+- `src/lib/gifts/` (no framework imports; integer cents):
+  - `validateGift` — one server-authoritative check for preview, add-to-cart and checkout. Returns `valid` (no rule broken) and `complete` (ready for the cart), totals (items, premium, contents, packaging, total, remaining budget, fit used) and explainable violations.
+  - `checkProduct` / `checkForPicker` — why a product can't be chosen (in-store only, hidden, inquiry only, exclusive to Baby White, price not confirmed, stock unknown/stale/out, wrong gift type/category, already chosen, premium limit, over budget). Customers see "Currently unavailable" for stock/approval causes, never internal detail.
+  - `assessFeasibility` — cheapest valid fill for a size/type/budget; suggests the minimum budget and smaller sizes that fit.
+  - `defaults.ts` + `parseSettings` — PRD/chart defaults and validation of admin edits.
+- Admin **Gift builder → Gift builder rules** (`gift-builder-settings` global): sizes, fees, premium caps, fit capacity, count exceptions (large sympathy 13–16), special presentations (Cowboy, Baby White: inquiry; filled ceramics: disabled), customer budget notice. Owner/manager edit; every save validated by the engine and audited. Migration `20260925_184633_gift_builder_settings`.
+- CI on Node 24; decisions D14–D18 recorded.
+
+## Milestone 2 test results (2026-09-25)
+
+| Check | Result |
+| --- | --- |
+| `npm test` | 13 files, **125 tests pass** (79 new for gift rules incl. 6 Payload integration) |
+| Mutation: remove the sympathy 13–16 override | 4 tests fail |
+| Mutation: premium cap off by one | 5 tests fail |
+| Mutation: charge packaging on curated/special | 3 tests fail (first attempt survived → fixed by routing specials through `packagingFor` and adding direct tests) |
+| Performance: 2,000-product catalog, 20-item gift | well under the 50 ms/validation guard (PRD target p95 < 1 s) |
+| HTTP (production `server.js`): anonymous read / write of rules | 200 / 403 |
+| HTTP: owner saves min 15 > max 14 | 400 "Basket size 3: minimum (15) is above maximum (14)" |
+| HTTP: owner changes small packaging to 2095 | 200; audit entry with before/after |
+| Migration on existing milestone-1 DB | Applied on rerun; first run silently applied nothing (not reproduced) → README now requires `migrate:status` check |
+| `npm ci` with npm 10 and 11 | Both install a valid tree |
+| typecheck, lint, build | Clean |
+
+Screenshot: `docs/screenshots/m2-admin-gift-rules.png`.
+
+## Milestone 1 test results (2026-09-25)
 
 | Check | Result |
 | --- | --- |
@@ -45,24 +109,31 @@ in-house Clover sync (D10).
 | Horizontal scroll at 390px, and at 200% text on 1280px and 390px | None (footer reflow fixed during QA) |
 | Third-party requests from storefront | None |
 
-Screenshots: `docs/screenshots/m1-home-desktop.png`, `m1-home-mobile.png`, `m1-home-text-200.png`,
+Screenshots (home shell since replaced by `m3-*`):
 `m1-admin-dashboard.png`, `m1-admin-source-records.png`.
 
 ## Unresolved inputs (blocking only the affected feature)
 
 - Authorized Clover export (native IDs, SKUs, variants, stock, inactive items) — not received.
 - Clover API access for the in-house sync (merchant API token; sandbox merchant for testing) — needed by milestone 5.
-- Corrected price/name form, original logo, product photos, sourcing/allergen info — not received.
+- Corrected price form for items without a card (almonds, bark, tulips, cherries, pretzels, Dubai items, macarons, curated baskets).
 - Price conflict: screenshot P01–P03 ($5.95) equal DoorDash prices while P13/P15 are $4.25; observed DoorDash gaps are 30–40%, not the stated 3%.
 - Physical fit: only basket sizes are known; per-product sizes are not, so fit limits will be staff-configurable counts.
 - OMNIYA: confirm it is not one of the in-store-only Lebanese chocolates.
-- Node version offered by the cPanel Node.js selector on this account (needs ≥ 20.9).
+- **Savory products** (crackers, nuts, olives, salami per the chart) and more sweet items — XL baskets need 18 distinct items.
+- **Stock counts** for every product (and each pink/blue option) — nothing is purchasable until entered.
+- Ceramic prices (bowl/block $14.95, shoes $19.95) and whether they are empty-container prices; item counts for filled ceramics.
+- Publishing rights for supplier photos (bassinet, planters).
+- Price differences in `docs/reconciliation.md` (raisins, gummy bears, Princess box vs screenshot; teddy, book, cards vs Clover).
+- Cape Cod Provisions fudge: prices, sizes, photos (4 drafts waiting).
+- Allergen data for Lodelicious-bagged items (raisins, gummy bears, Swedish candy) and add-ons.
+- Sympathy packaging and premium caps: assumed equal to the standard size (D15) — confirm with Lody.
+- Cowboy / Baby White: price, premium cap, and whether chosen items are charged on top of the base price (D18).
+- Product categories for Baby White choices (defaults "candy", "chocolate") must match milestone-3 product categories.
 - All other PRD "Remaining inputs" (cowboy/Baby White prices, ceramic basis, scheduling cutoffs, shipping data, fountain terms, tax/policies).
 
 ## Next concrete step
 
-Milestone 2: `src/lib/gifts/` — presentation definitions seeded from `data/source/basket-chart.csv`
-plus cowboy/Baby White/ceramic special rules, a validator returning explainable violations
-(count range, premium cap, budget incl. packaging, repeat groups, exclusions, unknown stock), a
-`presentations` collection so Lody can edit rules, and vitest coverage for PRD AC 02/AC 03
-(large sympathy 13–16, no duplicate packaging on curated baskets).
+Milestone 3 (part 3): curated Gift Baskets as products, Events (fountain inquiry), About, Contact
+and policy pages, and an inquiry form for Baby White / Cowboy / filled ceramics. Then milestone 4
+(cart, checkout, order snapshots) so a built basket can be added to a cart.

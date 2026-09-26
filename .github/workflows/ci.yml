@@ -22,7 +22,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22"
+          node-version: "24"
           cache: npm
       - run: npm ci
       - run: mkdir -p .data/media
@@ -31,5 +31,5 @@ jobs:
       - run: npm run lint
       - run: npm test
       - name: Migrations apply to an empty database
-        run: NODE_ENV=production DATABASE_URI=file:./.data/migrate-check.db npx payload migrate
+        run: NODE_ENV=production DATABASE_URI=file:./.data/migrate-check.db npm run migrate
       - run: npm run build

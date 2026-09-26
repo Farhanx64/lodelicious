@@ -1,6 +1,12 @@
 import Link from "next/link";
 
-export function SiteHeader({ staging }: { staging: boolean }) {
+const NAV = [
+  { href: "/shop", label: "Shop" },
+  { href: "/build-a-basket", label: "Build a Basket" },
+  { href: "/baby-gifts", label: "Baby Gifts" },
+];
+
+export function SiteHeader({ staging, storeName }: { staging: boolean; storeName: string }) {
   return (
     <>
       {staging && (
@@ -9,16 +15,33 @@ export function SiteHeader({ staging }: { staging: boolean }) {
         </div>
       )}
       <header className="on-ink border-b border-gold bg-ink text-cream">
-        <div className="mx-auto flex w-[min(100%-2rem,72rem)] flex-wrap items-center justify-between gap-4 py-4">
-          <p className="m-0 font-display text-[1.75rem] leading-none">
-            <Link href="/" rel="home" className="text-cream no-underline">
+        <div className="mx-auto flex w-[min(100%-2rem,72rem)] flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3">
+          <Link href="/" rel="home" className="flex items-center gap-3 text-cream no-underline">
+            {/* The logo is a white sticker roundel with its own gold ring, so it reads on black as is. */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- static brand asset, pre-sized */}
+            <img
+              src="/brand/logo-512.png"
+              alt={storeName}
+              width={72}
+              height={72}
+              className="h-[72px] w-[72px]"
+            />
+            <span aria-hidden="true" className="hidden font-display text-2xl leading-none sm:block">
               Lodelicious
-              <span className="mt-1 block font-sans text-xs tracking-[0.18em] text-gold-light uppercase">
-                Gifts &amp; Sweets
-              </span>
-            </Link>
-          </p>
-          {/* Primary navigation arrives with the storefront pages (milestone 3). */}
+              <span className="mt-1 block font-sans text-xs tracking-[0.18em] text-gold-light uppercase">Gifts &amp; Sweets</span>
+            </span>
+          </Link>
+          <nav aria-label="Primary">
+            <ul className="flex flex-wrap gap-x-6 gap-y-1">
+              {NAV.map((item) => (
+                <li key={item.href}>
+                  <Link href={item.href} className="inline-flex min-h-11 items-center text-cream no-underline hover:underline">
+                    {item.label}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </nav>
         </div>
       </header>
     </>
