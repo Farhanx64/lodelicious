@@ -55,10 +55,37 @@ describe("catalog seed", () => {
     const bar = await bySlug("phillips-dark-chocolate-bar");
     expect(bar).toMatchObject({ priceCents: 425, priceApproved: true, premium: true, nutFree: "not_guaranteed", vegan: "no" });
     expect(bar.allergenNotes).toBe("Contains milk/butterfat and soy; shared equipment with peanuts/tree nuts and other allergens.");
-    expect((bar.sourceRecords as { ref: string }[]).map((r) => r.ref).sort()).toEqual(["D09", "K01", "P03", "P13"]);
+    expect((bar.sourceRecords as { ref: string }[]).map((r) => r.ref).sort()).toEqual(["D09", "K01", "P03", "P13", "X015"]);
 
     // No allergen data supplied → stays unknown, never inferred from the name.
     expect(await bySlug("milk-chocolate-covered-raisins")).toMatchObject({ nutFree: "unknown", vegan: "unknown", priceCents: 995 });
+  });
+
+  it("links products to Clover by ID and uses Clover's price where it differs (D25)", async () => {
+    expect(await bySlug("phillips-dark-chocolate-bar")).toMatchObject({ cloverId: "J691E9GYAN1H6", priceCents: 425 });
+    expect(await bySlug("dr-seuss-book")).toMatchObject({ cloverId: "0BCEF88043TAW", priceCents: 625, priceApproved: true });
+    expect(await bySlug("greeting-cards")).toMatchObject({ cloverId: "99WHJCC2GE1G6", priceCents: 295 });
+    // Two Clover teddies ($10.95 and $14.95): not linked until Lody says which one the card shows.
+    expect(await bySlug("teddy-bear")).toMatchObject({ cloverId: null, priceCents: 1495 });
+  });
+
+  it("adds the other Clover sweets with Clover's price, no allergen claims, outside custom gifts", async () => {
+    const bark = await bySlug("phillips-vegan-bark");
+    expect(bark).toMatchObject({
+      cloverId: "2T1DTECBX4CV0",
+      priceCents: 1795,
+      priceApproved: true,
+      _status: "published",
+      // The name says vegan; the website still claims nothing until Lody's chart covers it.
+      vegan: "unknown",
+      nutFree: "unknown",
+      basketEligible: false,
+      onlineReserve: 1,
+      images: [],
+    });
+    expect((bark.sourceRecords as { ref: string }[]).map((r) => r.ref).sort()).toEqual(["P11", "X064"]);
+    // "(Nut Free)" in the Clover name is not repeated as a claim in the title.
+    expect((await bySlug("dark-chocolate-sea-salt")).title).toBe("Dark Chocolate Sea Salt");
   });
 
   it("keeps everything unpurchasable until stock is counted", async () => {

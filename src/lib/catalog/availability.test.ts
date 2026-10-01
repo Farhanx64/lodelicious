@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { availabilityOf, type AvailabilityInput } from "./availability";
+import { availabilityOf, onlineQuantity, type AvailabilityInput } from "./availability";
 
 const base: AvailabilityInput = {
   channel: "online",
@@ -9,6 +9,7 @@ const base: AvailabilityInput = {
   stockState: "known",
   stockQuantity: 10,
   lowStockThreshold: 3,
+  onlineReserve: 0,
 };
 
 describe("availabilityOf (PRD INV 05)", () => {
@@ -28,6 +29,20 @@ describe("availabilityOf (PRD INV 05)", () => {
     ["missing price", { priceCents: null }],
   ])("shows %s as Currently unavailable (visible, not purchasable)", (_label, patch) => {
     expect(availabilityOf({ ...base, ...patch })).toMatchObject({ status: "unavailable", purchasable: false, label: "Currently unavailable" });
+  });
+
+  it("keeps the in-store reserve off the website (D26)", () => {
+    const reserved = { ...base, onlineReserve: 1 };
+    expect(availabilityOf({ ...reserved, stockQuantity: 1 })).toMatchObject({ status: "unavailable", purchasable: false });
+    expect(availabilityOf({ ...reserved, stockQuantity: 2 })).toMatchObject({ status: "low_stock", purchasable: true });
+    expect(availabilityOf({ ...reserved, stockQuantity: 4 })).toMatchObject({ status: "low_stock" });
+    expect(availabilityOf({ ...reserved, stockQuantity: 5 })).toMatchObject({ status: "available" });
+    expect(availabilityOf({ ...base, onlineReserve: 12 })).toMatchObject({ status: "unavailable" });
+  });
+
+  it("treats a missing reserve as 0 and never goes below zero", () => {
+    expect(onlineQuantity(1, null)).toBe(1);
+    expect(onlineQuantity(2, 5)).toBe(0);
   });
 
   it("never sells in-store-only, inquiry-only or hidden products online", () => {

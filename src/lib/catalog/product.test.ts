@@ -82,6 +82,21 @@ describe("toBuilderProducts", () => {
     ]);
   });
 
+  it("gives the gift engine only the stock above the in-store reserve, per option", () => {
+    const p = product({
+      onlineReserve: 2,
+      variants: [
+        { key: "pink", label: "Pink", stockState: "known", stockQuantity: 5 },
+        { key: "blue", label: "Blue", stockState: "known", stockQuantity: 1 },
+      ],
+    });
+    expect(toBuilderProducts(p).map((u) => u.stock)).toEqual([
+      { state: "known", quantity: 3 },
+      { state: "known", quantity: 0 },
+    ]);
+    expect(sellableUnits(p).map((u) => u.availability.purchasable)).toEqual([true, false]);
+  });
+
   it("treats a counted product without a quantity as unknown stock", () => {
     expect(toBuilderProducts(product({ stockQuantity: null }))[0].stock).toEqual({ state: "unknown" });
   });

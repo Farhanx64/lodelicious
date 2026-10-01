@@ -47,6 +47,14 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
               {store.email}
             </a>
           </p>
+          {store.doordashUrl && (
+            <p className="mt-3">
+              Local delivery:{" "}
+              <a href={store.doordashUrl} className="text-cream">
+                order on DoorDash
+              </a>
+            </p>
+          )}
         </section>
       </div>
     </footer>

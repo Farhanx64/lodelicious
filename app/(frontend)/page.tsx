@@ -59,7 +59,18 @@ export default async function HomePage() {
         </div>
         <div className="border border-line bg-paper p-5">
           <h3 className="mb-1 text-xl">Local delivery</h3>
-          <p>$25 within five miles of the shop — call to arrange a time.</p>
+          <p>
+            Through DoorDash
+            {store.doordashUrl ? (
+              <>
+                {" "}
+                — <a href={store.doordashUrl}>order on our DoorDash page</a>.
+              </>
+            ) : (
+              "."
+            )}{" "}
+            Shipping is coming with online checkout.
+          </p>
         </div>
         <div className="border border-line bg-paper p-5">
           <h3 className="mb-1 text-xl">Order by phone</h3>

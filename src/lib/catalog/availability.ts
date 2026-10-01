@@ -12,7 +12,14 @@ export type AvailabilityInput = {
   stockState: "known" | "unknown";
   stockQuantity: number | null;
   lowStockThreshold: number | null;
+  /** Units kept for in-store customers; online can sell only what is above it (D26). */
+  onlineReserve: number | null;
 };
+
+/** How many units the website may sell: counted stock minus the in-store reserve, never negative. */
+export function onlineQuantity(stockQuantity: number, onlineReserve: number | null): number {
+  return Math.max(0, stockQuantity - (onlineReserve ?? 0));
+}
 
 export type Availability =
   | { status: "available"; purchasable: true; label: null }
@@ -33,7 +40,9 @@ export function availabilityOf(input: AvailabilityInput): Availability {
   }
   const unavailable = { status: "unavailable", purchasable: false, label: "Currently unavailable" } as const;
   if (!input.priceApproved || input.priceCents === null) return unavailable;
-  if (input.stockState !== "known" || input.stockQuantity === null || input.stockQuantity <= 0) return unavailable;
-  if (input.stockQuantity <= (input.lowStockThreshold ?? 0)) return { status: "low_stock", purchasable: true, label: "Low stock" };
+  if (input.stockState !== "known" || input.stockQuantity === null) return unavailable;
+  const sellable = onlineQuantity(input.stockQuantity, input.onlineReserve);
+  if (sellable <= 0) return unavailable;
+  if (sellable <= (input.lowStockThreshold ?? 0)) return { status: "low_stock", purchasable: true, label: "Low stock" };
   return { status: "available", purchasable: true, label: null };
 }

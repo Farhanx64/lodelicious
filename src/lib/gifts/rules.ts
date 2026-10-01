@@ -13,6 +13,11 @@ export function specialPresentation(settings: GiftSettings, code: SpecialCode): 
   return p;
 }
 
+/** Sizes customers can choose, in the configured order. */
+export function offeredSizes(settings: GiftSettings): SizeRule[] {
+  return settings.sizes.filter((s) => s.enabled);
+}
+
 /** Count range for a custom basket; a gift-type override (large sympathy 13–16) wins. */
 export function resolveCountRange(settings: GiftSettings, size: SizeCode, giftType: GiftType): { min: number; max: number } {
   const override = settings.countOverrides.find((o) => o.size === size && o.giftType === giftType);

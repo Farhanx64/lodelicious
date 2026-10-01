@@ -8,6 +8,7 @@ import {
   assessFeasibility,
   catalogOf,
   checkForPicker,
+  offeredSizes,
   resolveBasketSize,
   resolveCountRange,
   validateGift,
@@ -39,7 +40,8 @@ type Props = {
 export function BasketBuilder({ settings, products, display, budgetNotice, previewStock, phone, phoneHref }: Props) {
   const ids = useId();
   const [giftType, setGiftType] = useState<GiftType>("sweet");
-  const [size, setSize] = useState<SizeCode>("medium");
+  const sizes = offeredSizes(settings);
+  const [size, setSize] = useState<SizeCode>(() => (sizes.find((s) => s.code === "medium") ?? sizes[0]).code);
   const [budgetText, setBudgetText] = useState("");
   const [chosen, setChosen] = useState<Record<string, number>>({});
   const [category, setCategory] = useState("");
@@ -140,7 +142,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         <fieldset>
           <legend className="mb-3 font-display text-2xl">2. Choose a size</legend>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(12rem,100%),1fr))] gap-3">
-            {settings.sizes.map((s) => {
+            {sizes.map((s) => {
               const range = resolveCountRange(settings, s.code, giftType);
               const basketSize = resolveBasketSize(settings, s.code, giftType);
               return (

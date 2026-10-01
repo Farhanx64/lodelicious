@@ -68,18 +68,18 @@ describe("users", () => {
 });
 
 describe("source records import", () => {
-  it("imports all 73 observations as unreviewed, then is idempotent", async () => {
+  it("imports all 178 observations (73 + 105 from the Clover export) as unreviewed, then is idempotent", async () => {
     const rows = readSourceRows();
     const first = await importSourceRecords(payload, rows);
-    expect(first.created).toHaveLength(73);
+    expect(first.created).toHaveLength(178);
     expect(first.conflicts).toEqual([]);
 
     const second = await importSourceRecords(payload, rows);
     expect(second.created).toEqual([]);
-    expect(second.unchanged).toHaveLength(73);
+    expect(second.unchanged).toHaveLength(178);
 
     const { totalDocs } = await payload.count({ collection: "source-records", where: { disposition: { equals: "unreviewed" } } });
-    expect(totalDocs).toBe(73);
+    expect(totalDocs).toBe(178);
   });
 
   it("reports changed evidence as a conflict instead of overwriting it", async () => {

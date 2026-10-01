@@ -38,6 +38,8 @@ export type CatalogSeed = {
     featured?: boolean;
     allergen?: string;
     sources?: string[];
+    /** Clover inventory item ID from Lody's export; matching is by ID, never by name. */
+    cloverId?: string;
   }[];
 };
 
@@ -72,6 +74,7 @@ export function checkSeed(seed: CatalogSeed, allergens: AllergenRow[], assetsDir
     }
     if (p.allergen && !allergens.some((a) => a.product === p.allergen)) problems.push(`${p.slug}: allergen row "${p.allergen}" not found`);
     if (p.priceCents !== undefined && !Number.isSafeInteger(p.priceCents)) problems.push(`${p.slug}: price must be integer cents`);
+    if (p.cloverId !== undefined && !/^[0-9A-Z]{13}$/.test(p.cloverId)) problems.push(`${p.slug}: Clover ID "${p.cloverId}" is not a 13-character Clover ID`);
   }
   return problems;
 }
@@ -143,7 +146,7 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
       images: (p.images ?? []).map((file) => ({ image: mediaIds.get(file)! })),
       featured: p.featured ?? false,
       priceCents: p.priceCents ?? null,
-      // Owner product-card prices count as approved; anything else waits for Lody (D22).
+      // Owner product-card and Clover prices count as approved (D22, D25); anything else waits for Lody.
       priceApproved: p.priceApproved ?? p.priceCents !== undefined,
       priceSource: p.priceSource,
       channel: "online",
@@ -166,6 +169,7 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
       dietarySource: allergen ? `Owner allergen chart 2026-09-26 (${allergen.section})` : undefined,
       perishable: p.perishable ?? false,
       shippable: false,
+      cloverId: p.cloverId,
       sourceRecords: await sourceIds(p.sources),
       _status: status,
     } as Partial<Product>;

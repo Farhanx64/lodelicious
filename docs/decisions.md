@@ -131,6 +131,48 @@ unpublish) and keep 25 versions. Owner and manager can create, edit, publish and
 and categories; fulfillment staff can read but not change them. Price, stock, channel, premium,
 gift-type and status changes are audited.
 
+## D25 — Clover's in-store price wins (Lody, 2026-09-30)
+
+When the website and Clover disagree, the current Clover price is correct. Products are matched to
+Clover by Clover item ID (`cloverId`), never by name: the export has no SKUs. Applied to the seed:
+Dr. Seuss Book $7.95 → $6.25 and Greeting Cards $3.95 → $2.95. Teddy Bear stays $14.95 and unlinked
+because Clover has two teddies ($10.95 "Teddy Bear", $14.95 "Teddy Bear Vintage Collection").
+Phillips Dark and Milk bars both link to the single Clover item "Philips Chocolate Bar" until Lody
+splits it. The later sync (milestone 5) should read prices from Clover rather than overwrite them.
+
+## D26 — In-store reserve per product
+
+Lody wants a few units of each item kept for in-store customers, decided per product. Products have
+`onlineReserve` (default 1, editable in /admin, applies to each option). The website sells only
+`stockQuantity − onlineReserve`: with the default, it stops when 1 is left. The low-stock label uses
+the same sellable figure, and the gift builder sees only the sellable quantity.
+
+## D27 — Extra Large basket off for now
+
+Lody prefers no Extra Large basket rather than padding it with products. Basket sizes have an
+"Offered to customers" switch in Gift builder settings. Extra Large keeps its PRD rules (18–20 items,
+$37.95, 4 premium) but is off: the builder hides it, never suggests it, and validation refuses it
+(`SIZE_UNAVAILABLE`). The migration switches it off in existing databases too. At least one size must
+stay offered.
+
+## D28 — Local delivery is DoorDash
+
+Website orders offer in-store pickup and shipping where applicable (shipping arrives with checkout,
+milestone 6); local delivery sends customers to the shop's DoorDash page. The product "Local delivery"
+flag was removed; Store settings has a "DoorDash store page" link (empty until Lody sends it) shown on
+the home page and footer when set. DoorDash prices remain channel prices and never website prices.
+
+## D29 — Clover export items added as products
+
+The project lead chose to add every sweet and gift from Lody's Clover export that wasn't on the site
+yet: 49 products with the Clover name (spelling and capitalisation tidied), Clover price (approved per
+D25), Clover ID and source record, no description, no photo ("Photo coming soon"), allergen fields
+"unknown", and **not** basket-eligible until Lody reviews each one. "(Nut Free)" was dropped from one
+title so the name makes no allergen claim. Left out, pending Lody: coffee, drinks, gelato,
+ice-cream-truck items, Dubai cups, pancake flavours, savory items (she will name them later), and
+OMNIYA chocolates (the Lebanese in-store-only question is still open). The full list is in
+`docs/reconciliation.md`.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

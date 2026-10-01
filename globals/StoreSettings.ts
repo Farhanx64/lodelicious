@@ -18,7 +18,7 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice"])],
+    afterChange: [auditGlobal(["name", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl"])],
   },
   fields: [
     { name: "name", type: "text", required: true, defaultValue: "Lodelicious Gifts & Sweets" },
@@ -35,6 +35,17 @@ export const StoreSettings: GlobalConfig = {
         { name: "phone", type: "text", required: true, defaultValue: "(774) 283-4676" },
         { name: "email", type: "email", required: true, defaultValue: "lodelicious1@gmail.com" },
       ],
+    },
+    {
+      name: "doordashUrl",
+      label: "DoorDash store page",
+      type: "text",
+      admin: {
+        description:
+          "Local delivery is through DoorDash (Lody, 2026-09-30). Paste the shop's DoorDash link to show it on the site; leave empty to hide the link.",
+      },
+      validate: (value: string | null | undefined) =>
+        !value || /^https:\/\/(www\.)?doordash\.com\//.test(value) ? true : "Use the shop's https://www.doordash.com/… link",
     },
     { name: "timezone", type: "text", required: true, defaultValue: "America/New_York" },
     { name: "hoursLabel", type: "text", required: true, defaultValue: "Fall & winter hours" },
