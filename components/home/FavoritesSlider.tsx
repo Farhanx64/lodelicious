@@ -10,7 +10,7 @@ const INTERVAL_MS = 5000;
  * Pause/Play button and also holds still while hovered, while anything inside has keyboard focus,
  * while the tab is hidden, and always for people who ask for reduced motion.
  */
-export function FavoritesSlider({ children, count }: { children: React.ReactNode; count: number }) {
+export function FavoritesSlider({ children, count }: { children?: React.ReactNode; count: number }) {
   const track = useRef<HTMLUListElement>(null);
   const [playing, setPlaying] = useState(true);
   const [held, setHeld] = useState(false); // hover or focus inside

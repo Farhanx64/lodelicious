@@ -7,7 +7,7 @@ import { FavoritesSlider } from "@/components/home/FavoritesSlider";
 
 describe("FavoritesSlider", () => {
   const html = renderToStaticMarkup(
-    createElement(FavoritesSlider, { count: 2, children: [createElement("li", { key: "a" }, "A"), createElement("li", { key: "b" }, "B")] }),
+    createElement(FavoritesSlider, { count: 2 }, createElement("li", { key: "a" }, "A"), createElement("li", { key: "b" }, "B")),
   );
 
   it("is a labelled carousel region around a plain list of cards", () => {
