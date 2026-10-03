@@ -36,10 +36,6 @@ describe("SiteHeader", () => {
 describe("PhotoStrip", () => {
   const placeholder = { id: 9, alt: "Gift box", approvedForLaunch: false, url: "/media/x.jpg", sizes: {} } as never;
 
-  it("renders the four tiles beside the logo", () => {
-    expect(renderToStaticMarkup(createElement(PhotoStrip, { images: [], count: 4 })).match(/<li/g)).toHaveLength(4);
-  });
-
   it("shows mood-board placeholders on staging but never on the live site (D32)", () => {
     const before = process.env.APP_ENV;
     try {

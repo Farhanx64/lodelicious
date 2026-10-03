@@ -9,13 +9,8 @@ photos in /admin → Home page (D32). Never use them as product photos.
 
 | File | Crop (left, top, width, height) |
 | --- | --- |
-| hero.jpg | 0, 693, 698, 372 |
-| feature-1.jpg | 491, 1079, 205, 178 |
-| feature-2.jpg | 711, 1079, 170, 178 |
-| feature-3.jpg | 897, 1079, 174, 178 |
-| feature-4.jpg | 1088, 1079, 154, 178 |
-| strip-1.jpg | 0, 1330, 221, 186 |
-| strip-2.jpg | 238, 1330, 283, 186 |
-| strip-3.jpg | 537, 1330, 221, 186 |
-| strip-4.jpg | 773, 1330, 236, 186 |
-| strip-5.jpg | 1024, 1330, 218, 186 |
+| strip-1-hydrangea-vase.jpg | 0, 1330, 221, 186 |
+| strip-2-truffles.jpg | 711, 1079, 170, 178 |
+| strip-3-pink-bow-box.jpg | 491, 1079, 205, 178 |
+| strip-4-hydrangeas.jpg | 1088, 1079, 154, 178 |
+| strip-5-blue-ribbon-boxes.jpg | 1024, 1330, 218, 186 |

@@ -1,6 +1,6 @@
 /**
  * One-off: cut the photos out of Lody's mood board (AI-generated) as temporary home-page
- * placeholders (D32). Usage: npx tsx scripts/moodboard-crops.ts <board.jpg>
+ * placeholders (D32): the flowers, truffles and gift boxes. Usage: npx tsx scripts/moodboard-crops.ts <board.jpg>
  * Crop boxes are in the board's own pixels (1242 × 2208).
  */
 import crypto from "node:crypto";
@@ -9,17 +9,13 @@ import path from "node:path";
 
 import sharp from "sharp";
 
+// Only the flower, truffle and gift-box photos, in the order of the home-page strip (D32).
 const CROPS: Record<string, [number, number, number, number]> = {
-  "hero.jpg": [0, 693, 698, 372],
-  "feature-1.jpg": [491, 1079, 205, 178],
-  "feature-2.jpg": [711, 1079, 170, 178],
-  "feature-3.jpg": [897, 1079, 174, 178],
-  "feature-4.jpg": [1088, 1079, 154, 178],
-  "strip-1.jpg": [0, 1330, 221, 186],
-  "strip-2.jpg": [238, 1330, 283, 186],
-  "strip-3.jpg": [537, 1330, 221, 186],
-  "strip-4.jpg": [773, 1330, 236, 186],
-  "strip-5.jpg": [1024, 1330, 218, 186],
+  "strip-1-hydrangea-vase.jpg": [0, 1330, 221, 186],
+  "strip-2-truffles.jpg": [711, 1079, 170, 178],
+  "strip-3-pink-bow-box.jpg": [491, 1079, 205, 178],
+  "strip-4-hydrangeas.jpg": [1088, 1079, 154, 178],
+  "strip-5-blue-ribbon-boxes.jpg": [1024, 1330, 218, 186],
 };
 
 const board = process.argv[2];

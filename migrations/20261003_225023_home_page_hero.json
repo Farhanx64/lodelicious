@@ -3526,93 +3526,6 @@
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "home_page_feature_images": {
-      "name": "home_page_feature_images",
-      "columns": {
-        "_order": {
-          "name": "_order",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "_parent_id": {
-          "name": "_parent_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true,
-          "autoincrement": false
-        },
-        "image_id": {
-          "name": "image_id",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true,
-          "autoincrement": false
-        }
-      },
-      "indexes": {
-        "home_page_feature_images_order_idx": {
-          "name": "home_page_feature_images_order_idx",
-          "columns": [
-            "_order"
-          ],
-          "isUnique": false
-        },
-        "home_page_feature_images_parent_id_idx": {
-          "name": "home_page_feature_images_parent_id_idx",
-          "columns": [
-            "_parent_id"
-          ],
-          "isUnique": false
-        },
-        "home_page_feature_images_image_idx": {
-          "name": "home_page_feature_images_image_idx",
-          "columns": [
-            "image_id"
-          ],
-          "isUnique": false
-        }
-      },
-      "foreignKeys": {
-        "home_page_feature_images_image_id_media_id_fk": {
-          "name": "home_page_feature_images_image_id_media_id_fk",
-          "tableFrom": "home_page_feature_images",
-          "tableTo": "media",
-          "columnsFrom": [
-            "image_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "home_page_feature_images_parent_id_fk": {
-          "name": "home_page_feature_images_parent_id_fk",
-          "tableFrom": "home_page_feature_images",
-          "tableTo": "home_page",
-          "columnsFrom": [
-            "_parent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "checkConstraints": {}
-    },
     "home_page_strip_images": {
       "name": "home_page_strip_images",
       "columns": {
@@ -4388,6 +4301,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "6252aa65-2355-4ee2-8464-b2047bb565a0",
+  "id": "ff69c8dc-e4b3-4aca-926d-1ec0095b3bf1",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

@@ -29,13 +29,12 @@ in-house Clover sync (D10).
 
 ## Mood-board photos as placeholders — 2026-10-03 (D32)
 
-- **Placeholders:** the board's awning, the 4 tiles beside the logo and the 5-photo strip are on the
-  home page, in the board's layout. All 10 are editable in /admin → Home page.
-- **Staging only:** they are seeded unapproved, so the live site hides them until Lody approves or
-  replaces them. Replacing them with her own photos is the goal.
-- **Checks:**
-  - 201 tests pass.
-  - No horizontal scroll at 390 or 1280 px, including with 200% text.
+- **Photo strip:** the original five-box strip now holds the board's flowers, truffles and gift boxes.
+  The top keeps the drawn awning.
+- **Editing:** everything is editable in /admin → Home page.
+- **Staging only:** the photos are seeded unapproved, so the live site shows the bow panels until
+  Lody approves or replaces them.
+- **Tests:** 200 pass.
 
 ## Exact mood-board match — SOUSET-PINK, 2026-10-03 (D31)
 

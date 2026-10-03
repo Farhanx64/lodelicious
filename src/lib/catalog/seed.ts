@@ -42,7 +42,7 @@ export type CatalogSeed = {
     cloverId?: string;
   }[];
   /** Starting photos for the Home page global; only fills empty slots (D32). */
-  homePage?: { heroImage?: string; featureImages?: string[]; stripImages?: string[] };
+  homePage?: { stripImages?: string[] };
 };
 
 export type SeedReport = {
@@ -80,7 +80,7 @@ export function checkSeed(seed: CatalogSeed, allergens: AllergenRow[], assetsDir
     if (p.cloverId !== undefined && !/^[0-9A-Z]{13}$/.test(p.cloverId)) problems.push(`${p.slug}: Clover ID "${p.cloverId}" is not a 13-character Clover ID`);
   }
   const home = seed.homePage ?? {};
-  for (const file of [home.heroImage, ...(home.featureImages ?? []), ...(home.stripImages ?? [])]) {
+  for (const file of home.stripImages ?? []) {
     if (file && !media.has(file)) problems.push(`home page: image ${file} not in media list`);
   }
   return problems;
@@ -210,8 +210,6 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
   const wanted = seed.homePage ?? {};
   const ids = (files: string[] = []) => files.map((file) => ({ image: mediaIds.get(file) as number }));
   const homeData: Record<string, unknown> = {};
-  if (!home.heroImage && wanted.heroImage) homeData.heroImage = mediaIds.get(wanted.heroImage);
-  if (!home.featureImages?.length && wanted.featureImages?.length) homeData.featureImages = ids(wanted.featureImages);
   if (!home.stripImages?.length && wanted.stripImages?.length) homeData.stripImages = ids(wanted.stripImages);
   if (Object.keys(homeData).length) {
     await payload.updateGlobal({ slug: "home-page", data: homeData, overrideAccess: true });

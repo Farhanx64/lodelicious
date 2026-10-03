@@ -235,23 +235,24 @@ colours and D21's logo-in-header.
 
 ## D32 — Mood-board photos as temporary home-page placeholders (2026-10-03)
 
-The project lead asked to use the board's own pictures "for now", editable later in /admin.
+The project lead asked to use some of the board's own pictures "for now", editable later in /admin.
+Only the flower, truffle and gift-box photos are used, in the original five-box strip. The top keeps
+the drawn awning, and the board's middle row is not used.
 
-- `scripts/moodboard-crops.ts` cuts 10 photos from the board into `data/assets/moodboard/`.
-  `SOURCE.md` there records the hash and the crop boxes. The 10 photos are:
-  - the awning
-  - 4 tiles beside the logo
-  - the 5-photo strip
+- `scripts/moodboard-crops.ts` cuts five photos into `data/assets/moodboard/`; `SOURCE.md` there
+  records the hash and the crop boxes. In strip order:
+  1. hydrangea vase
+  2. truffles
+  3. pink-bow gift box
+  4. hydrangeas
+  5. blue-ribbon gift boxes
 - They are seeded as Media with **"approved for launch" off** and the credit "Placeholder from Lody's
-  mood board (AI-generated)".
-- They fill the new Home page slots (`heroImage`, `featureImages`, `stripImages`), but only when a
-  slot is empty, so staff edits are never overwritten.
+  mood board (AI-generated)". They fill /admin → Home page → Photo strip only while the strip is
+  empty, so staff edits are never overwritten.
 - **They show on staging/preview only.** `isImagePublishable` hides unapproved images in production,
-  and those slots fall back to the bow panels or the drawn awning. They reach the live site only if
-  Lody ticks "approved for launch". She should replace them with her own photos instead: they are
-  AI-generated and show a shop that isn't hers. That is why the PRD bans them as product photos.
-- The board is 1242 px wide, so the top photo is about 700 px and looks soft at full desktop width.
-  Real photos fix that.
+  so on the live site each box shows the gold-bow panel instead. They are AI-generated and not
+  photos of her shop, so the aim is for Lody to replace them with her own photos.
+- Home page → "Top photo" is optional: an uploaded and approved shop photo replaces the drawn awning.
 
 ## Superseded (WooCommerce build, commit 5c36c77)
 

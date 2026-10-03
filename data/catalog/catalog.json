@@ -184,61 +184,31 @@
       "approvedForLaunch": false
     },
     {
-      "file": "moodboard/hero.jpg",
-      "alt": "Ivory shop awning with a scalloped gold edge, lettered Souset-Pink, Sweets · Chocolates · Gifts",
-      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
-      "approvedForLaunch": false
-    },
-    {
-      "file": "moodboard/feature-1.jpg",
-      "alt": "White gift box tied with a pink satin bow",
-      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
-      "approvedForLaunch": false
-    },
-    {
-      "file": "moodboard/feature-2.jpg",
-      "alt": "Assorted chocolate truffles with pink and gold decoration",
-      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
-      "approvedForLaunch": false
-    },
-    {
-      "file": "moodboard/feature-3.jpg",
-      "alt": "Glass candy jars filled with pink and blue sweets",
-      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
-      "approvedForLaunch": false
-    },
-    {
-      "file": "moodboard/feature-4.jpg",
-      "alt": "White and blue hydrangeas",
-      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
-      "approvedForLaunch": false
-    },
-    {
-      "file": "moodboard/strip-1.jpg",
+      "file": "moodboard/strip-1-hydrangea-vase.jpg",
       "alt": "Blue and white hydrangeas in a blue-and-white porcelain vase",
       "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
       "approvedForLaunch": false
     },
     {
-      "file": "moodboard/strip-2.jpg",
-      "alt": "Stacked ivory gift boxes printed Souset-Pink",
+      "file": "moodboard/strip-2-truffles.jpg",
+      "alt": "Assorted chocolate truffles with pink and gold decoration",
       "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
       "approvedForLaunch": false
     },
     {
-      "file": "moodboard/strip-3.jpg",
-      "alt": "Blush satin ribbon edged in gold",
+      "file": "moodboard/strip-3-pink-bow-box.jpg",
+      "alt": "White gift box tied with a pink satin bow",
       "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
       "approvedForLaunch": false
     },
     {
-      "file": "moodboard/strip-4.jpg",
-      "alt": "Scoop of pink gelato in a cup printed with a gold bow",
+      "file": "moodboard/strip-4-hydrangeas.jpg",
+      "alt": "White and blue hydrangeas",
       "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
       "approvedForLaunch": false
     },
     {
-      "file": "moodboard/strip-5.jpg",
+      "file": "moodboard/strip-5-blue-ribbon-boxes.jpg",
       "alt": "Ivory gift boxes tied with pale blue ribbon",
       "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
       "approvedForLaunch": false
@@ -1368,20 +1338,13 @@
     }
   ],
   "homePage": {
-    "_comment": "Mood-board placeholders (D32): filled only into empty Home page slots; staging-only until approved.",
-    "heroImage": "moodboard/hero.jpg",
-    "featureImages": [
-      "moodboard/feature-1.jpg",
-      "moodboard/feature-2.jpg",
-      "moodboard/feature-3.jpg",
-      "moodboard/feature-4.jpg"
-    ],
+    "_comment": "Mood-board placeholders (D32): filled only into an empty photo strip; staging-only until approved.",
     "stripImages": [
-      "moodboard/strip-1.jpg",
-      "moodboard/strip-2.jpg",
-      "moodboard/strip-3.jpg",
-      "moodboard/strip-4.jpg",
-      "moodboard/strip-5.jpg"
+      "moodboard/strip-1-hydrangea-vase.jpg",
+      "moodboard/strip-2-truffles.jpg",
+      "moodboard/strip-3-pink-bow-box.jpg",
+      "moodboard/strip-4-hydrangeas.jpg",
+      "moodboard/strip-5-blue-ribbon-boxes.jpg"
     ]
   }
 }

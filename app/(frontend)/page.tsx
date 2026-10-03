@@ -17,7 +17,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-[min(100%-2rem,72rem)]">
-      {/* The board's top photo (the awning). Without a usable photo, a drawn awning stands in. */}
+      {/* The board's awning, drawn; an approved shop photo uploaded in /admin replaces it. */}
       <section aria-labelledby="welcome" className="mb-10">
         <h1 id="welcome" className="sr-only">
           {store.name} — {store.tagline}
@@ -51,16 +51,8 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* The board's middle row: the logo panel beside four photos. */}
-      <section aria-label="Gifts and treats" className="mb-2 grid grid-cols-[minmax(0,1fr)] gap-2 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
-        <div className="flex items-center justify-center border border-gold bg-paper px-4 py-8">
-          <Lockup name={store.name} tagline={store.tagline} />
-        </div>
-        <PhotoStrip count={4} label="Gifts and treats" images={(home.featureImages ?? []).map((row) => row.image)} />
-      </section>
-
       <section aria-label="From the shop" className="mb-12">
-        <PhotoStrip count={5} images={(home.stripImages ?? []).map((row) => row.image)} />
+        <PhotoStrip images={(home.stripImages ?? []).map((row) => row.image)} />
       </section>
 
       {featured.length > 0 && (

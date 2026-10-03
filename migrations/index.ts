@@ -5,7 +5,7 @@ import * as migration_20260926_205140_sympathy_basket_size from './20260926_2051
 import * as migration_20261001_002245_clover_reserve_sizes_doordash from './20261001_002245_clover_reserve_sizes_doordash';
 import * as migration_20261003_072516_store_story from './20261003_072516_store_story';
 import * as migration_20261003_092317_home_page_brand from './20261003_092317_home_page_brand';
-import * as migration_20261003_224009_home_page_photos from './20261003_224009_home_page_photos';
+import * as migration_20261003_225023_home_page_hero from './20261003_225023_home_page_hero';
 
 export const migrations = [
   {
@@ -44,8 +44,8 @@ export const migrations = [
     name: '20261003_092317_home_page_brand',
   },
   {
-    up: migration_20261003_224009_home_page_photos.up,
-    down: migration_20261003_224009_home_page_photos.down,
-    name: '20261003_224009_home_page_photos',
+    up: migration_20261003_225023_home_page_hero.up,
+    down: migration_20261003_225023_home_page_hero.down,
+    name: '20261003_225023_home_page_hero',
   },
 ];
