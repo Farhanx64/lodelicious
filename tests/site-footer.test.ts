@@ -11,7 +11,8 @@ import type { StoreSetting } from "@/payload-types";
 
 const store = {
   id: 1,
-  name: "Lodelicious Gifts & Sweets",
+  name: "Souset-Pink",
+  tagline: "Sweets · Chocolates · Gifts",
   street: "24 Manomet Point Rd.",
   locality: "Plymouth, MA 02360",
   phone: "(774) 283-4676",
@@ -27,6 +28,12 @@ const store = {
 const render = (patch: Partial<StoreSetting> = {}) => renderToStaticMarkup(createElement(SiteFooter, { store: { ...store, ...patch } }));
 
 describe("SiteFooter", () => {
+  it("carries the board lockup and links to the shop sections not in the main nav", () => {
+    const html = render();
+    expect(html).toContain("Souset-Pink");
+    for (const href of ["/shop?category=fudge", "/shop?category=fresh-treats", "/baby-gifts"]) expect(html).toContain(`href="${href}"`);
+  });
+
   it("hides the story until it is written", () => {
     expect(render()).not.toContain("footer-story");
     expect(render({ story: "   " })).not.toContain("footer-story");

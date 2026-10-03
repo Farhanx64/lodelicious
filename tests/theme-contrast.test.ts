@@ -23,39 +23,44 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-const SURFACES = ["cream", "paper", "linen", "blush", "coastal-pale"];
+const SURFACES = ["cream", "paper", "ivory", "linen", "blush", "coastal-pale"];
 
-describe("palette contrast (WCAG 2.2 AA)", () => {
+describe("palette (Lody's mood board, D31)", () => {
   it("defines every token the checks use", () => {
-    for (const name of [...SURFACES, "ink", "ink-soft", "gold-text", "gold", "coastal", "focus", "error", "success"]) {
+    for (const name of [...SURFACES, "ink", "ink-soft", "nav", "gold-text", "gold", "coastal", "focus", "error", "success"]) {
       expect(tokens[name], name).toMatch(/^#[0-9a-f]{6}$/i);
     }
   });
 
-  it.each(["ink", "ink-soft", "gold-text", "error", "success"])("%s text is at least 4.5:1 on every surface", (fg) => {
+  it("matches the colours sampled from the board", () => {
+    expect(tokens).toMatchObject({
+      cream: "#f7f2ee",
+      ivory: "#f7f0ea",
+      linen: "#eadccf",
+      blush: "#efd5ce",
+      coastal: "#98a9b9",
+      gold: "#b99870",
+      "gold-text": "#9c7f5b",
+      nav: "#605b57",
+    });
+  });
+
+  it.each(["ink", "ink-soft", "error", "success"])("%s text is at least 4.5:1 on every surface (WCAG AA)", (fg) => {
     for (const bg of SURFACES) expect(contrast(tokens[fg], tokens[bg]), `${fg} on ${bg}`).toBeGreaterThanOrEqual(4.5);
   });
 
-  it("button labels (ivory on gold) are at least 4.5:1", () => {
-    expect(contrast(tokens.cream, tokens["gold-text"])).toBeGreaterThanOrEqual(4.5);
+  it("keeps the nav lettering AA on the page and nav bar", () => {
+    for (const bg of ["cream", "paper"]) expect(contrast(tokens.nav, tokens[bg])).toBeGreaterThanOrEqual(4.5);
   });
 
   it("focus outlines are at least 3:1 against every surface", () => {
     for (const bg of SURFACES) expect(contrast(tokens.focus, tokens[bg]), `focus on ${bg}`).toBeGreaterThanOrEqual(3);
   });
 
-  it("documents why antique gold and coastal blue are never text", () => {
-    expect(contrast(tokens.gold, tokens.cream)).toBeLessThan(3);
-    expect(contrast(tokens.coastal, tokens.cream)).toBeLessThan(3);
-  });
-
-  it("never uses antique gold or coastal blue as a text colour in the storefront", () => {
-    const files = ["app", "components"].flatMap((dir) =>
-      (fs.readdirSync(path.resolve(dir), { recursive: true }) as string[])
-        .filter((f) => f.endsWith(".tsx"))
-        .map((f) => path.join(dir, f)),
-    );
-    const offenders = files.filter((f) => /\btext-(gold|coastal|coastal-pale)(?![\w-])/.test(fs.readFileSync(f, "utf8")));
-    expect(offenders).toEqual([]);
+  it("records the client-accepted gold deviation: board gold text is below AA (D31)", () => {
+    // If this starts passing AA, D31 can be retired; if it drops further, someone changed the board colour.
+    const ratio = contrast(tokens["gold-text"], tokens.cream);
+    expect(ratio).toBeGreaterThan(3.3);
+    expect(ratio).toBeLessThan(4.5);
   });
 });

@@ -181,7 +181,8 @@ describe("audit log", () => {
 describe("store settings", () => {
   it("defaults to the confirmed business details", async () => {
     const store = await payload.findGlobal({ slug: "store-settings" });
-    expect(store.name).toBe("Lodelicious Gifts & Sweets");
+    expect(store.name).toBe("Souset-Pink");
+    expect(store.tagline).toBe("Sweets · Chocolates · Gifts");
     expect(store.street).toBe("24 Manomet Point Rd.");
     expect(store.phone).toBe("(774) 283-4676");
     expect(store.email).toBe("lodelicious1@gmail.com");

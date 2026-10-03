@@ -14,6 +14,7 @@ import { SourceRecords } from "./collections/SourceRecords";
 import { SyncJobs } from "./collections/SyncJobs";
 import { Users } from "./collections/Users";
 import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
+import { HomePage } from "./globals/HomePage";
 import { StoreSettings } from "./globals/StoreSettings";
 
 const filename = fileURLToPath(import.meta.url);
@@ -36,7 +37,7 @@ export default buildConfig({
     },
   },
   collections: [Products, Categories, Media, SourceRecords, Users, AuditLog, SyncJobs],
-  globals: [StoreSettings, GiftBuilderSettings],
+  globals: [StoreSettings, HomePage, GiftBuilderSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {

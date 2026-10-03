@@ -27,7 +27,23 @@ in-house Clover sync (D10).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
 
-## Re-theme to Lody's mood board — 2026-10-03
+## Exact mood-board match — SOUSET-PINK, 2026-10-03 (D31)
+
+- **Board match:**
+  - Board-sampled palette.
+  - SOUSET-PINK lockup with a gold bow.
+  - The board's nav bar with four icons.
+  - A scalloped awning hero.
+  - A five-photo strip (admin-editable, with placeholders).
+  - New About and coming-soon pages for account, wishlist and bag.
+- **Accessibility:** gold text is below WCAG AA by client decision. This is recorded in D31 and needs
+  Lody's acceptance.
+- **Checks:**
+  - 197 tests pass.
+  - No horizontal scroll at 390 px or with 200% text.
+  - The phone menu works by keyboard.
+
+## Re-theme to Lody's mood board — 2026-10-03 (superseded by D31)
 
 - Ivory, linen and blush surfaces, with gold headings, nav, prices and buttons.
 - Double gold frames on products, basket choices and the Baby White panel.
@@ -138,6 +154,7 @@ Screenshots (home shell since replaced by `m3-*`):
 - Clover API access for the in-house sync (inventory-only token Lody creates) — needed by milestone 5.
 - DoorDash page link for local delivery.
 - "Our story" text for the footer, in her own words (Store settings).
+- Her own photos for the home-page photo strip (Home page settings), and acceptance of the gold-text contrast deviation (D31).
 - Photos, descriptions, allergen info and basket eligibility for the 49 products added from Clover.
 - Corrected price form for items without a card (almonds, bark, tulips, cherries, pretzels, Dubai items, macarons, curated baskets).
 - Price conflict: screenshot P01–P03 ($5.95) equal DoorDash prices while P13/P15 are $4.25; observed DoorDash gaps are 30–40%, not the stated 3%.

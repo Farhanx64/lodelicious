@@ -18,10 +18,17 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
+    afterChange: [auditGlobal(["name", "tagline", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
   },
   fields: [
-    { name: "name", type: "text", required: true, defaultValue: "Lodelicious Gifts & Sweets" },
+    {
+      type: "row",
+      fields: [
+        // Brand from Lody's mood board (D31); shown in the header lockup, page titles and footer.
+        { name: "name", label: "Shop name", type: "text", required: true, defaultValue: "Souset-Pink" },
+        { name: "tagline", type: "text", defaultValue: "Sweets · Chocolates · Gifts", admin: { description: "Shown in small capitals under the name." } },
+      ],
+    },
     {
       type: "row",
       fields: [

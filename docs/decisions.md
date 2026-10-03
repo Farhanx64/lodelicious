@@ -191,6 +191,48 @@ frames, and coastal blue appears toward the bottom: the "Getting your order" ban
 - "Our story" is a Store settings field that Lody writes in /admin. The footer shows it only when
   it is filled in; we don't write her story for her.
 
+## D31 — Exact match to the SOUSET-PINK mood board (client-directed, 2026-10-03)
+
+The client asked for the site to be "super accurate" to Lody's mood board. This supersedes D30's
+colours and D21's logo-in-header.
+
+- **Colours sampled from the board image:**
+
+  | Board colour | Hex |
+  | --- | --- |
+  | page | `#F7F2EE` |
+  | Ivory | `#F7F0EA` |
+  | Linen | `#EADCCF` |
+  | Blush | `#EFD5CE` |
+  | Coastal Blue | `#98A9B9` |
+  | bow and rules | `#B99870` |
+  | wordmark gold | `#9C7F5B` |
+  | nav lettering | `#605B57` |
+
+  `tests/theme-contrast.test.ts` pins these.
+- **Accessibility deviation, accepted by the project lead for the client:** all gold text uses the
+  board's wordmark gold, which is 3.4:1 on the page and below WCAG AA's 4.5:1. That covers the
+  headings, prices, buttons, labels and icons. The PRD requires AA, so Lody must accept this
+  knowingly. Body text (11.7:1), the nav (6.0:1), errors and focus outlines stay AA. The test fails
+  if the gold drifts, or if it is ever raised to AA so this note can be retired.
+- **Brand:**
+  - The brand is **SOUSET-PINK** with a gold bow and "Sweets · Chocolates · Gifts". The name and
+    tagline are Store-settings fields, renamed by migration unless staff had changed the name.
+  - The bow is our own vector line drawing, not the board's artwork.
+  - Lodelicious remains on products whose bags carry that label.
+- **Layout from the board:**
+  - A centred lockup.
+  - A nav bar of SHOP · SWEETS · CHOCOLATES · GIFTS · bow · CUSTOM BASKETS · ABOUT with search,
+    account, wishlist and bag icons. Phones get a Menu disclosure.
+  - A drawn ivory awning with a scalloped gold hem.
+  - A five-photo strip, from /admin → Home page.
+- **No AI board photos:**
+  - The strip shows palette panels with the bow until Lody uploads her own photos.
+  - The awning is an illustration, not a storefront photo.
+- **Account, wishlist and bag** lead to "coming soon" pages (noindex) until those features exist.
+  Accounts and wishlists are not in the PRD.
+- **New `/about` page** shows the Store-settings story, or "coming soon".
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

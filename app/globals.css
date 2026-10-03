@@ -1,21 +1,24 @@
 @import "tailwindcss";
 
-/* Design tokens: Lody's ivory-linen board (2026-10-02, D30). tests/theme-contrast.test.ts checks
-   every text/background pair below for WCAG 2.2 AA. The board's antique gold (--color-gold) is
-   2.9:1 on ivory, so it is only ever a frame, rule or ornament; gold words use --color-gold-text. */
+/* Design tokens sampled from Lody's SOUSET-PINK mood board (2026-10-03, D31). The board's gold
+   lettering is used for all gold text by client decision even though it is 3.4:1 on ivory, below
+   WCAG AA (D31 records the deviation). Body text, the nav and errors stay AA; see
+   tests/theme-contrast.test.ts. */
 @theme {
-  --color-cream: #fbf8f2;        /* ivory: page background */
-  --color-paper: #fffdf9;        /* card and panel surface */
-  --color-linen: #efe7da;
-  --color-blush: #f4dcda;
-  --color-coastal: #a9c1db;      /* coastal blue: bands and accents only, never text */
-  --color-coastal-pale: #e3ecf5;
-  --color-ink: #3b2f25;          /* body text: 12.2:1 on ivory */
-  --color-ink-soft: #665a4e;     /* secondary text: 5.1:1 on blush, 6.3:1 on ivory */
-  --color-gold: #b08d57;         /* antique gold: frames, rules, ornaments only */
-  --color-gold-text: #7a5c22;    /* gold words, headings, buttons: 4.8:1 on blush, 5.9:1 on ivory */
-  --color-line: #e6dccb;
-  --color-focus: #1f4fd1;        /* 5.2:1 on blush, 6.4:1 on ivory */
+  --color-cream: #f7f2ee;        /* page background, sampled from the board */
+  --color-paper: #fbf8f5;        /* cards and panels */
+  --color-ivory: #f7f0ea;        /* board swatch "Ivory" */
+  --color-linen: #eadccf;        /* board swatch "Linen" */
+  --color-blush: #efd5ce;        /* board swatch "Blush" */
+  --color-coastal: #98a9b9;      /* board swatch "Coastal Blue": bands and accents */
+  --color-coastal-pale: #e4e9ee;
+  --color-ink: #3b2f25;          /* body text: 11.7:1 */
+  --color-ink-soft: #665a4e;     /* secondary text: 6.0:1 */
+  --color-nav: #605b57;          /* board nav lettering: 6.0:1 */
+  --color-gold: #b99870;         /* board bow, rules and frames */
+  --color-gold-text: #9c7f5b;    /* board wordmark gold: 3.4:1, client-accepted (D31) */
+  --color-line: #e3d8cc;
+  --color-focus: #1f4fd1;
   --color-error: #a32020;
   --color-success: #25603a;
 
@@ -43,6 +46,12 @@
     line-height: 1.15;
   }
 
+  /* The board sets its titles in letterspaced capitals. */
+  h1, h2 {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
   a {
     text-decoration-color: var(--color-gold);
     text-underline-offset: 0.2em;
@@ -57,6 +66,14 @@
   a[href^="mailto:"] {
     overflow-wrap: anywhere;
   }
+}
+
+/* Board-style label: small letterspaced serif capitals (nav, taglines, section labels). */
+.caps {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .skip-link {
