@@ -18,7 +18,7 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl"])],
+    afterChange: [auditGlobal(["name", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
   },
   fields: [
     { name: "name", type: "text", required: true, defaultValue: "Lodelicious Gifts & Sweets" },
@@ -46,6 +46,16 @@ export const StoreSettings: GlobalConfig = {
       },
       validate: (value: string | null | undefined) =>
         !value || /^https:\/\/(www\.)?doordash\.com\//.test(value) ? true : "Use the shop's https://www.doordash.com/… link",
+    },
+    { name: "storyHeading", label: "Story heading", type: "text", defaultValue: "Our story" },
+    {
+      name: "story",
+      label: "Our story",
+      type: "textarea",
+      admin: {
+        description:
+          "A few sentences about the shop for the bottom of every page, in your own words. Leave empty to hide it. A blank line starts a new paragraph.",
+      },
     },
     { name: "timezone", type: "text", required: true, defaultValue: "America/New_York" },
     { name: "hoursLabel", type: "text", required: true, defaultValue: "Fall & winter hours" },

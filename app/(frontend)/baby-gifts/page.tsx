@@ -28,7 +28,7 @@ export default async function BabyGiftsPage() {
       </p>
 
       {babyWhite && (
-        <section aria-labelledby="baby-white" className="mb-12 grid grid-cols-[minmax(0,1fr)] gap-6 border border-line bg-paper p-5 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <section aria-labelledby="baby-white" className="mb-12 grid grid-cols-[minmax(0,1fr)] gap-6 border border-gold bg-paper p-5 outline outline-1 outline-offset-[-7px] outline-gold/50 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <ProductImage media={babyWhite.image as Media | number | null} className="aspect-square w-full" />
           <div>
             <h2 id="baby-white" className="mb-2 text-3xl">

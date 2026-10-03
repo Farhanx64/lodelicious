@@ -46,7 +46,8 @@ Planned design (decision D10, which replaces SKU IQ):
    - How often to check Clover, for example every 5 or 15 minutes.
    - Whether packaging (baskets, ribbon) is tracked in Clover.
    - The per-product reserve numbers, if not 1.
-7. **The DoorDash page link** for local delivery (D28).
+7. **The DoorDash page link** for local delivery (D28), and the **"Our story" text** for the
+   footer (D30); both go in /admin → Store settings.
 8. **Later, for payments (milestone 6):**
    - Clover ecommerce API keys (public and private).
    - Lody's approval of Clover's online processing fees before anything goes live.

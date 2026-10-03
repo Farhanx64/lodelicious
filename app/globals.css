@@ -1,18 +1,21 @@
 @import "tailwindcss";
 
-/* Design tokens. Contrast pairs are checked for WCAG 2.2 AA; gold is decorative and never
-   carries body text on cream. */
+/* Design tokens: Lody's ivory-linen board (2026-10-02, D30). tests/theme-contrast.test.ts checks
+   every text/background pair below for WCAG 2.2 AA. The board's antique gold (--color-gold) is
+   2.9:1 on ivory, so it is only ever a frame, rule or ornament; gold words use --color-gold-text. */
 @theme {
-  --color-ink: #141414;
-  --color-ink-soft: #3d3a36;
-  --color-cream: #faf6ee;
-  --color-paper: #ffffff;
-  --color-gold: #b08d4a;       /* rules, borders, ornaments only */
-  --color-gold-text: #7a5c22;  /* gold as text on cream: 5.8:1 */
-  --color-gold-light: #d9c28f; /* gold as text on ink: 10.6:1 */
-  --color-line: #e4dccb;
-  --color-focus: #1f4fd1;      /* 6.3:1 on cream */
-  --color-focus-dark: #9db7ff; /* 9.3:1 on ink */
+  --color-cream: #fbf8f2;        /* ivory: page background */
+  --color-paper: #fffdf9;        /* card and panel surface */
+  --color-linen: #efe7da;
+  --color-blush: #f4dcda;
+  --color-coastal: #a9c1db;      /* coastal blue: bands and accents only, never text */
+  --color-coastal-pale: #e3ecf5;
+  --color-ink: #3b2f25;          /* body text: 12.2:1 on ivory */
+  --color-ink-soft: #665a4e;     /* secondary text: 5.1:1 on blush, 6.3:1 on ivory */
+  --color-gold: #b08d57;         /* antique gold: frames, rules, ornaments only */
+  --color-gold-text: #7a5c22;    /* gold words, headings, buttons: 4.8:1 on blush, 5.9:1 on ivory */
+  --color-line: #e6dccb;
+  --color-focus: #1f4fd1;        /* 5.2:1 on blush, 6.4:1 on ivory */
   --color-error: #a32020;
   --color-success: #25603a;
 
@@ -34,6 +37,7 @@
   }
 
   h1, h2, h3, h4 {
+    color: var(--color-gold-text);
     font-family: var(--font-display);
     font-weight: 500;
     line-height: 1.15;
@@ -49,10 +53,6 @@
     outline-offset: 3px;
   }
 
-  .on-ink :focus-visible {
-    outline-color: var(--color-focus-dark);
-  }
-
   /* Long unbroken addresses must wrap at 200% text on a phone (WCAG 1.4.4 / 1.4.10). */
   a[href^="mailto:"] {
     overflow-wrap: anywhere;
@@ -64,7 +64,7 @@
   left: 1rem;
   top: -10rem;
   z-index: 100;
-  background: var(--color-ink);
+  background: var(--color-gold-text);
   color: var(--color-paper);
   padding: 0.5rem 1rem;
 }

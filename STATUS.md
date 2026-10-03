@@ -27,6 +27,16 @@ in-house Clover sync (D10).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
 
+## Re-theme to Lody's mood board — 2026-10-03
+
+- Ivory, linen and blush surfaces, with gold headings, nav, prices and buttons.
+- Double gold frames on products, basket choices and the Baby White panel.
+- Coastal-blue band and footer at the bottom (D30). AA contrast is enforced by
+  `tests/theme-contrast.test.ts`.
+- "Our story" footer column, editable in Store settings and hidden until Lody writes it (migration
+  `store_story`).
+- 193 tests pass. No horizontal scroll at 390 px or with 200% text, and focus outlines are visible.
+
 ## Lody's answers + Clover export — 2026-09-30
 
 - **Clover export imported** as evidence (`data/source/clover-export-2026-09-30.csv`, 105 items, X001–X105). The 14 matching website products carry their Clover ID. The export has **no stock counts and no SKUs**.
@@ -127,6 +137,7 @@ Screenshots (home shell since replaced by `m3-*`):
 - **Stock counts in Clover**: the export has none. Also: split the shared Phillips bar and Princess items, add the ceramics, bassinet and fudges to Clover, and say which teddy the card shows (`docs/clover-sync-needs.md`).
 - Clover API access for the in-house sync (inventory-only token Lody creates) — needed by milestone 5.
 - DoorDash page link for local delivery.
+- "Our story" text for the footer, in her own words (Store settings).
 - Photos, descriptions, allergen info and basket eligibility for the 49 products added from Clover.
 - Corrected price form for items without a card (almonds, bark, tulips, cherries, pretzels, Dubai items, macarons, curated baskets).
 - Price conflict: screenshot P01–P03 ($5.95) equal DoorDash prices while P13/P15 are $4.25; observed DoorDash gaps are 30–40%, not the stated 3%.

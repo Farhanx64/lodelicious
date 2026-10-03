@@ -19,10 +19,10 @@ export default async function HomePage() {
             favorites or ask us to build a basket around your budget.
           </p>
           <p className="flex flex-wrap gap-3">
-            <Link href="/shop" className="inline-flex min-h-11 items-center bg-ink px-6 text-cream no-underline">
+            <Link href="/shop" className="inline-flex min-h-11 items-center bg-gold-text px-6 text-cream no-underline">
               Shop sweets
             </Link>
-            <Link href="/baby-gifts" className="inline-flex min-h-11 items-center border border-ink px-6 text-ink no-underline">
+            <Link href="/baby-gifts" className="inline-flex min-h-11 items-center border border-gold-text px-6 text-gold-text no-underline">
               Baby gifts
             </Link>
           </p>
@@ -51,13 +51,13 @@ export default async function HomePage() {
         <h2 id="get-it" className="sr-only">
           Getting your order
         </h2>
-        <div className="border border-line bg-paper p-5">
+        <div className="border-t-4 border-coastal bg-coastal-pale p-5">
           <h3 className="mb-1 text-xl">Pickup</h3>
           <p>
             Free from our shop at {store.street}, {store.locality}.
           </p>
         </div>
-        <div className="border border-line bg-paper p-5">
+        <div className="border-t-4 border-coastal bg-coastal-pale p-5">
           <h3 className="mb-1 text-xl">Local delivery</h3>
           <p>
             Through DoorDash
@@ -72,7 +72,7 @@ export default async function HomePage() {
             Shipping is coming with online checkout.
           </p>
         </div>
-        <div className="border border-line bg-paper p-5">
+        <div className="border-t-4 border-coastal bg-coastal-pale p-5">
           <h3 className="mb-1 text-xl">Order by phone</h3>
           <p>
             Online checkout is coming soon. Call <a href={telHref(store.phone)}>{store.phone}</a> today.

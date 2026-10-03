@@ -3,11 +3,27 @@ import { telHref } from "@/src/lib/phone";
 
 export function SiteFooter({ store }: { store: StoreSetting }) {
   const closed = (store.closedDays ?? []).map((d) => d.label);
+  const story = store.story?.trim();
   return (
-    <footer className="on-ink border-t border-gold bg-ink py-10 text-[0.95rem] text-cream">
-      <div className="mx-auto grid w-[min(100%-2rem,72rem)] grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))] gap-6">
+    // Coastal-blue band and gold rule at the bottom of the page (Lody's board); blue is never text.
+    <footer className="border-t-[6px] border-coastal bg-linen text-[0.95rem] text-ink">
+      <div aria-hidden="true" className="h-1.5 border-b border-gold bg-coastal-pale" />
+      <div className="mx-auto grid w-[min(100%-2rem,72rem)] grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))] gap-6 py-10">
+        {story && (
+          <section aria-labelledby="footer-story" className="border-l-2 border-coastal pl-4">
+            <h2 id="footer-story" className="mb-3 text-xl">
+              {store.storyHeading || "Our story"}
+            </h2>
+            {story.split(/\n\s*\n/).map((paragraph, i) => (
+              <p key={i} className="mb-2 whitespace-pre-line">
+                {paragraph}
+              </p>
+            ))}
+          </section>
+        )}
+
         <section aria-labelledby="footer-visit">
-          <h2 id="footer-visit" className="mb-3 text-xl text-gold-light">
+          <h2 id="footer-visit" className="mb-3 text-xl">
             Visit the shop
           </h2>
           <address className="not-italic">
@@ -20,7 +36,7 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
         </section>
 
         <section aria-labelledby="footer-hours">
-          <h2 id="footer-hours" className="mb-3 text-xl text-gold-light">
+          <h2 id="footer-hours" className="mb-3 text-xl">
             {store.hoursLabel}
           </h2>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4">
@@ -35,22 +51,22 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
         </section>
 
         <section aria-labelledby="footer-contact">
-          <h2 id="footer-contact" className="mb-3 text-xl text-gold-light">
+          <h2 id="footer-contact" className="mb-3 text-xl">
             Contact
           </h2>
           <p>
-            <a href={telHref(store.phone)} className="text-cream">
+            <a href={telHref(store.phone)}>
               {store.phone}
             </a>
             <br />
-            <a href={`mailto:${store.email}`} className="break-words text-cream">
+            <a href={`mailto:${store.email}`} className="break-words">
               {store.email}
             </a>
           </p>
           {store.doordashUrl && (
             <p className="mt-3">
               Local delivery:{" "}
-              <a href={store.doordashUrl} className="text-cream">
+              <a href={store.doordashUrl}>
                 order on DoorDash
               </a>
             </p>

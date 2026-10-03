@@ -173,6 +173,24 @@ ice-cream-truck items, Dubai cups, pancake flavours, savory items (she will name
 OMNIYA chocolates (the Lebanese in-store-only question is still open). The full list is in
 `docs/reconciliation.md`.
 
+## D30 — Ivory, linen, gold and coastal blue (Lody's mood board, 2026-10-02)
+
+Replaces the black/cream/gold look (D13's colours). The page is ivory with linen and blush
+surfaces. Headings, nav, prices and buttons are gold, products and baskets sit in thin double gold
+frames, and coastal blue appears toward the bottom: the "Getting your order" band and the footer.
+
+- **Gold words use `--color-gold-text` `#7A5C22`** (5.9:1 on ivory). The board's antique gold
+  `#B08D57` is 2.9:1 on ivory, which fails WCAG for any text, so it is used only for frames, rules
+  and ornaments. Coastal blue `#A9C1DB` is never text either.
+- Body text stays a warm dark brown `#3B2F25` (12:1) for readability.
+- `tests/theme-contrast.test.ts` reads the tokens from `app/globals.css`. It fails if any text
+  colour drops below 4.5:1 on any surface, or if antique gold or coastal blue is used as a text
+  class.
+- The name and sticker logo are unchanged (project lead): the board's "Souset-Pink" bow is
+  reference art, not her logo.
+- "Our story" is a Store settings field that Lody writes in /admin. The footer shows it only when
+  it is filled in; we don't write her story for her.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

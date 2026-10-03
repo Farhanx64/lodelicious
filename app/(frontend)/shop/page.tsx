@@ -34,7 +34,7 @@ export default async function ShopPage({ searchParams }: Props) {
             className="min-h-11 border border-ink-soft bg-paper px-3"
           />
         </div>
-        <button type="submit" className="min-h-11 bg-ink px-5 text-cream">
+        <button type="submit" className="min-h-11 bg-gold-text px-5 text-cream">
           Search
         </button>
       </form>
@@ -49,7 +49,7 @@ export default async function ShopPage({ searchParams }: Props) {
                 <Link
                   href={`/shop${params.size ? `?${params}` : ""}`}
                   aria-current={current ? "page" : undefined}
-                  className={`inline-flex min-h-11 items-center border px-4 no-underline ${current ? "border-ink bg-ink text-cream" : "border-line bg-paper text-ink"}`}
+                  className={`inline-flex min-h-11 items-center border px-4 no-underline ${current ? "border-gold-text bg-gold-text text-cream" : "border-line bg-paper text-ink"}`}
                 >
                   {c.name}
                 </Link>
