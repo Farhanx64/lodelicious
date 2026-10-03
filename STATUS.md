@@ -27,6 +27,16 @@ in-house Clover sync (D10).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
 
+## Mood-board photos as placeholders — 2026-10-03 (D32)
+
+- **Placeholders:** the board's awning, the 4 tiles beside the logo and the 5-photo strip are on the
+  home page, in the board's layout. All 10 are editable in /admin → Home page.
+- **Staging only:** they are seeded unapproved, so the live site hides them until Lody approves or
+  replaces them. Replacing them with her own photos is the goal.
+- **Checks:**
+  - 201 tests pass.
+  - No horizontal scroll at 390 or 1280 px, including with 200% text.
+
 ## Exact mood-board match — SOUSET-PINK, 2026-10-03 (D31)
 
 - **Board match:**

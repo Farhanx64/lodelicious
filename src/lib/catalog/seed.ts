@@ -41,6 +41,8 @@ export type CatalogSeed = {
     /** Clover inventory item ID from Lody's export; matching is by ID, never by name. */
     cloverId?: string;
   }[];
+  /** Starting photos for the Home page global; only fills empty slots (D32). */
+  homePage?: { heroImage?: string; featureImages?: string[]; stripImages?: string[] };
 };
 
 export type SeedReport = {
@@ -48,6 +50,7 @@ export type SeedReport = {
   media: { created: string[]; existing: string[] };
   products: { created: string[]; existing: string[] };
   presentationImages: string[];
+  homePage: string[];
 };
 
 type AllergenRow = { product: string; nut_free: string; vegan: string; notes: string; section: string };
@@ -76,6 +79,10 @@ export function checkSeed(seed: CatalogSeed, allergens: AllergenRow[], assetsDir
     if (p.priceCents !== undefined && !Number.isSafeInteger(p.priceCents)) problems.push(`${p.slug}: price must be integer cents`);
     if (p.cloverId !== undefined && !/^[0-9A-Z]{13}$/.test(p.cloverId)) problems.push(`${p.slug}: Clover ID "${p.cloverId}" is not a 13-character Clover ID`);
   }
+  const home = seed.homePage ?? {};
+  for (const file of [home.heroImage, ...(home.featureImages ?? []), ...(home.stripImages ?? [])]) {
+    if (file && !media.has(file)) problems.push(`home page: image ${file} not in media list`);
+  }
   return problems;
 }
 
@@ -88,6 +95,7 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
     media: { created: [], existing: [] },
     products: { created: [], existing: [] },
     presentationImages: [],
+    homePage: [],
   };
 
   const categoryIds = new Map<string, number | string>();
@@ -195,6 +203,19 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
   });
   if (changed) {
     await payload.updateGlobal({ slug: "gift-builder-settings", data: { specialPresentations }, overrideAccess: true });
+  }
+
+  // Home page photos: fill each empty slot once; anything staff set in /admin is left alone.
+  const home = await payload.findGlobal({ slug: "home-page", depth: 0, overrideAccess: true });
+  const wanted = seed.homePage ?? {};
+  const ids = (files: string[] = []) => files.map((file) => ({ image: mediaIds.get(file) as number }));
+  const homeData: Record<string, unknown> = {};
+  if (!home.heroImage && wanted.heroImage) homeData.heroImage = mediaIds.get(wanted.heroImage);
+  if (!home.featureImages?.length && wanted.featureImages?.length) homeData.featureImages = ids(wanted.featureImages);
+  if (!home.stripImages?.length && wanted.stripImages?.length) homeData.stripImages = ids(wanted.stripImages);
+  if (Object.keys(homeData).length) {
+    await payload.updateGlobal({ slug: "home-page", data: homeData, overrideAccess: true });
+    report.homePage.push(...Object.keys(homeData));
   }
 
   return report;

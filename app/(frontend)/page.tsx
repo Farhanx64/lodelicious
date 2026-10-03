@@ -3,27 +3,37 @@ import Link from "next/link";
 import { AwningHem } from "@/components/brand/Awning";
 import { Lockup } from "@/components/brand/Lockup";
 import { ProductCard } from "@/components/catalog/ProductCard";
+import { ProductImage } from "@/components/catalog/ProductImage";
 import { PhotoStrip } from "@/components/home/PhotoStrip";
 import { listProducts } from "@/src/lib/catalog/queries";
 import { telHref } from "@/src/lib/phone";
-import { getHomePage, getStoreSettings } from "@/src/lib/store";
+import { getHomePage, getStoreSettings, isImagePublishable } from "@/src/lib/store";
 
 const button = "caps inline-flex min-h-11 items-center px-7 text-[0.75rem] no-underline";
 
 export default async function HomePage() {
   const [store, home, featured] = await Promise.all([getStoreSettings(), getHomePage(), listProducts({ featured: true, limit: 8 })]);
+  const hero = typeof home.heroImage === "object" ? home.heroImage : null;
 
   return (
     <div className="mx-auto w-[min(100%-2rem,72rem)]">
-      {/* The board's awning: ivory canopy, gold lockup, scalloped gold hem. */}
+      {/* The board's top photo (the awning). Without a usable photo, a drawn awning stands in. */}
       <section aria-labelledby="welcome" className="mb-10">
-        <div className="border-x border-t border-gold bg-paper px-6 pt-10 pb-8">
-          <h1 id="welcome" className="sr-only">
-            {store.name} — {store.tagline}
-          </h1>
-          <Lockup name={store.name} tagline={store.tagline} size="lg" />
-        </div>
-        <AwningHem />
+        <h1 id="welcome" className="sr-only">
+          {store.name} — {store.tagline}
+        </h1>
+        {hero && isImagePublishable(hero) ? (
+          <div className="border border-gold bg-paper p-1.5">
+            <ProductImage media={hero} size="large" priority className="aspect-[16/7] w-full object-cover!" />
+          </div>
+        ) : (
+          <>
+            <div className="border-x border-t border-gold bg-paper px-6 pt-10 pb-8">
+              <Lockup name={store.name} tagline={store.tagline} size="lg" />
+            </div>
+            <AwningHem />
+          </>
+        )}
         <div className="mx-auto mt-8 max-w-[60ch] text-center">
           <p className="caps mb-3 text-[0.75rem] text-gold-text">Plymouth, Massachusetts</p>
           <p className="mb-6 text-lg">
@@ -41,8 +51,16 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {/* The board's middle row: the logo panel beside four photos. */}
+      <section aria-label="Gifts and treats" className="mb-2 grid grid-cols-[minmax(0,1fr)] gap-2 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <div className="flex items-center justify-center border border-gold bg-paper px-4 py-8">
+          <Lockup name={store.name} tagline={store.tagline} />
+        </div>
+        <PhotoStrip count={4} label="Gifts and treats" images={(home.featureImages ?? []).map((row) => row.image)} />
+      </section>
+
       <section aria-label="From the shop" className="mb-12">
-        <PhotoStrip images={(home.stripImages ?? []).map((row) => row.image)} />
+        <PhotoStrip count={5} images={(home.stripImages ?? []).map((row) => row.image)} />
       </section>
 
       {featured.length > 0 && (

@@ -12,8 +12,27 @@ export const HomePage: GlobalConfig = {
   label: "Home page",
   admin: { group: "Settings" },
   access: { read: anyone, update: isCommerceManager },
-  hooks: { afterChange: [auditGlobal(["stripImages"])] },
+  hooks: { afterChange: [auditGlobal(["heroImage", "featureImages", "stripImages"])] },
   fields: [
+    {
+      name: "heroImage",
+      label: "Top photo",
+      type: "upload",
+      relationTo: "media",
+      admin: {
+        description:
+          "The large photo at the top of the home page (the board's awning). The starting picture is a mood-board placeholder: replace it with your own photo. Empty shows a drawn awning.",
+      },
+    },
+    {
+      name: "featureImages",
+      label: "Photos beside the logo",
+      type: "array",
+      maxRows: 4,
+      labels: { singular: "Photo", plural: "Photos" },
+      admin: { description: "Up to four photos next to the logo panel, left to right. Replace the mood-board placeholders with your own." },
+      fields: [{ name: "image", type: "upload", relationTo: "media", required: true }],
+    },
     {
       name: "stripImages",
       label: "Photo strip",

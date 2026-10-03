@@ -233,6 +233,26 @@ colours and D21's logo-in-header.
   Accounts and wishlists are not in the PRD.
 - **New `/about` page** shows the Store-settings story, or "coming soon".
 
+## D32 — Mood-board photos as temporary home-page placeholders (2026-10-03)
+
+The project lead asked to use the board's own pictures "for now", editable later in /admin.
+
+- `scripts/moodboard-crops.ts` cuts 10 photos from the board into `data/assets/moodboard/`.
+  `SOURCE.md` there records the hash and the crop boxes. The 10 photos are:
+  - the awning
+  - 4 tiles beside the logo
+  - the 5-photo strip
+- They are seeded as Media with **"approved for launch" off** and the credit "Placeholder from Lody's
+  mood board (AI-generated)".
+- They fill the new Home page slots (`heroImage`, `featureImages`, `stripImages`), but only when a
+  slot is empty, so staff edits are never overwritten.
+- **They show on staging/preview only.** `isImagePublishable` hides unapproved images in production,
+  and those slots fall back to the bow panels or the drawn awning. They reach the live site only if
+  Lody ticks "approved for launch". She should replace them with her own photos instead: they are
+  AI-generated and show a shop that isn't hers. That is why the PRD bans them as product photos.
+- The board is 1242 px wide, so the top photo is about 700 px and looks soft at full desktop width.
+  Real photos fix that.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

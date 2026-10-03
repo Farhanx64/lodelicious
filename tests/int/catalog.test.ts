@@ -44,11 +44,13 @@ describe("catalog seed", () => {
     expect(first.products.created).toHaveLength(seed.products.length);
     expect(first.media.created).toHaveLength(seed.media.length);
     expect(first.presentationImages.sort()).toEqual(["baby_white", "ceramic_block", "ceramic_bowl", "ceramic_shoes"]);
+    expect(first.homePage.sort()).toEqual(["featureImages", "heroImage", "stripImages"]);
 
     const second = await seedCatalog(payload, seed, allergens, assetsDir);
     expect(second.products.created).toEqual([]);
     expect(second.media.created).toEqual([]);
     expect(second.presentationImages).toEqual([]);
+    expect(second.homePage).toEqual([]);
   });
 
   it("uses the owner card prices and allergen chart verbatim", async () => {
@@ -108,6 +110,29 @@ describe("catalog seed", () => {
     expect(publicView.docs).toEqual([]);
   });
 });
+
+describe("home page placeholder photos (D32)", () => {
+  it("are the mood-board crops, unapproved for launch", async () => {
+    const home = await payload.findGlobal({ slug: "home-page", depth: 1, overrideAccess: true });
+    const hero = home.heroImage as { sourceFile: string; approvedForLaunch: boolean; credit: string };
+    expect(hero).toMatchObject({ sourceFile: "moodboard/hero.jpg", approvedForLaunch: false });
+    expect(hero.credit).toMatch(/AI-generated/);
+    expect(home.featureImages).toHaveLength(4);
+    expect(home.stripImages).toHaveLength(5);
+  });
+
+  it("leaves slots staff have edited alone and only fills empty ones", async () => {
+    await payload.updateGlobal({ slug: "home-page", data: { stripImages: [], featureImages: [{ image: (await anyMedia()).id }] }, user: manager, overrideAccess: false });
+    const report = await seedCatalog(payload, seed, allergens, assetsDir);
+    // An emptied slot is refilled only because it is empty; an edited slot is left alone.
+    expect(report.homePage).toEqual(["stripImages"]);
+    expect((await payload.findGlobal({ slug: "home-page", depth: 0, overrideAccess: true })).featureImages).toHaveLength(1);
+  });
+});
+
+async function anyMedia() {
+  return (await payload.find({ collection: "media", where: { sourceFile: { equals: "products/teddy-bear.jpg" } }, overrideAccess: true })).docs[0];
+}
 
 describe("editing products in /admin", () => {
   it("lets a manager change a price, audited, and a re-seed never reverts it", async () => {

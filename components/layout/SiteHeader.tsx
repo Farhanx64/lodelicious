@@ -99,8 +99,8 @@ export function SiteHeader({ staging, storeName, tagline }: { staging: boolean; 
 
         {/* Desktop: the board's nav bar. */}
         <div className="relative border-y border-line bg-paper">
-          <nav aria-label="Primary" className="mx-auto hidden w-[min(100%-2rem,72rem)] items-center justify-between gap-6 py-1 lg:flex">
-            <ul className="flex gap-10">
+          <nav aria-label="Primary" className="mx-auto hidden w-[min(100%-2rem,72rem)] flex-wrap items-center justify-between gap-x-6 py-1 lg:flex">
+            <ul className="flex flex-wrap gap-x-10">
               {NAV_LEFT.map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className={linkClass}>
@@ -110,7 +110,7 @@ export function SiteHeader({ staging, storeName, tagline }: { staging: boolean; 
               ))}
             </ul>
             <Bow className="w-8 text-gold" />
-            <ul className="flex gap-10">
+            <ul className="flex flex-wrap gap-x-10">
               {NAV_RIGHT.map((item) => (
                 <li key={item.href}>
                   <Link href={item.href} className={linkClass}>

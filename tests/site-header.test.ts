@@ -34,6 +34,26 @@ describe("SiteHeader", () => {
 });
 
 describe("PhotoStrip", () => {
+  const placeholder = { id: 9, alt: "Gift box", approvedForLaunch: false, url: "/media/x.jpg", sizes: {} } as never;
+
+  it("renders the four tiles beside the logo", () => {
+    expect(renderToStaticMarkup(createElement(PhotoStrip, { images: [], count: 4 })).match(/<li/g)).toHaveLength(4);
+  });
+
+  it("shows mood-board placeholders on staging but never on the live site (D32)", () => {
+    const before = process.env.APP_ENV;
+    try {
+      process.env.APP_ENV = "staging";
+      expect(renderToStaticMarkup(createElement(PhotoStrip, { images: [placeholder] }))).toContain('alt="Gift box"');
+      process.env.APP_ENV = "production";
+      const live = renderToStaticMarkup(createElement(PhotoStrip, { images: [placeholder] }));
+      expect(live).not.toContain("Gift box");
+      expect(live.match(/data-placeholder/g)).toHaveLength(5);
+    } finally {
+      process.env.APP_ENV = before;
+    }
+  });
+
   it("always shows five frames, with branded placeholders until photos are uploaded", () => {
     const strip = renderToStaticMarkup(createElement(PhotoStrip, { images: [] }));
     expect(strip.match(/<li/g)).toHaveLength(5);
