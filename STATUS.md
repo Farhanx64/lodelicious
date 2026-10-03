@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-09-26 · Branch: `claude/sweet-meitner-2hnl84`
+Last updated: 2026-09-30 · Branch: `claude/sweet-meitner-2hnl84`
 
 **Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
 (confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an
@@ -26,6 +26,42 @@ in-house Clover sync (D10).
 - Initial migration (`migrations/20260925_182201_initial.ts`).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
+
+## Exact mood-board match — SOUSET-PINK, 2026-10-03 (D31)
+
+- **Board match:**
+  - Board-sampled palette.
+  - SOUSET-PINK lockup with a gold bow.
+  - The board's nav bar with four icons.
+  - A scalloped awning hero.
+  - A five-photo strip (admin-editable, with placeholders).
+  - New About and coming-soon pages for account, wishlist and bag.
+- **Accessibility:** gold text is below WCAG AA by client decision. This is recorded in D31 and needs
+  Lody's acceptance.
+- **Checks:**
+  - 197 tests pass.
+  - No horizontal scroll at 390 px or with 200% text.
+  - The phone menu works by keyboard.
+
+## Re-theme to Lody's mood board — 2026-10-03 (superseded by D31)
+
+- Ivory, linen and blush surfaces, with gold headings, nav, prices and buttons.
+- Double gold frames on products, basket choices and the Baby White panel.
+- Coastal-blue band and footer at the bottom (D30). AA contrast is enforced by
+  `tests/theme-contrast.test.ts`.
+- "Our story" footer column, editable in Store settings and hidden until Lody writes it (migration
+  `store_story`).
+- 193 tests pass. No horizontal scroll at 390 px or with 200% text, and focus outlines are visible.
+
+## Lody's answers + Clover export — 2026-09-30
+
+- **Clover export imported** as evidence (`data/source/clover-export-2026-09-30.csv`, 105 items, X001–X105). The 14 matching website products carry their Clover ID. The export has **no stock counts and no SKUs**.
+- **Clover price wins** (D25): Dr. Seuss Book $6.25 and Greeting Cards $2.95. The teddy is unresolved because there are two Clover teddies.
+- **49 Clover sweets and gifts added as products** (D29): Clover price, "Photo coming soon", allergens "unknown", not in custom gifts yet. Left out for now: coffee, drinks, gelato, ice-cream truck, Dubai cups, savory, OMNIYA.
+- **In-store reserve** (D26): each product has a "Keep for in-store" number (default 1), and the website sells only what is above it.
+- **Extra Large off** (D27): sizes have an "Offered to customers" switch, and Extra Large is off in the defaults and in existing databases.
+- **Local delivery = DoorDash** (D28): the product "Local delivery" flag was removed. The DoorDash link goes in Store settings, and the home page and footer show it.
+- Migration `clover_reserve_sizes_doordash`. 180 tests pass. Catalog: 71 products (67 published, 4 Cape Cod drafts).
 
 ## Milestone 3 (part 2) — Build a Basket, 2026-09-26
 
@@ -114,17 +150,21 @@ Screenshots (home shell since replaced by `m3-*`):
 
 ## Unresolved inputs (blocking only the affected feature)
 
-- Authorized Clover export (native IDs, SKUs, variants, stock, inactive items) — not received.
-- Clover API access for the in-house sync (merchant API token; sandbox merchant for testing) — needed by milestone 5.
+- **Stock counts in Clover**: the export has none. Also: split the shared Phillips bar and Princess items, add the ceramics, bassinet and fudges to Clover, and say which teddy the card shows (`docs/clover-sync-needs.md`).
+- Clover API access for the in-house sync (inventory-only token Lody creates) — needed by milestone 5.
+- DoorDash page link for local delivery.
+- "Our story" text for the footer, in her own words (Store settings).
+- Her own photos for the home-page photo strip (Home page settings), and acceptance of the gold-text contrast deviation (D31).
+- Photos, descriptions, allergen info and basket eligibility for the 49 products added from Clover.
 - Corrected price form for items without a card (almonds, bark, tulips, cherries, pretzels, Dubai items, macarons, curated baskets).
 - Price conflict: screenshot P01–P03 ($5.95) equal DoorDash prices while P13/P15 are $4.25; observed DoorDash gaps are 30–40%, not the stated 3%.
 - Physical fit: only basket sizes are known; per-product sizes are not, so fit limits will be staff-configurable counts.
 - OMNIYA: confirm it is not one of the in-store-only Lebanese chocolates.
-- **Savory products** (crackers, nuts, olives, salami per the chart) and more sweet items — XL baskets need 18 distinct items.
+- **Savory products**: Lody will name them later (cheese, salami). Extra Large stays off until there is enough variety (D27).
 - **Stock counts** for every product (and each pink/blue option) — nothing is purchasable until entered.
 - Ceramic prices (bowl/block $14.95, shoes $19.95) and whether they are empty-container prices; item counts for filled ceramics.
 - Publishing rights for supplier photos (bassinet, planters).
-- Price differences in `docs/reconciliation.md` (raisins, gummy bears, Princess box vs screenshot; teddy, book, cards vs Clover).
+- Price differences in `docs/reconciliation.md`: the Clover price now wins (D25). Only the teddy is still open.
 - Cape Cod Provisions fudge: prices, sizes, photos (4 drafts waiting).
 - Allergen data for Lodelicious-bagged items (raisins, gummy bears, Swedish candy) and add-ons.
 - Sympathy packaging and premium caps: assumed equal to the standard size (D15) — confirm with Lody.

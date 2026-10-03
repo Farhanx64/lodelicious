@@ -69,7 +69,7 @@ export function assessFeasibility(
   const smallerSizesThatFit = current.ok
     ? []
     : settings.sizes
-        .filter((s) => resolveCountRange(settings, s.code, giftType).min < currentMin)
+        .filter((s) => s.enabled && resolveCountRange(settings, s.code, giftType).min < currentMin)
         .sort((a, b) => b.minItems - a.minItems)
         .filter((s) => fits(s.code).ok)
         .map((s) => s.code);

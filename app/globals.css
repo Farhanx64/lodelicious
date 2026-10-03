@@ -1,18 +1,24 @@
 @import "tailwindcss";
 
-/* Design tokens. Contrast pairs are checked for WCAG 2.2 AA; gold is decorative and never
-   carries body text on cream. */
+/* Design tokens sampled from Lody's SOUSET-PINK mood board (2026-10-03, D31). The board's gold
+   lettering is used for all gold text by client decision even though it is 3.4:1 on ivory, below
+   WCAG AA (D31 records the deviation). Body text, the nav and errors stay AA; see
+   tests/theme-contrast.test.ts. */
 @theme {
-  --color-ink: #141414;
-  --color-ink-soft: #3d3a36;
-  --color-cream: #faf6ee;
-  --color-paper: #ffffff;
-  --color-gold: #b08d4a;       /* rules, borders, ornaments only */
-  --color-gold-text: #7a5c22;  /* gold as text on cream: 5.8:1 */
-  --color-gold-light: #d9c28f; /* gold as text on ink: 10.6:1 */
-  --color-line: #e4dccb;
-  --color-focus: #1f4fd1;      /* 6.3:1 on cream */
-  --color-focus-dark: #9db7ff; /* 9.3:1 on ink */
+  --color-cream: #f7f2ee;        /* page background, sampled from the board */
+  --color-paper: #fbf8f5;        /* cards and panels */
+  --color-ivory: #f7f0ea;        /* board swatch "Ivory" */
+  --color-linen: #eadccf;        /* board swatch "Linen" */
+  --color-blush: #efd5ce;        /* board swatch "Blush" */
+  --color-coastal: #98a9b9;      /* board swatch "Coastal Blue": bands and accents */
+  --color-coastal-pale: #e4e9ee;
+  --color-ink: #3b2f25;          /* body text: 11.7:1 */
+  --color-ink-soft: #665a4e;     /* secondary text: 6.0:1 */
+  --color-nav: #605b57;          /* board nav lettering: 6.0:1 */
+  --color-gold: #b99870;         /* board bow, rules and frames */
+  --color-gold-text: #9c7f5b;    /* board wordmark gold: 3.4:1, client-accepted (D31) */
+  --color-line: #e3d8cc;
+  --color-focus: #1f4fd1;
   --color-error: #a32020;
   --color-success: #25603a;
 
@@ -34,9 +40,16 @@
   }
 
   h1, h2, h3, h4 {
+    color: var(--color-gold-text);
     font-family: var(--font-display);
     font-weight: 500;
     line-height: 1.15;
+  }
+
+  /* The board sets its titles in letterspaced capitals. */
+  h1, h2 {
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
   }
 
   a {
@@ -49,14 +62,18 @@
     outline-offset: 3px;
   }
 
-  .on-ink :focus-visible {
-    outline-color: var(--color-focus-dark);
-  }
-
   /* Long unbroken addresses must wrap at 200% text on a phone (WCAG 1.4.4 / 1.4.10). */
   a[href^="mailto:"] {
     overflow-wrap: anywhere;
   }
+}
+
+/* Board-style label: small letterspaced serif capitals (nav, taglines, section labels). */
+.caps {
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
 }
 
 .skip-link {
@@ -64,7 +81,7 @@
   left: 1rem;
   top: -10rem;
   z-index: 100;
-  background: var(--color-ink);
+  background: var(--color-gold-text);
   color: var(--color-paper);
   padding: 0.5rem 1rem;
 }

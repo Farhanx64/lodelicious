@@ -13,13 +13,17 @@ const read = (file: string) =>
   parseCsvRecords(fs.readFileSync(path.resolve("data/source", file), "utf8"));
 
 describe("source evidence", () => {
-  it("matches the source row counts (PRD appendices 20 + 19 + 12, owner cards 15, supplier specs 7)", () => {
+  it("matches the source row counts (PRD appendices 20 + 19 + 12, owner cards 15, supplier specs 7, Clover export 105)", () => {
     const rows = readSourceRows();
     expect(rows.filter((r) => r.source === "clover_public")).toHaveLength(20);
     expect(rows.filter((r) => r.source === "price_list_screenshot")).toHaveLength(19);
     expect(rows.filter((r) => r.source === "doordash")).toHaveLength(12);
     expect(rows.filter((r) => r.source === "owner_product_card")).toHaveLength(15);
     expect(rows.filter((r) => r.source === "supplier_spec")).toHaveLength(7);
+    // Lody's full Clover inventory export (2026-09-30): every item has a Clover ID, none has a stock count.
+    const exported = rows.filter((r) => r.source === "clover_export");
+    expect(exported).toHaveLength(105);
+    expect(exported.every((r) => /^clover_id=[0-9A-Z]{13};/.test(r.sourceNotes ?? ""))).toBe(true);
   });
 
   it("has unique refs and integer-cent prices", () => {

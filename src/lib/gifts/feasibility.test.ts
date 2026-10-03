@@ -36,6 +36,11 @@ describe("assessFeasibility (GFT 03)", () => {
     expect(r.smallerSizesThatFit).toEqual(["large", "medium", "small"]);
   });
 
+  it("never suggests a size that isn't offered", () => {
+    const smallOff = { ...settings, sizes: settings.sizes.map((s) => (s.code === "small" ? { ...s, enabled: false } : s)) };
+    expect(assessFeasibility(smallOff, "large", "sweet", null, cheap(11, 500)).smallerSizesThatFit).toEqual(["medium"]);
+  });
+
   it("uses the sympathy 13-item minimum for large sympathy", () => {
     const products = cheap(13, 500, { giftTypes: ["sympathy"] });
     expect(assessFeasibility(settings, "large", "sympathy", null, products).minimumBudgetCents).toBe(13 * 500 + 2995);

@@ -131,6 +131,108 @@ unpublish) and keep 25 versions. Owner and manager can create, edit, publish and
 and categories; fulfillment staff can read but not change them. Price, stock, channel, premium,
 gift-type and status changes are audited.
 
+## D25 — Clover's in-store price wins (Lody, 2026-09-30)
+
+When the website and Clover disagree, the current Clover price is correct. Products are matched to
+Clover by Clover item ID (`cloverId`), never by name: the export has no SKUs. Applied to the seed:
+Dr. Seuss Book $7.95 → $6.25 and Greeting Cards $3.95 → $2.95. Teddy Bear stays $14.95 and unlinked
+because Clover has two teddies ($10.95 "Teddy Bear", $14.95 "Teddy Bear Vintage Collection").
+Phillips Dark and Milk bars both link to the single Clover item "Philips Chocolate Bar" until Lody
+splits it. The later sync (milestone 5) should read prices from Clover rather than overwrite them.
+
+## D26 — In-store reserve per product
+
+Lody wants a few units of each item kept for in-store customers, decided per product. Products have
+`onlineReserve` (default 1, editable in /admin, applies to each option). The website sells only
+`stockQuantity − onlineReserve`: with the default, it stops when 1 is left. The low-stock label uses
+the same sellable figure, and the gift builder sees only the sellable quantity.
+
+## D27 — Extra Large basket off for now
+
+Lody prefers no Extra Large basket rather than padding it with products. Basket sizes have an
+"Offered to customers" switch in Gift builder settings. Extra Large keeps its PRD rules (18–20 items,
+$37.95, 4 premium) but is off: the builder hides it, never suggests it, and validation refuses it
+(`SIZE_UNAVAILABLE`). The migration switches it off in existing databases too. At least one size must
+stay offered.
+
+## D28 — Local delivery is DoorDash
+
+Website orders offer in-store pickup and shipping where applicable (shipping arrives with checkout,
+milestone 6); local delivery sends customers to the shop's DoorDash page. The product "Local delivery"
+flag was removed; Store settings has a "DoorDash store page" link (empty until Lody sends it) shown on
+the home page and footer when set. DoorDash prices remain channel prices and never website prices.
+
+## D29 — Clover export items added as products
+
+The project lead chose to add every sweet and gift from Lody's Clover export that wasn't on the site
+yet: 49 products with the Clover name (spelling and capitalisation tidied), Clover price (approved per
+D25), Clover ID and source record, no description, no photo ("Photo coming soon"), allergen fields
+"unknown", and **not** basket-eligible until Lody reviews each one. "(Nut Free)" was dropped from one
+title so the name makes no allergen claim. Left out, pending Lody: coffee, drinks, gelato,
+ice-cream-truck items, Dubai cups, pancake flavours, savory items (she will name them later), and
+OMNIYA chocolates (the Lebanese in-store-only question is still open). The full list is in
+`docs/reconciliation.md`.
+
+## D30 — Ivory, linen, gold and coastal blue (Lody's mood board, 2026-10-02)
+
+Replaces the black/cream/gold look (D13's colours). The page is ivory with linen and blush
+surfaces. Headings, nav, prices and buttons are gold, products and baskets sit in thin double gold
+frames, and coastal blue appears toward the bottom: the "Getting your order" band and the footer.
+
+- **Gold words use `--color-gold-text` `#7A5C22`** (5.9:1 on ivory). The board's antique gold
+  `#B08D57` is 2.9:1 on ivory, which fails WCAG for any text, so it is used only for frames, rules
+  and ornaments. Coastal blue `#A9C1DB` is never text either.
+- Body text stays a warm dark brown `#3B2F25` (12:1) for readability.
+- `tests/theme-contrast.test.ts` reads the tokens from `app/globals.css`. It fails if any text
+  colour drops below 4.5:1 on any surface, or if antique gold or coastal blue is used as a text
+  class.
+- The name and sticker logo are unchanged (project lead): the board's "Souset-Pink" bow is
+  reference art, not her logo.
+- "Our story" is a Store settings field that Lody writes in /admin. The footer shows it only when
+  it is filled in; we don't write her story for her.
+
+## D31 — Exact match to the SOUSET-PINK mood board (client-directed, 2026-10-03)
+
+The client asked for the site to be "super accurate" to Lody's mood board. This supersedes D30's
+colours and D21's logo-in-header.
+
+- **Colours sampled from the board image:**
+
+  | Board colour | Hex |
+  | --- | --- |
+  | page | `#F7F2EE` |
+  | Ivory | `#F7F0EA` |
+  | Linen | `#EADCCF` |
+  | Blush | `#EFD5CE` |
+  | Coastal Blue | `#98A9B9` |
+  | bow and rules | `#B99870` |
+  | wordmark gold | `#9C7F5B` |
+  | nav lettering | `#605B57` |
+
+  `tests/theme-contrast.test.ts` pins these.
+- **Accessibility deviation, accepted by the project lead for the client:** all gold text uses the
+  board's wordmark gold, which is 3.4:1 on the page and below WCAG AA's 4.5:1. That covers the
+  headings, prices, buttons, labels and icons. The PRD requires AA, so Lody must accept this
+  knowingly. Body text (11.7:1), the nav (6.0:1), errors and focus outlines stay AA. The test fails
+  if the gold drifts, or if it is ever raised to AA so this note can be retired.
+- **Brand:**
+  - The brand is **SOUSET-PINK** with a gold bow and "Sweets · Chocolates · Gifts". The name and
+    tagline are Store-settings fields, renamed by migration unless staff had changed the name.
+  - The bow is our own vector line drawing, not the board's artwork.
+  - Lodelicious remains on products whose bags carry that label.
+- **Layout from the board:**
+  - A centred lockup.
+  - A nav bar of SHOP · SWEETS · CHOCOLATES · GIFTS · bow · CUSTOM BASKETS · ABOUT with search,
+    account, wishlist and bag icons. Phones get a Menu disclosure.
+  - A drawn ivory awning with a scalloped gold hem.
+  - A five-photo strip, from /admin → Home page.
+- **No AI board photos:**
+  - The strip shows palette panels with the bow until Lody uploads her own photos.
+  - The awning is an illustration, not a storefront photo.
+- **Account, wishlist and bag** lead to "coming soon" pages (noindex) until those features exist.
+  Accounts and wishlists are not in the PRD.
+- **New `/about` page** shows the Store-settings story, or "coming soon".
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

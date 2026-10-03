@@ -60,6 +60,7 @@ export const Products: CollectionConfig = {
         "channel",
         "stockState",
         "stockQuantity",
+        "onlineReserve",
         "variants",
         "premium",
         "giftTypes",
@@ -139,6 +140,12 @@ export const Products: CollectionConfig = {
                 },
                 whole("stockQuantity", "Quantity on hand"),
                 whole("lowStockThreshold", "Low-stock label at or below", 3),
+                whole(
+                  "onlineReserve",
+                  "Keep for in-store",
+                  1,
+                  "Online sales stop when this many are left (applies to each option). 0 sells the last one.",
+                ),
               ],
             },
             { name: "stockCountedAt", type: "date", admin: { description: "When stock was last counted against the shelf/Clover." } },
@@ -266,7 +273,6 @@ export const Products: CollectionConfig = {
               type: "row",
               fields: [
                 { name: "pickup", type: "checkbox", defaultValue: true, label: "Pickup" },
-                { name: "localDelivery", type: "checkbox", defaultValue: true, label: "Local delivery" },
                 { name: "shippable", type: "checkbox", defaultValue: false, label: "Can ship" },
                 { name: "perishable", type: "checkbox", defaultValue: false, label: "Perishable / prepared" },
               ],

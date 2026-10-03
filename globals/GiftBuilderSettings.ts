@@ -94,6 +94,13 @@ export const GiftBuilderSettings: GlobalConfig = {
             { name: "code", type: "select", required: true, options: SIZE_OPTIONS },
             { name: "label", type: "text", required: true },
             { name: "basketSizeIn", label: "Basket size (inches)", type: "text" },
+            {
+              name: "enabled",
+              type: "checkbox",
+              label: "Offered to customers",
+              defaultValue: true,
+              admin: { description: "Untick to hide this size from Build a Basket and refuse it at checkout." },
+            },
           ],
         },
         {

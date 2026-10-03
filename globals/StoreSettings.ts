@@ -18,10 +18,17 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice"])],
+    afterChange: [auditGlobal(["name", "tagline", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
   },
   fields: [
-    { name: "name", type: "text", required: true, defaultValue: "Lodelicious Gifts & Sweets" },
+    {
+      type: "row",
+      fields: [
+        // Brand from Lody's mood board (D31); shown in the header lockup, page titles and footer.
+        { name: "name", label: "Shop name", type: "text", required: true, defaultValue: "Souset-Pink" },
+        { name: "tagline", type: "text", defaultValue: "Sweets · Chocolates · Gifts", admin: { description: "Shown in small capitals under the name." } },
+      ],
+    },
     {
       type: "row",
       fields: [
@@ -35,6 +42,27 @@ export const StoreSettings: GlobalConfig = {
         { name: "phone", type: "text", required: true, defaultValue: "(774) 283-4676" },
         { name: "email", type: "email", required: true, defaultValue: "lodelicious1@gmail.com" },
       ],
+    },
+    {
+      name: "doordashUrl",
+      label: "DoorDash store page",
+      type: "text",
+      admin: {
+        description:
+          "Local delivery is through DoorDash (Lody, 2026-09-30). Paste the shop's DoorDash link to show it on the site; leave empty to hide the link.",
+      },
+      validate: (value: string | null | undefined) =>
+        !value || /^https:\/\/(www\.)?doordash\.com\//.test(value) ? true : "Use the shop's https://www.doordash.com/… link",
+    },
+    { name: "storyHeading", label: "Story heading", type: "text", defaultValue: "Our story" },
+    {
+      name: "story",
+      label: "Our story",
+      type: "textarea",
+      admin: {
+        description:
+          "A few sentences about the shop for the bottom of every page, in your own words. Leave empty to hide it. A blank line starts a new paragraph.",
+      },
     },
     { name: "timezone", type: "text", required: true, defaultValue: "America/New_York" },
     { name: "hoursLabel", type: "text", required: true, defaultValue: "Fall & winter hours" },

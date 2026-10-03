@@ -24,8 +24,8 @@ const sourceSans = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "Lodelicious Gifts & Sweets — Plymouth, MA",
-    template: "%s — Lodelicious Gifts & Sweets",
+    default: "Souset-Pink — Sweets, Chocolates & Gifts · Plymouth, MA",
+    template: "%s — Souset-Pink",
   },
   description: "Gift baskets, chocolates and sweets from a family-owned shop in Plymouth, Massachusetts.",
   // Staging previews shared with the client must not end up in search results.
@@ -44,7 +44,7 @@ export default async function FrontendLayout({ children }: Readonly<{ children: 
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <SiteHeader staging={staging} storeName={store.name} />
+        <SiteHeader staging={staging} storeName={store.name} tagline={store.tagline} />
         <main id="main" tabIndex={-1} className="flex-1 py-10">
           {children}
         </main>

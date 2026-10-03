@@ -1,0 +1,106 @@
+ref,source_name,source_brand,source_price_cents,source,observed_on,notes
+X001,Sea Salt Caramels,,2095,clover_export,2026-09-30,clover_id=8NSZ8VQCNDF0M; category=Philips Chocolate
+X002,Mini Chocolates,,100,clover_export,2026-09-30,clover_id=T9NWGCAX802WG; category=Omniya
+X003,Apricot Nougat Pistachio,,175,clover_export,2026-09-30,clover_id=HQCW4PZB04G8M; category=Omniya
+X004,Red Velvet Ball,,295,clover_export,2026-09-30,clover_id=ZS5W0T39F3RJ2; category=Omniya
+X005,Crepe Chocolate,,245,clover_export,2026-09-30,clover_id=8EN82J1JEPVB8; category=Omniya
+X006,Orange Peel Chocolate,,145,clover_export,2026-09-30,clover_id=90Z483FTFQ94Y; category=Omniya
+X007,Orange Log,,175,clover_export,2026-09-30,clover_id=6ZCZFBQ15GDVE; category=Omniya
+X008,Turtles Fudge,,1245,clover_export,2026-09-30,clover_id=5X840BE752PR8; category=Philips Chocolate | Fudge
+X009,Baklava,,395,clover_export,2026-09-30,clover_id=NBF2PB8PXDTPJ; category=Lodelicious
+X010,Golden Coin,,100,clover_export,2026-09-30,clover_id=MR4R4CR845W4W; category=Candy Store
+X011,Swedish Candy,,1495,clover_export,2026-09-30,clover_id=AVSBF2QHN5308; category=Candy Store
+X012,Turtles Box,,2795,clover_export,2026-09-30,clover_id=JBGM3Y25XJRHM; category=Philips Chocolate
+X013,Turtles Bars,,1095,clover_export,2026-09-30,clover_id=Y9CX100BFQZ20; category=Philips Chocolate
+X014,Princess Assortment,,3095,clover_export,2026-09-30,clover_id=4GXSMCE3RM9V4; category=Philips Chocolate
+X015,Philips Chocolate Bar,,425,clover_export,2026-09-30,clover_id=J691E9GYAN1H6; category=Philips Chocolate
+X016,Hash Bar,,1295,clover_export,2026-09-30,clover_id=5ZEM4H09K7RV2; category=Philips Chocolate
+X017,1 Shot Espresso,,345,clover_export,2026-09-30,clover_id=SVF32ARA8APFY; category=Coffee
+X018,Double Shot of Espresso,,495,clover_export,2026-09-30,clover_id=ZA3THN4RE5MX0; category=Coffee
+X019,Cappuchino,,550,clover_export,2026-09-30,clover_id=BM5XFH0P9R7BJ; category=Coffee
+X020,Latte,,550,clover_export,2026-09-30,clover_id=QPT7FDPQX0SW0; category=Coffee
+X021,Affogato,,900,clover_export,2026-09-30,clover_id=B81M4EF56JBTA; category=Dubai Cup | Coffee
+X022,Small Iced Coffee,,495,clover_export,2026-09-30,clover_id=F99MB7D8516AM; category=Coffee
+X023,Large Iced Coffee,,595,clover_export,2026-09-30,clover_id=6PV1ZRB8E66WJ; category=Coffee
+X024,S'mores Bar,,425,clover_export,2026-09-30,clover_id=35V99XD1DVH4P; category=Philips Chocolate
+X025,Large Dubai Cup,,1895,clover_export,2026-09-30,clover_id=MGHQBPZ25RB2R; category=Dubai Cup
+X026,Small Dubai Cup,,995,clover_export,2026-09-30,clover_id=HKR1MB9AJ8S6M; category=Dubai Cup
+X027,Gelato 1 Scoop,,500,clover_export,2026-09-30,clover_id=V1D8R1271P2C8; category=Gelato
+X028,Gelato double scoop,,900,clover_export,2026-09-30,clover_id=YDTS2SDBCDE5R; category=Gelato
+X029,Tic Tac,,199,clover_export,2026-09-30,clover_id=X1SFEMWXWX3AJ; category=(none)
+X030,Focaccia Crisps,,595,clover_export,2026-09-30,clover_id=RFTRVSG7TGZMP; category=Faire
+X031,Swedish Fish,,375,clover_export,2026-09-30,clover_id=GSGZ348QSGQZE; category=Elite Treats
+X032,Gummy Bears,,375,clover_export,2026-09-30,clover_id=HPYFV4SRKFJ4M; category=Elite Treats
+X033,Smoked Almonds,,425,clover_export,2026-09-30,clover_id=NJE1W2CCTH4HC; category=Faire
+X034,Thyme Bar,,125,clover_export,2026-09-30,clover_id=KPNZCRYDV86X4; category=Omniya
+X035,Dr Suess Books,,625,clover_export,2026-09-30,clover_id=0BCEF88043TAW; category=Toys And Books
+X036,Charleston Chew,,385,clover_export,2026-09-30,clover_id=FH0EPTXVE9CRG; category=Candy Store
+X037,Skybar,,325,clover_export,2026-09-30,clover_id=ZS3QG9E9GMPPR; category=Candy Store
+X038,Lollipops,,425,clover_export,2026-09-30,clover_id=DTH7MVVAH5P0A; category=Pops | Candy Store
+X039,Teddy Bear,,1095,clover_export,2026-09-30,clover_id=H3GJRNPDBE4ZY; category=Teddy Bears; product_code=013
+X040,Teddy Bear Vintage Collection,,1495,clover_export,2026-09-30,clover_id=R66EJWXHRCRJE; category=Teddy Bears
+X041,Red Bull,,325,clover_export,2026-09-30,clover_id=PKE65JE8YP0GA; category=Drinks
+X042,Celsius,,325,clover_export,2026-09-30,clover_id=7ATX6ZRPG8X0W; category=Drinks
+X043,Water Bottle,,99,clover_export,2026-09-30,clover_id=ZSV1PPHV477WW; category=Drinks
+X044,Diet Coke,,250,clover_export,2026-09-30,clover_id=ZACTTRMCE4YW4; category=Drinks
+X045,Chocolate Covered Almonds,,995,clover_export,2026-09-30,clover_id=C4VT6J0MSJ690; category=Lodelicious
+X046,Milk Chocolate Raisins,,995,clover_export,2026-09-30,clover_id=6F1Y80EV6F6XT; category=Lodelicious
+X047,Small Jordan Almonds,,695,clover_export,2026-09-30,clover_id=QVVC4416K76M6; category=Lodelicious
+X048,Medium Jordan Almond,,1295,clover_export,2026-09-30,clover_id=NC5S0S1VV4QJA; category=Lodelicious
+X049,Large Jordan Almonds,,1995,clover_export,2026-09-30,clover_id=4DV6K702AC51Y; category=Lodelicious
+X050,Salt Water Taffy,,750,clover_export,2026-09-30,clover_id=KWB91FQK67RT4; category=Candy Store
+X051,Cranberry Bog Frogs,,1995,clover_export,2026-09-30,clover_id=YX99FBS491EKW; category=Candy Store
+X052,Cranberry Chocolate Bar,,550,clover_export,2026-09-30,clover_id=8C3707GMTVYEY; category=Candy Store
+X053,Peanut Butter Bark,,875,clover_export,2026-09-30,clover_id=BK6S2VBN4M1CT; category=Philips Chocolate
+X054,Chocolate Pretzels 2pc,,475,clover_export,2026-09-30,clover_id=7B9F8DVHC2NQC; category=Philips Chocolate
+X055,Mini Pop,,100,clover_export,2026-09-30,clover_id=RZH4SR4QFA44R; category=Pops
+X056,Peelerz,,445,clover_export,2026-09-30,clover_id=05X6YE7NNK3QM; category=Lodelicious
+X057,Sugarfree Theatre Box,,1695,clover_export,2026-09-30,clover_id=M6DPSJKEDCM74; category=Philips Chocolate
+X058,Summer Sausage,,395,clover_export,2026-09-30,clover_id=MGMNYJFZGN50E; category=Cheese And Salami | Faire
+X059,Dark Chocolate Sea Salt (Nut Free),,2495,clover_export,2026-09-30,clover_id=2HMMNG5C3VN2T; category=Nut Free
+X060,Chocolate With Marshmellow Cream,,250,clover_export,2026-09-30,clover_id=YWVN0EDQM466J; category=Omniya
+X061,Omniya Chocolate Birthday Card,,1595,clover_export,2026-09-30,clover_id=9ATSKA5AP02HA; category=Omniya | Cards
+X062,Chocolate Marzipan Rose,,375,clover_export,2026-09-30,clover_id=3HPKSA67AZGNE; category=Omniya
+X063,Cards,,295,clover_export,2026-09-30,clover_id=99WHJCC2GE1G6; category=Cards
+X064,vegan bark,,1795,clover_export,2026-09-30,clover_id=2T1DTECBX4CV0; category=Philips Chocolate
+X065,Pug Teddy,,1695,clover_export,2026-09-30,clover_id=4YS18CCZ8FACM; category=Teddy Bears
+X066,Blessed Teddy Bear,,1895,clover_export,2026-09-30,clover_id=VAB88VFQNCMJT; category=Teddy Bears
+X067,Little Brown Teddy,,1095,clover_export,2026-09-30,clover_id=FG1K4PP017F44; category=Teddy Bears
+X068,Biscoff Cookie,,199,clover_export,2026-09-30,clover_id=0TNHX7YP7AB7P; category=(none)
+X069,10 Piece Pancakes,,1000,clover_export,2026-09-30,clover_id=VY4G8XDHF3TBE; category=Mini Pancakes
+X070,Oreo Pancakes 10(pc),,1000,clover_export,2026-09-30,clover_id=328KHBVA3W364; category=Mini Pancakes
+X071,Biscoff Pancakes 10(pc),,1000,clover_export,2026-09-30,clover_id=YN1MRASD4VPY4; category=Mini Pancakes
+X072,Dubai Pancakes 10(pc),,1200,clover_export,2026-09-30,clover_id=MBWM7NS4P6Z68; category=Mini Pancakes
+X073,chocolate covered gummy bears,,995,clover_export,2026-09-30,clover_id=R4QJQZ1SWFW92; category=Elite Treats
+X074,sea salt caramel fudge,,1095,clover_export,2026-09-30,clover_id=WMDPKYW91TAQP; category=Elite Treats
+X075,Chocolate Almond Clusters,,250,clover_export,2026-09-30,clover_id=J8H3RS9GHFCAA; category=(none)
+X076,Chocolate Pretzels,,795,clover_export,2026-09-30,clover_id=ZYJZ1QP57NH96; category=Philips Chocolate
+X077,Coffee,,245,clover_export,2026-09-30,clover_id=5PKHRQ84C3QNC; category=(none)
+X078,Sour Flush Candy,,475,clover_export,2026-09-30,clover_id=58Z5RDSPWWTXM; category=Candy Store
+X079,Chocolate Rose,,499,clover_export,2026-09-30,clover_id=QA56DF281RC5E; category=(none)
+X080,Swiss Chocolate Bar,,795,clover_export,2026-09-30,clover_id=9RR55VQ1G5QX0; category=Candy Store
+X081,Sugarfree Salt Water Taffy,,825,clover_export,2026-09-30,clover_id=NWDNF0WE46FFR; category=Candy Store
+X082,Flush Candy,,350,clover_export,2026-09-30,clover_id=VHS9QS45YQJZT; category=(none)
+X083,Hazelnut Milk Chocolate bite,,295,clover_export,2026-09-30,clover_id=VTJYPEVJ1KK4C; category=Omniya
+X084,Sugarfree Mix,,1095,clover_export,2026-09-30,clover_id=80CV69WNZ4NQE; category=(none)
+X085,Small Sugarfree Bag,,545,clover_export,2026-09-30,clover_id=V4MG3R2H5VEW4; category=(none)
+X086,Mini Dubai Chocolate Bar,,595,clover_export,2026-09-30,clover_id=XV5JH5JRTQZQJ; category=(none)
+X087,Flower Pop,,325,clover_export,2026-09-30,clover_id=QM9A3Y90543FT; category=(none)
+X088,Spongebob Ice Cream,,345,clover_export,2026-09-30,clover_id=WA9Y03VJSFB16; category=Ice Cream Truck
+X089,Strawberry Shortcake Ice Cream,,345,clover_export,2026-09-30,clover_id=4WGY44KNN48GW; category=Ice Cream Truck
+X090,Ice Cream Sandwich,,325,clover_export,2026-09-30,clover_id=0H0QE5XYN5J70; category=Ice Cream Truck
+X091,Magnum Bar,,525,clover_export,2026-09-30,clover_id=3E0X1YSD0JBVR; category=Ice Cream Truck
+X092,Drumstick Bar,,495,clover_export,2026-09-30,clover_id=WAQEFSP82M4VE; category=Ice Cream Truck
+X093,M&M Ice Cream,,395,clover_export,2026-09-30,clover_id=J9CREC1N0VQ5W; category=Ice Cream Truck
+X094,Twix Bar,,345,clover_export,2026-09-30,clover_id=FRP51ATB9DTGA; category=Ice Cream Truck
+X095,Snickers Bar,,345,clover_export,2026-09-30,clover_id=1WWQMD48H5TEY; category=Ice Cream Truck
+X096,Chocolate Covered Cherries,,3295,clover_export,2026-09-30,clover_id=ZK3C8KKRTMGPG; category=Philips Chocolate
+X097,toblerone,,369,clover_export,2026-09-30,clover_id=597721W12N1GJ; category=Candy Store
+X098,Dark Chocolate Sea Salt Caramel,,999,clover_export,2026-09-30,clover_id=66B5GTPZ2X51J; category=(none)
+X099,Milk Chocolate Sea Salt Caramel,,999,clover_export,2026-09-30,clover_id=YFWW0R3AQ188W; category=(none)
+X100,Black Licorice,,895,clover_export,2026-09-30,clover_id=MKRYPXPP1WH4W; category=(none)
+X101,Chocolate Covered Cashews,,1295,clover_export,2026-09-30,clover_id=A3BGAG1JX88AC; category=(none)
+X102,Chocolate Covered Blueberries,,1195,clover_export,2026-09-30,clover_id=5VZ80A52CC7GR; category=(none)
+X103,Dark Chocolate Covered Almonds,,999,clover_export,2026-09-30,clover_id=NWQDE66RNNHME; category=(none)
+X104,Dark Chocolate Covered Coffee Beans,,1295,clover_export,2026-09-30,clover_id=VA9RCM3RS3K26; category=(none)
+X105,Molases Chips,,745,clover_export,2026-09-30,clover_id=MNCMK522CQ0KM; category=(none)
