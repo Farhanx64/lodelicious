@@ -27,6 +27,17 @@ in-house Clover sync (D10).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
 
+## Shop Favorites layouts — 2026-10-04 (D33)
+
+- **Layout choice:** /admin → Home page lets Lody pick a slider (the default), a 2 × 2 grid or a
+  3 × 2 grid.
+- **Slider controls:** it auto-plays, with Pause/Play and arrows. It stops on hover or focus, and for
+  people who prefer reduced motion.
+- **Checks:**
+  - 204 tests pass.
+  - Browser checks cover auto-play, pause, focus hold, arrows and reduced motion.
+  - No overflow in any layout at 390 px or with 200% text.
+
 ## Mood-board photos as placeholders — 2026-10-03 (D32)
 
 - **Photo strip:** the original five-box strip now holds the board's flowers, truffles and gift boxes.

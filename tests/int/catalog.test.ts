@@ -125,6 +125,8 @@ describe("home page placeholder photos (D32)", () => {
     for (const m of strip) expect(m).toMatchObject({ approvedForLaunch: false, credit: expect.stringMatching(/AI-generated/) });
     // The top keeps the drawn awning: no photo is seeded there.
     expect(home.heroImage ?? null).toBeNull();
+    // Shop Favorites start as the slider (D33).
+    expect(home.favoritesLayout).toBe("slider");
   });
 
   it("leaves a strip staff have edited alone", async () => {

@@ -1,6 +1,7 @@
 import type { GlobalConfig } from "payload";
 
 import { anyone, isCommerceManager } from "../src/access/roles";
+import { FAVORITES_LAYOUTS } from "../src/lib/home";
 import { auditGlobal } from "../src/hooks/audit";
 
 /**
@@ -12,7 +13,7 @@ export const HomePage: GlobalConfig = {
   label: "Home page",
   admin: { group: "Settings" },
   access: { read: anyone, update: isCommerceManager },
-  hooks: { afterChange: [auditGlobal(["heroImage", "stripImages"])] },
+  hooks: { afterChange: [auditGlobal(["heroImage", "stripImages", "favoritesLayout"])] },
   fields: [
     {
       name: "heroImage",
@@ -35,6 +36,17 @@ export const HomePage: GlobalConfig = {
           "Up to five photos in the strip across the home page, left to right (flowers, gift boxes, ribbon, treats…). Use your own photos only. Empty spots show a soft colour panel with the gold bow.",
       },
       fields: [{ name: "image", type: "upload", relationTo: "media", required: true }],
+    },
+    {
+      name: "favoritesLayout",
+      label: "Shop Favorites layout",
+      type: "select",
+      required: true,
+      defaultValue: "slider",
+      options: FAVORITES_LAYOUTS.map(({ value, label }) => ({ value, label })),
+      admin: {
+        description: "How the products marked \"Show on the home page\" are laid out. The slider moves on its own and has a pause button.",
+      },
     },
   ],
 };

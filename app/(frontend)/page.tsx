@@ -4,15 +4,23 @@ import { AwningHem } from "@/components/brand/Awning";
 import { Lockup } from "@/components/brand/Lockup";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
+import { FavoritesSlider } from "@/components/home/FavoritesSlider";
 import { PhotoStrip } from "@/components/home/PhotoStrip";
 import { listProducts } from "@/src/lib/catalog/queries";
+import { favoritesLayout, favoritesLimit } from "@/src/lib/home";
 import { telHref } from "@/src/lib/phone";
 import { getHomePage, getStoreSettings, isImagePublishable } from "@/src/lib/store";
+
+// Grid layouts Lody can pick in /admin → Home page (D33). Phones show two columns, or one when
+// text is enlarged so cards never overflow.
+const GRID = { "grid-2x2": "mx-auto max-w-[40rem]", "grid-3x2": "lg:grid-cols-3" } as const;
 
 const button = "caps inline-flex min-h-11 items-center px-7 text-[0.75rem] no-underline";
 
 export default async function HomePage() {
-  const [store, home, featured] = await Promise.all([getStoreSettings(), getHomePage(), listProducts({ featured: true, limit: 8 })]);
+  const [store, home] = await Promise.all([getStoreSettings(), getHomePage()]);
+  const layout = favoritesLayout(home.favoritesLayout);
+  const featured = await listProducts({ featured: true, limit: favoritesLimit(layout) });
   const hero = typeof home.heroImage === "object" ? home.heroImage : null;
 
   return (
@@ -60,11 +68,19 @@ export default async function HomePage() {
           <h2 id="favorites" className="mb-6 text-center text-2xl">
             Shop favorites
           </h2>
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-5">
-            {featured.map((p) => (
-              <ProductCard key={p.id} product={p} />
-            ))}
-          </ul>
+          {layout === "slider" ? (
+            <FavoritesSlider count={featured.length}>
+              {featured.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </FavoritesSlider>
+          ) : (
+            <ul className={`grid grid-cols-[repeat(auto-fit,minmax(min(10rem,100%),1fr))] gap-3 sm:grid-cols-2 sm:gap-5 ${GRID[layout]}`}>
+              {featured.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </ul>
+          )}
           <p className="mt-6 flex flex-wrap justify-center gap-6">
             <Link href="/shop" className="caps text-[0.75rem] text-gold-text">
               See the whole shop

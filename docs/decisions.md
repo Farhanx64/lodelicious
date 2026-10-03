@@ -254,6 +254,30 @@ the drawn awning, and the board's middle row is not used.
   photos of her shop, so the aim is for Lody to replace them with her own photos.
 - Home page → "Top photo" is optional: an uploaded and approved shop photo replaces the drawn awning.
 
+## D33 — Shop Favorites layout is Lody's choice; slider by default (2026-10-04)
+
+The project lead didn't like the 4-across grid, where a 5th product sits alone on a second row.
+/admin → Home page → "Shop Favorites layout" offers three layouts:
+
+| Layout | Products shown |
+| --- | --- |
+| **Slider** (default) | up to 12 |
+| **2 × 2 grid** | 4 |
+| **3 across × 2 rows** | 6 |
+
+On phones the grids show two columns, or one when text is enlarged.
+
+The slider auto-plays at the project lead's request: it advances one card every 5 s and loops.
+WCAG 2.2.2 requires that movement can be stopped, so:
+- it has a Pause/Play button
+- it holds still while hovered or while anything in it has keyboard focus, and while the tab is
+  hidden
+- it never auto-plays for people who prefer reduced motion
+- pressing an arrow pauses it until Play is pressed
+
+Swipe and trackpad scrolling use native scroll-snap. When the cards don't overflow, the controls are
+not rendered at all.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

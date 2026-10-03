@@ -36,7 +36,7 @@ export function ProductCard({ product }: { product: Product }) {
             </Link>
           </h3>
           {product.sizeLabel && <p className="text-sm text-ink-soft">{product.sizeLabel}</p>}
-          <div className="mt-auto flex items-baseline justify-between gap-2 pt-2">
+          <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-2 pt-2">
             {price ? <p className="text-lg font-semibold text-gold-text">{price}</p> : <p className="text-sm text-ink-soft">Price on request</p>}
             <AvailabilityNote product={product} />
           </div>
