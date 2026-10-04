@@ -32,3 +32,103 @@ price was supplied. They remain in **Source records** (unreviewed) for Lody to d
 
 ⚠ = Clover or the screenshot shows a different price: if the in-store Clover price is still
 correct, the website will disagree with the register until one of them is updated.
+
+# Clover inventory export (2026-09-30)
+
+Lody's export `inventory-export-v2.xlsx` (SHA-256 `f52a00d7e405824db8f6cda9f827a9cbba1f4f38742ce093f7a53cdbfa0b70d2`)
+is recorded row-for-row as `data/source/clover-export-2026-09-30.csv` (refs X001–X105). Lody's rule
+(D25): **the Clover price is correct**.
+
+What the export does **not** contain:
+
+- **Stock counts: the Quantity column is empty for all 105 items.** Stock tracking is off or no
+  counts have been entered, so nothing can become purchasable from this file.
+- SKUs (none) and product codes (one item, Teddy Bear "013"). Products match Clover by Clover ID.
+
+## Website products → Clover
+
+| Website product | Clover item (ref) | Clover | Website now | Note |
+| --- | --- | --- | --- | --- |
+| Phillips Dark Chocolate Bar | Philips Chocolate Bar (X015) | 4.25 | 4.25 | ⚠ shares one Clover item with the Milk bar |
+| Phillips Milk Chocolate Bar | Philips Chocolate Bar (X015) | 4.25 | 4.25 | ⚠ same; split in Clover to track stock separately |
+| Phillips S'mores Bar | S'mores Bar (X024) | 4.25 | 4.25 | |
+| Phillips Princess Assortment Box | Princess Assortment (X014) | 30.95 | 30.95 | ⚠ window and classic styles share one Clover item |
+| Milk Chocolate Covered Raisins | Milk Chocolate Raisins (X046) | 9.95 | 9.95 | |
+| Chocolate Covered Gummy Bears | chocolate covered gummy bears (X073) | 9.95 | 9.95 | |
+| Phillips Turtle Fudge | Turtles Fudge (X008) | 12.45 | 12.45 | |
+| Turtles 9pc Assortment Box | Turtles Box (X012) | 27.95 | 27.95 | |
+| Peanut Butter Bark | Peanut Butter Bark (X053) | 8.75 | 8.75 | |
+| Sea Salt Chocolate Caramels (9 pc) | Sea Salt Caramels (X001) | 20.95 | 20.95 | |
+| Swedish Candy Bag | Swedish Candy (X011) | 14.95 | 14.95 | |
+| 10 Pieces Mini Pancakes | 10 Piece Pancakes (X069) | 10.00 | 10.00 | |
+| Dr. Seuss Book | Dr Suess Books (X035) | 6.25 | **6.25** | was 7.95 (card) |
+| Greeting Cards | Cards (X063) | 2.95 | **2.95** | was 3.95 (card) |
+| Teddy Bear | Teddy Bear (X039) 10.95 **or** Teddy Bear Vintage Collection (X040) 14.95 | ? | 14.95 | ⚠ not linked: which one is on the card? |
+| Baby ceramic bowl / shoes / block | — | — | 14.95 / 19.95 / 14.95 | ⚠ not in Clover; add to sync stock |
+| Cape Cod fudges (4, drafts) | — (maybe "sea salt caramel fudge" X074?) | — | unpriced | ⚠ not in Clover by name |
+| White wicker bassinet (Baby White) | — | — | in presentation price | ⚠ not in Clover |
+
+## Added from the export (D29): 49 products, Clover price, no photo, not in custom gifts yet
+
+- **Phillips (chocolate):**
+  - Turtles Bars 10.95 (X013, P09)
+  - Hash Bar 12.95 (X016)
+  - Chocolate Pretzels (2 pc) 4.75 (X054, P18)
+  - Chocolate Pretzels 7.95 (X076, P17)
+  - Sugar-Free Theatre Box 16.95 (X057)
+  - Vegan Bark 17.95 (X064, P11)
+  - Chocolate Covered Cherries 32.95 (X096, P16)
+- **Chocolate:**
+  - Dark Chocolate Sea Salt 24.95 (X059; Clover name "(Nut Free)", not repeated as a claim)
+  - Chocolate Covered Almonds 9.95 (X045)
+  - Dark Chocolate Covered Almonds 9.99 (X103, P05, D11)
+  - Chocolate Covered Cashews 12.95 (X101)
+  - Chocolate Covered Blueberries 11.95 (X102)
+  - Dark Chocolate Covered Coffee Beans 12.95 (X104)
+  - Chocolate Almond Clusters 2.50 (X075)
+  - Dark Chocolate Sea Salt Caramel 9.99 (X098)
+  - Milk Chocolate Sea Salt Caramel 9.99 (X099)
+  - Molasses Chips 7.45 (X105)
+  - Chocolate Rose 4.99 (X079)
+  - Mini Dubai Chocolate Bar 5.95 (X086)
+  - Swiss Chocolate Bar 7.95 (X080)
+  - Toblerone 3.69 (X097)
+  - Cranberry Chocolate Bar 5.50 (X052)
+- **Fudge:** Sea Salt Caramel Fudge 10.95 (X074)
+- **Candy:**
+  - Cranberry Bog Frogs 19.95 (X051)
+  - Salt Water Taffy 7.50 (X050)
+  - Sugar-Free Salt Water Taffy 8.25 (X081)
+  - Sugar-Free Mix 10.95 (X084)
+  - Small Sugar-Free Bag 5.45 (X085)
+  - Jordan Almonds — Small / Medium / Large 6.95 / 12.95 / 19.95 (X047–X049)
+  - Peelerz 4.45 (X056)
+  - Swedish Fish 3.75 (X031)
+  - Gummy Bears 3.75 (X032)
+  - Black Licorice 8.95 (X100)
+  - Sour Flush Candy 4.75 (X078)
+  - Flush Candy 3.50 (X082)
+  - Charleston Chew 3.85 (X036)
+  - Skybar 3.25 (X037)
+  - Golden Coin 1.00 (X010)
+  - Tic Tac 1.99 (X029)
+  - Lollipops 4.25 (X038)
+  - Mini Pop 1.00 (X055)
+  - Flower Pop 3.25 (X087)
+- **Fresh treats (perishable):** Baklava 3.95 (X009), Biscoff Cookie 1.99 (X068)
+- **Gift add-ons:** Pug Teddy 16.95 (X065), Blessed Teddy Bear 18.95 (X066), Little Brown Teddy 10.95 (X067)
+
+## Left out (still in Source records, for Lody)
+
+- **Coffee and drinks:**
+  - X017–X020, X022, X023, X077 (coffee)
+  - X041–X044 (drinks)
+- **Prepared and frozen:**
+  - Affogato X021
+  - Dubai cups X025, X026
+  - Gelato X027, X028 (PRD: gelato hidden)
+  - Ice-cream-truck items X088–X095
+  - Pancake flavours X070–X072 (could become options of the mini pancakes)
+- **Savory (Lody will name them later):** Focaccia Crisps X030, Smoked Almonds X033, Summer Sausage X058
+- **OMNIYA, until the Lebanese in-store-only question is settled:** X002–X007, X034, X060–X062, X083
+- **Already on the site:** Teddy Bear X039 / Teddy Bear Vintage Collection X040, pending the teddy question above

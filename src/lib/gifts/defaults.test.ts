@@ -52,6 +52,16 @@ describe("defaults", () => {
 describe("parseSettings", () => {
   const doc = () => JSON.parse(JSON.stringify(DEFAULT_GIFT_SETTINGS)) as Record<string, unknown> & typeof DEFAULT_GIFT_SETTINGS;
 
+  it("offers every size except Extra Large (D27)", () => {
+    expect(DEFAULT_GIFT_SETTINGS.sizes.filter((s) => !s.enabled).map((s) => s.code)).toEqual(["extra_large"]);
+  });
+
+  it("treats size rows saved before the switch existed as offered", () => {
+    const d = doc();
+    for (const s of d.sizes) delete (s as { enabled?: boolean }).enabled;
+    expect(parseSettings(d).sizes.every((s) => s.enabled)).toBe(true);
+  });
+
   it("round-trips the defaults", () => {
     expect(parseSettings(doc())).toEqual(DEFAULT_GIFT_SETTINGS);
   });
@@ -67,6 +77,7 @@ describe("parseSettings", () => {
     ["fractional packaging", (d: ReturnType<typeof doc>) => { d.sizes[0].packagingCents = 19.95; }, /packaging must be a whole number/],
     ["negative cap", (d: ReturnType<typeof doc>) => { d.sizes[1].premiumCap = -1; }, /premium maximum must be a whole number/],
     ["duplicate size", (d: ReturnType<typeof doc>) => { d.sizes[1].code = "small"; }, /only once/],
+    ["no size offered", (d: ReturnType<typeof doc>) => { for (const s of d.sizes) s.enabled = false; }, /at least one basket size/],
     ["unknown gift type", (d: ReturnType<typeof doc>) => { (d.countOverrides[0] as { giftType: string }).giftType = "birthday"; }, /gift type must be one of/],
     ["available without a price", (d: ReturnType<typeof doc>) => { d.specialPresentations[0].status = "available"; }, /set a price and premium maximum/],
     ["duplicate presentation", (d: ReturnType<typeof doc>) => { d.specialPresentations[3].code = "ceramic_bowl"; }, /special presentation may appear only once/],

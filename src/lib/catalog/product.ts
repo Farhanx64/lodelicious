@@ -5,7 +5,7 @@
 import type { Category, Product } from "@/payload-types";
 
 import type { BuilderProduct, GiftType, SpecialCode } from "../gifts/types";
-import { availabilityOf, type Availability } from "./availability";
+import { availabilityOf, onlineQuantity, type Availability } from "./availability";
 
 type Variant = NonNullable<Product["variants"]>[number];
 
@@ -31,6 +31,7 @@ function unitAvailability(product: Product, variant: Variant | null): Availabili
     stockState: (variant ?? product).stockState,
     stockQuantity: (variant ?? product).stockQuantity ?? null,
     lowStockThreshold: product.lowStockThreshold ?? null,
+    onlineReserve: product.onlineReserve ?? null,
   });
 }
 
@@ -90,7 +91,7 @@ export function toBuilderProducts(product: Product): BuilderProduct[] {
   };
   const stock = (s: { stockState: "known" | "unknown"; stockQuantity?: number | null }) =>
     s.stockState === "known" && s.stockQuantity !== null && s.stockQuantity !== undefined
-      ? ({ state: "known", quantity: s.stockQuantity } as const)
+      ? ({ state: "known", quantity: onlineQuantity(s.stockQuantity, product.onlineReserve ?? null) } as const)
       : ({ state: "unknown" } as const);
 
   return sellableUnits(product).map((unit) => {

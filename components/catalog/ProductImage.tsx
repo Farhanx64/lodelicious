@@ -21,7 +21,7 @@ export function ProductImage({
   const doc = typeof media === "object" ? media : null;
   if (!doc || !isImagePublishable(doc) || !doc.url) {
     return (
-      <div className={`flex aspect-square items-center justify-center bg-[#f1ebdd] text-sm text-ink-soft ${className}`}>
+      <div className={`flex aspect-square items-center justify-center bg-linen text-sm text-ink-soft ${className}`}>
         Photo coming soon
       </div>
     );

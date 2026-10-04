@@ -55,7 +55,7 @@ export default async function ProductPage({ params }: Props) {
 
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2">
         <div className="flex flex-col gap-3">
-          <ProductImage media={images[0]} size="large" priority className="w-full border border-line" />
+          <ProductImage media={images[0]} size="large" priority className="w-full border border-gold p-1.5" />
           {images.length > 1 && (
             <ul className="grid grid-cols-4 gap-2">
               {images.slice(1).map((m, i) => (

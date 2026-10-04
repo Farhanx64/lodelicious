@@ -2,17 +2,31 @@ import { describe, expect, it } from "vitest";
 
 import { CATALOG, PREMIUM, SPECIAL_CASES as X, plainItems, sel } from "@/tests/fixtures/gift-catalog";
 
-import { DEFAULT_GIFT_SETTINGS as SETTINGS } from "./defaults";
+import { DEFAULT_GIFT_SETTINGS } from "./defaults";
 import type { GiftRequest, GiftSettings, GiftType, SizeCode } from "./types";
 import { catalogOf, validateGift } from "./validate";
 
 const catalog = catalogOf(CATALOG);
+// The PRD rules for every size, including Extra Large, which is configured but switched off (D27).
+const SETTINGS: GiftSettings = { ...DEFAULT_GIFT_SETTINGS, sizes: DEFAULT_GIFT_SETTINGS.sizes.map((s) => ({ ...s, enabled: true })) };
 
 function custom(size: SizeCode, ids: string[], opts: { giftType?: GiftType; budgetCents?: number | null } = {}): GiftRequest {
   return { kind: "custom", size, giftType: opts.giftType ?? "sweet", budgetCents: opts.budgetCents ?? null, selections: sel(...ids) };
 }
 
 const codes = (r: ReturnType<typeof validateGift>) => r.violations.map((v) => v.code);
+
+describe("sizes that are switched off (D27)", () => {
+  it("refuses an Extra Large basket while it isn't offered, however it is filled", () => {
+    const r = validateGift(custom("extra_large", plainItems(18)), DEFAULT_GIFT_SETTINGS, catalog);
+    expect(codes(r)).toContain("SIZE_UNAVAILABLE");
+    expect(r).toMatchObject({ valid: false, complete: false });
+  });
+
+  it("accepts the offered sizes", () => {
+    expect(validateGift(custom("small", plainItems(6)), DEFAULT_GIFT_SETTINGS, catalog).complete).toBe(true);
+  });
+});
 
 describe("item counts (AC 02)", () => {
   it.each([

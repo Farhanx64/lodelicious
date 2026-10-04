@@ -31,6 +31,7 @@ export function validateGift(request: GiftRequest, settings: GiftSettings, catal
 
   if (request.kind === "custom") {
     const rule = sizeRule(settings, request.size);
+    if (!rule.enabled) add({ code: "SIZE_UNAVAILABLE", message: `The ${rule.label} basket isn't offered right now. Please choose another size.` });
     countRange = resolveCountRange(settings, request.size, request.giftType);
     premiumCap = rule.premiumCap;
     capacity = rule.capacityUnits;

@@ -44,21 +44,50 @@ describe("catalog seed", () => {
     expect(first.products.created).toHaveLength(seed.products.length);
     expect(first.media.created).toHaveLength(seed.media.length);
     expect(first.presentationImages.sort()).toEqual(["baby_white", "ceramic_block", "ceramic_bowl", "ceramic_shoes"]);
+    expect(first.homePage).toEqual(["stripImages"]);
 
     const second = await seedCatalog(payload, seed, allergens, assetsDir);
     expect(second.products.created).toEqual([]);
     expect(second.media.created).toEqual([]);
     expect(second.presentationImages).toEqual([]);
+    expect(second.homePage).toEqual([]);
   });
 
   it("uses the owner card prices and allergen chart verbatim", async () => {
     const bar = await bySlug("phillips-dark-chocolate-bar");
     expect(bar).toMatchObject({ priceCents: 425, priceApproved: true, premium: true, nutFree: "not_guaranteed", vegan: "no" });
     expect(bar.allergenNotes).toBe("Contains milk/butterfat and soy; shared equipment with peanuts/tree nuts and other allergens.");
-    expect((bar.sourceRecords as { ref: string }[]).map((r) => r.ref).sort()).toEqual(["D09", "K01", "P03", "P13"]);
+    expect((bar.sourceRecords as { ref: string }[]).map((r) => r.ref).sort()).toEqual(["D09", "K01", "P03", "P13", "X015"]);
 
     // No allergen data supplied → stays unknown, never inferred from the name.
     expect(await bySlug("milk-chocolate-covered-raisins")).toMatchObject({ nutFree: "unknown", vegan: "unknown", priceCents: 995 });
+  });
+
+  it("links products to Clover by ID and uses Clover's price where it differs (D25)", async () => {
+    expect(await bySlug("phillips-dark-chocolate-bar")).toMatchObject({ cloverId: "J691E9GYAN1H6", priceCents: 425 });
+    expect(await bySlug("dr-seuss-book")).toMatchObject({ cloverId: "0BCEF88043TAW", priceCents: 625, priceApproved: true });
+    expect(await bySlug("greeting-cards")).toMatchObject({ cloverId: "99WHJCC2GE1G6", priceCents: 295 });
+    // Two Clover teddies ($10.95 and $14.95): not linked until Lody says which one the card shows.
+    expect(await bySlug("teddy-bear")).toMatchObject({ cloverId: null, priceCents: 1495 });
+  });
+
+  it("adds the other Clover sweets with Clover's price, no allergen claims, outside custom gifts", async () => {
+    const bark = await bySlug("phillips-vegan-bark");
+    expect(bark).toMatchObject({
+      cloverId: "2T1DTECBX4CV0",
+      priceCents: 1795,
+      priceApproved: true,
+      _status: "published",
+      // The name says vegan; the website still claims nothing until Lody's chart covers it.
+      vegan: "unknown",
+      nutFree: "unknown",
+      basketEligible: false,
+      onlineReserve: 1,
+      images: [],
+    });
+    expect((bark.sourceRecords as { ref: string }[]).map((r) => r.ref).sort()).toEqual(["P11", "X064"]);
+    // "(Nut Free)" in the Clover name is not repeated as a claim in the title.
+    expect((await bySlug("dark-chocolate-sea-salt")).title).toBe("Dark Chocolate Sea Salt");
   });
 
   it("keeps everything unpurchasable until stock is counted", async () => {
@@ -81,6 +110,35 @@ describe("catalog seed", () => {
     expect(publicView.docs).toEqual([]);
   });
 });
+
+describe("home page placeholder photos (D32)", () => {
+  it("fill the strip with the flower, truffle and gift-box crops, unapproved for launch", async () => {
+    const home = await payload.findGlobal({ slug: "home-page", depth: 1, overrideAccess: true });
+    const strip = (home.stripImages ?? []).map((row) => row.image as { sourceFile: string; approvedForLaunch: boolean; credit: string });
+    expect(strip.map((m) => m.sourceFile)).toEqual([
+      "moodboard/strip-1-hydrangea-vase.jpg",
+      "moodboard/strip-2-truffles.jpg",
+      "moodboard/strip-3-pink-bow-box.jpg",
+      "moodboard/strip-4-hydrangeas.jpg",
+      "moodboard/strip-5-blue-ribbon-boxes.jpg",
+    ]);
+    for (const m of strip) expect(m).toMatchObject({ approvedForLaunch: false, credit: expect.stringMatching(/AI-generated/) });
+    // The top keeps the drawn awning: no photo is seeded there.
+    expect(home.heroImage ?? null).toBeNull();
+    // Shop Favorites start as the slider (D33).
+    expect(home.favoritesLayout).toBe("slider");
+  });
+
+  it("leaves a strip staff have edited alone", async () => {
+    await payload.updateGlobal({ slug: "home-page", data: { stripImages: [{ image: (await anyMedia()).id }] }, user: manager, overrideAccess: false });
+    expect((await seedCatalog(payload, seed, allergens, assetsDir)).homePage).toEqual([]);
+    expect((await payload.findGlobal({ slug: "home-page", depth: 0, overrideAccess: true })).stripImages).toHaveLength(1);
+  });
+});
+
+async function anyMedia() {
+  return (await payload.find({ collection: "media", where: { sourceFile: { equals: "products/teddy-bear.jpg" } }, overrideAccess: true })).docs[0];
+}
 
 describe("editing products in /admin", () => {
   it("lets a manager change a price, audited, and a re-seed never reverts it", async () => {

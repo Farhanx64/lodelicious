@@ -16,3 +16,8 @@ export function isStaging(): boolean {
 }
 
 export { isImagePublishable } from "./media";
+
+export async function getHomePage() {
+  const payload = await getPayload({ config });
+  return payload.findGlobal({ slug: "home-page", depth: 1 });
+}

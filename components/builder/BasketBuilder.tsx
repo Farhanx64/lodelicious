@@ -8,6 +8,7 @@ import {
   assessFeasibility,
   catalogOf,
   checkForPicker,
+  offeredSizes,
   resolveBasketSize,
   resolveCountRange,
   validateGift,
@@ -39,7 +40,8 @@ type Props = {
 export function BasketBuilder({ settings, products, display, budgetNotice, previewStock, phone, phoneHref }: Props) {
   const ids = useId();
   const [giftType, setGiftType] = useState<GiftType>("sweet");
-  const [size, setSize] = useState<SizeCode>("medium");
+  const sizes = offeredSizes(settings);
+  const [size, setSize] = useState<SizeCode>(() => (sizes.find((s) => s.code === "medium") ?? sizes[0]).code);
   const [budgetText, setBudgetText] = useState("");
   const [chosen, setChosen] = useState<Record<string, number>>({});
   const [category, setCategory] = useState("");
@@ -107,7 +109,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
     <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="flex flex-col gap-10">
         {previewStock && (
-          <p role="note" className="border border-[#e0c46c] bg-[#fff3cd] p-4 text-[#4a3b00]">
+          <p role="note" className="border border-gold bg-blush p-4 text-ink">
             Preview: stock hasn&rsquo;t been counted yet, so every item is shown as available for you to try the builder.
           </p>
         )}
@@ -116,7 +118,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
           <legend className="mb-3 font-display text-2xl">1. What kind of gift?</legend>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(12rem,100%),1fr))] gap-3">
             {GIFT_TYPE_OPTIONS.map((o) => (
-              <label key={o.value} className={`flex cursor-pointer gap-3 border p-4 ${giftType === o.value ? "border-ink bg-paper" : "border-line bg-paper/60"}`}>
+              <label key={o.value} className={`flex cursor-pointer gap-3 border p-4 ${giftType === o.value ? "border-gold-text bg-paper ring-1 ring-gold-text" : "border-gold bg-paper/60"}`}>
                 <input
                   type="radio"
                   name={`${ids}-type`}
@@ -126,7 +128,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                     setGiftType(o.value);
                     setServerResult(null);
                   }}
-                  className="mt-1 size-5 accent-ink"
+                  className="mt-1 size-5 accent-gold-text"
                 />
                 <span>
                   <span className="block font-semibold">{o.label}</span>
@@ -140,11 +142,11 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         <fieldset>
           <legend className="mb-3 font-display text-2xl">2. Choose a size</legend>
           <div className="grid grid-cols-[repeat(auto-fit,minmax(min(12rem,100%),1fr))] gap-3">
-            {settings.sizes.map((s) => {
+            {sizes.map((s) => {
               const range = resolveCountRange(settings, s.code, giftType);
               const basketSize = resolveBasketSize(settings, s.code, giftType);
               return (
-                <label key={s.code} className={`flex cursor-pointer gap-3 border p-4 ${size === s.code ? "border-ink bg-paper" : "border-line bg-paper/60"}`}>
+                <label key={s.code} className={`flex cursor-pointer gap-3 border p-4 ${size === s.code ? "border-gold-text bg-paper ring-1 ring-gold-text" : "border-gold bg-paper/60"}`}>
                   <input
                     type="radio"
                     name={`${ids}-size`}
@@ -154,7 +156,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                       setSize(s.code);
                       setServerResult(null);
                     }}
-                    className="mt-1 size-5 accent-ink"
+                    className="mt-1 size-5 accent-gold-text"
                   />
                   <span>
                     <span className="block font-semibold">{s.label}</span>
@@ -243,7 +245,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                 type="button"
                 aria-pressed={category === c}
                 onClick={() => setCategory(c)}
-                className={`min-h-11 border px-4 ${category === c ? "border-ink bg-ink text-cream" : "border-line bg-paper"}`}
+                className={`min-h-11 border px-4 ${category === c ? "border-gold-text bg-gold-text text-cream" : "border-line bg-paper"}`}
               >
                 {c || "All"}
               </button>
@@ -256,12 +258,12 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
               {pickerItems.map(({ d, product, status }) => {
                 const quantity = chosen[d.id] ?? 0;
                 return (
-                  <li key={d.id} className={`flex flex-col border bg-paper ${quantity ? "border-ink" : "border-line"}`}>
+                  <li key={d.id} className={`flex flex-col border bg-paper p-1 ${quantity ? "border-gold-text ring-1 ring-gold-text" : "border-gold"}`}>
                     {d.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- Payload's pre-sized thumbnail
                       <img src={d.imageUrl} alt={d.imageAlt} loading="lazy" className="aspect-[4/3] w-full bg-white object-contain" />
                     ) : (
-                      <div className="flex aspect-[4/3] items-center justify-center bg-[#f1ebdd] text-sm text-ink-soft">Photo coming soon</div>
+                      <div className="flex aspect-[4/3] items-center justify-center bg-linen text-sm text-ink-soft">Photo coming soon</div>
                     )}
                     <div className="flex flex-1 flex-col gap-1 p-3">
                       <p className="font-semibold leading-snug">{d.title}</p>
@@ -273,7 +275,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                       {!status.eligible && quantity === 0 && <p className="text-sm text-ink-soft">{status.message}</p>}
                       <div className="flex items-center gap-2 pt-1">
                         {quantity > 0 && (
-                          <button type="button" onClick={() => change(d.id, -1)} className="min-h-11 flex-1 border border-ink px-3" aria-label={`Remove ${d.title}`}>
+                          <button type="button" onClick={() => change(d.id, -1)} className="min-h-11 flex-1 border border-gold-text px-3" aria-label={`Remove ${d.title}`}>
                             Remove
                           </button>
                         )}
@@ -286,7 +288,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                             type="button"
                             onClick={() => change(d.id, 1)}
                             disabled={!status.eligible}
-                            className="min-h-11 flex-1 bg-ink px-3 text-cream disabled:cursor-not-allowed disabled:bg-[#bdb6a8] disabled:text-ink"
+                            className="min-h-11 flex-1 bg-gold-text px-3 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
                             aria-label={quantity > 0 ? `Add another ${d.title}` : `Add ${d.title}`}
                           >
                             {quantity > 0 ? `Add another (${quantity})` : "Add"}
@@ -401,7 +403,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
           type="button"
           disabled={!result.complete || checking}
           onClick={() => startCheck(async () => setServerResult(await checkBasket(request)))}
-          className="min-h-11 w-full bg-ink px-4 text-cream disabled:cursor-not-allowed disabled:bg-[#bdb6a8] disabled:text-ink"
+          className="min-h-11 w-full bg-gold-text px-4 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
         >
           {checking ? "Checking…" : "Review my basket"}
         </button>

@@ -23,7 +23,7 @@
       "slug": "fresh-treats",
       "name": "Fresh treats",
       "sortOrder": 40,
-      "description": "Freshly made treats for pickup and local delivery."
+      "description": "Freshly made treats for pickup in our shop."
     },
     {
       "slug": "baby-gifts",
@@ -182,6 +182,36 @@
       "alt": "Blue and white ceramic gingham block that spells BABY",
       "credit": "Supplier catalog image (cropped) — staging only",
       "approvedForLaunch": false
+    },
+    {
+      "file": "moodboard/strip-1-hydrangea-vase.jpg",
+      "alt": "Blue and white hydrangeas in a blue-and-white porcelain vase",
+      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "moodboard/strip-2-truffles.jpg",
+      "alt": "Assorted chocolate truffles with pink and gold decoration",
+      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "moodboard/strip-3-pink-bow-box.jpg",
+      "alt": "White gift box tied with a pink satin bow",
+      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "moodboard/strip-4-hydrangeas.jpg",
+      "alt": "White and blue hydrangeas",
+      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "moodboard/strip-5-blue-ribbon-boxes.jpg",
+      "alt": "Ivory gift boxes tied with pale blue ribbon",
+      "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
+      "approvedForLaunch": false
     }
   ],
   "products": [
@@ -208,9 +238,11 @@
         "K01",
         "P03",
         "P13",
-        "D09"
+        "D09",
+        "X015"
       ],
-      "featured": true
+      "featured": true,
+      "cloverId": "J691E9GYAN1H6"
     },
     {
       "slug": "phillips-milk-chocolate-bar",
@@ -235,8 +267,10 @@
         "K02",
         "P02",
         "P13",
-        "D08"
-      ]
+        "D08",
+        "X015"
+      ],
+      "cloverId": "J691E9GYAN1H6"
     },
     {
       "slug": "phillips-smores-bar",
@@ -261,9 +295,11 @@
         "K03",
         "P01",
         "P15",
-        "D07"
+        "D07",
+        "X024"
       ],
-      "featured": true
+      "featured": true,
+      "cloverId": "35V99XD1DVH4P"
     },
     {
       "slug": "phillips-princess-assortment-box",
@@ -298,9 +334,11 @@
       "allergen": "Phillips Chocolate Princess Assortment Box",
       "sources": [
         "K04",
-        "P04"
+        "P04",
+        "X014"
       ],
-      "featured": true
+      "featured": true,
+      "cloverId": "4GXSMCE3RM9V4"
     },
     {
       "slug": "milk-chocolate-covered-raisins",
@@ -323,8 +361,10 @@
       "sources": [
         "K05",
         "P08",
-        "D12"
-      ]
+        "D12",
+        "X046"
+      ],
+      "cloverId": "6F1Y80EV6F6XT"
     },
     {
       "slug": "chocolate-covered-gummy-bears",
@@ -345,8 +385,10 @@
       "sources": [
         "K06",
         "P19",
-        "D10"
-      ]
+        "D10",
+        "X073"
+      ],
+      "cloverId": "R4QJQZ1SWFW92"
     },
     {
       "slug": "phillips-turtle-fudge",
@@ -370,8 +412,10 @@
       "allergen": "Phillips Chocolate Covered Turtle Fudge",
       "sources": [
         "K07",
-        "P06"
-      ]
+        "P06",
+        "X008"
+      ],
+      "cloverId": "5X840BE752PR8"
     },
     {
       "slug": "phillips-turtles-9pc-assortment-box",
@@ -397,9 +441,11 @@
       "sources": [
         "K08",
         "P09",
-        "P10"
+        "P10",
+        "X012"
       ],
-      "featured": true
+      "featured": true,
+      "cloverId": "JBGM3Y25XJRHM"
     },
     {
       "slug": "phillips-peanut-butter-bark",
@@ -423,8 +469,10 @@
       "allergen": "Peanut Butter Bark",
       "sources": [
         "K09",
-        "P12"
-      ]
+        "P12",
+        "X053"
+      ],
+      "cloverId": "BK6S2VBN4M1CT"
     },
     {
       "slug": "phillips-sea-salt-caramels-9pc",
@@ -449,8 +497,10 @@
       "allergen": "9 Pack Sea Salt Caramels",
       "sources": [
         "K10",
-        "P07"
-      ]
+        "P07",
+        "X001"
+      ],
+      "cloverId": "8NSZ8VQCNDF0M"
     },
     {
       "slug": "swedish-candy-bag",
@@ -472,9 +522,11 @@
       ],
       "sources": [
         "K11",
-        "D06"
+        "D06",
+        "X011"
       ],
-      "featured": true
+      "featured": true,
+      "cloverId": "AVSBF2QHN5308"
     },
     {
       "slug": "mini-pancakes-10pc",
@@ -494,8 +546,10 @@
       "sources": [
         "K12",
         "C01",
-        "D03"
-      ]
+        "D03",
+        "X069"
+      ],
+      "cloverId": "VY4G8XDHF3TBE"
     },
     {
       "slug": "teddy-bear",
@@ -522,8 +576,8 @@
       "slug": "dr-seuss-book",
       "title": "Dr. Seuss Book",
       "category": "gift-add-ons",
-      "priceCents": 795,
-      "priceSource": "Owner product card 2026-09-26 (K14)",
+      "priceCents": 625,
+      "priceSource": "Clover inventory export 2026-09-30 (X035); was Owner product card 2026-09-26 (K14)",
       "shortDescription": "A fun Dr. Seuss children's book, perfect for adding a thoughtful and playful touch to a child's gift basket. Selection may vary based on the theme.",
       "images": [
         "products/dr-seuss-book.jpg"
@@ -536,15 +590,17 @@
       ],
       "sources": [
         "K14",
-        "C04"
-      ]
+        "C04",
+        "X035"
+      ],
+      "cloverId": "0BCEF88043TAW"
     },
     {
       "slug": "greeting-cards",
       "title": "Greeting Cards",
       "category": "gift-add-ons",
-      "priceCents": 395,
-      "priceSource": "Owner product card 2026-09-26 (K15)",
+      "priceCents": 295,
+      "priceSource": "Clover inventory export 2026-09-30 (X063); was Owner product card 2026-09-26 (K15)",
       "shortDescription": "A selection of cards available for different occasions and celebrations, perfect for adding a personal message to any gift.",
       "images": [
         "products/greeting-cards.jpg"
@@ -552,8 +608,10 @@
       "basketEligible": false,
       "sources": [
         "K15",
-        "C03"
-      ]
+        "C03",
+        "X063"
+      ],
+      "cloverId": "99WHJCC2GE1G6"
     },
     {
       "slug": "baby-ceramic-bowl",
@@ -711,6 +769,582 @@
         "sympathy"
       ],
       "allergen": "Pistachio"
+    },
+    {
+      "slug": "phillips-turtles-bars",
+      "title": "Turtles Bars",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 1095,
+      "priceSource": "Clover inventory export 2026-09-30 (X013)",
+      "cloverId": "Y9CX100BFQZ20",
+      "premium": true,
+      "sources": [
+        "X013",
+        "P09"
+      ]
+    },
+    {
+      "slug": "phillips-hash-bar",
+      "title": "Hash Bar",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 1295,
+      "priceSource": "Clover inventory export 2026-09-30 (X016)",
+      "cloverId": "5ZEM4H09K7RV2",
+      "premium": true,
+      "sources": [
+        "X016"
+      ]
+    },
+    {
+      "slug": "phillips-chocolate-pretzels-2pc",
+      "title": "Chocolate Pretzels (2 pc)",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 475,
+      "priceSource": "Clover inventory export 2026-09-30 (X054)",
+      "cloverId": "7B9F8DVHC2NQC",
+      "premium": true,
+      "sources": [
+        "X054",
+        "P18"
+      ]
+    },
+    {
+      "slug": "phillips-chocolate-pretzels",
+      "title": "Chocolate Pretzels",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 795,
+      "priceSource": "Clover inventory export 2026-09-30 (X076)",
+      "cloverId": "ZYJZ1QP57NH96",
+      "premium": true,
+      "sources": [
+        "X076",
+        "P17"
+      ]
+    },
+    {
+      "slug": "phillips-sugar-free-theatre-box",
+      "title": "Sugar-Free Theatre Box",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 1695,
+      "priceSource": "Clover inventory export 2026-09-30 (X057)",
+      "cloverId": "M6DPSJKEDCM74",
+      "premium": true,
+      "sources": [
+        "X057"
+      ]
+    },
+    {
+      "slug": "phillips-vegan-bark",
+      "title": "Vegan Bark",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 1795,
+      "priceSource": "Clover inventory export 2026-09-30 (X064)",
+      "cloverId": "2T1DTECBX4CV0",
+      "premium": true,
+      "sources": [
+        "X064",
+        "P11"
+      ]
+    },
+    {
+      "slug": "phillips-chocolate-covered-cherries",
+      "title": "Chocolate Covered Cherries",
+      "category": "chocolate",
+      "brand": "Phillips Chocolates",
+      "priceCents": 3295,
+      "priceSource": "Clover inventory export 2026-09-30 (X096)",
+      "cloverId": "ZK3C8KKRTMGPG",
+      "premium": true,
+      "sources": [
+        "X096",
+        "P16"
+      ]
+    },
+    {
+      "slug": "dark-chocolate-sea-salt",
+      "title": "Dark Chocolate Sea Salt",
+      "category": "chocolate",
+      "priceCents": 2495,
+      "priceSource": "Clover inventory export 2026-09-30 (X059)",
+      "cloverId": "2HMMNG5C3VN2T",
+      "sources": [
+        "X059"
+      ]
+    },
+    {
+      "slug": "chocolate-covered-almonds",
+      "title": "Chocolate Covered Almonds",
+      "category": "chocolate",
+      "priceCents": 995,
+      "priceSource": "Clover inventory export 2026-09-30 (X045)",
+      "cloverId": "C4VT6J0MSJ690",
+      "sources": [
+        "X045"
+      ]
+    },
+    {
+      "slug": "dark-chocolate-covered-almonds",
+      "title": "Dark Chocolate Covered Almonds",
+      "category": "chocolate",
+      "priceCents": 999,
+      "priceSource": "Clover inventory export 2026-09-30 (X103)",
+      "cloverId": "NWQDE66RNNHME",
+      "sources": [
+        "X103",
+        "P05",
+        "D11"
+      ]
+    },
+    {
+      "slug": "chocolate-covered-cashews",
+      "title": "Chocolate Covered Cashews",
+      "category": "chocolate",
+      "priceCents": 1295,
+      "priceSource": "Clover inventory export 2026-09-30 (X101)",
+      "cloverId": "A3BGAG1JX88AC",
+      "sources": [
+        "X101"
+      ]
+    },
+    {
+      "slug": "chocolate-covered-blueberries",
+      "title": "Chocolate Covered Blueberries",
+      "category": "chocolate",
+      "priceCents": 1195,
+      "priceSource": "Clover inventory export 2026-09-30 (X102)",
+      "cloverId": "5VZ80A52CC7GR",
+      "sources": [
+        "X102"
+      ]
+    },
+    {
+      "slug": "dark-chocolate-covered-coffee-beans",
+      "title": "Dark Chocolate Covered Coffee Beans",
+      "category": "chocolate",
+      "priceCents": 1295,
+      "priceSource": "Clover inventory export 2026-09-30 (X104)",
+      "cloverId": "VA9RCM3RS3K26",
+      "sources": [
+        "X104"
+      ]
+    },
+    {
+      "slug": "chocolate-almond-clusters",
+      "title": "Chocolate Almond Clusters",
+      "category": "chocolate",
+      "priceCents": 250,
+      "priceSource": "Clover inventory export 2026-09-30 (X075)",
+      "cloverId": "J8H3RS9GHFCAA",
+      "sources": [
+        "X075"
+      ]
+    },
+    {
+      "slug": "dark-chocolate-sea-salt-caramel",
+      "title": "Dark Chocolate Sea Salt Caramel",
+      "category": "chocolate",
+      "priceCents": 999,
+      "priceSource": "Clover inventory export 2026-09-30 (X098)",
+      "cloverId": "66B5GTPZ2X51J",
+      "sources": [
+        "X098"
+      ]
+    },
+    {
+      "slug": "milk-chocolate-sea-salt-caramel",
+      "title": "Milk Chocolate Sea Salt Caramel",
+      "category": "chocolate",
+      "priceCents": 999,
+      "priceSource": "Clover inventory export 2026-09-30 (X099)",
+      "cloverId": "YFWW0R3AQ188W",
+      "sources": [
+        "X099"
+      ]
+    },
+    {
+      "slug": "molasses-chips",
+      "title": "Molasses Chips",
+      "category": "chocolate",
+      "priceCents": 745,
+      "priceSource": "Clover inventory export 2026-09-30 (X105)",
+      "cloverId": "MNCMK522CQ0KM",
+      "sources": [
+        "X105"
+      ]
+    },
+    {
+      "slug": "chocolate-rose",
+      "title": "Chocolate Rose",
+      "category": "chocolate",
+      "priceCents": 499,
+      "priceSource": "Clover inventory export 2026-09-30 (X079)",
+      "cloverId": "QA56DF281RC5E",
+      "sources": [
+        "X079"
+      ]
+    },
+    {
+      "slug": "mini-dubai-chocolate-bar",
+      "title": "Mini Dubai Chocolate Bar",
+      "category": "chocolate",
+      "priceCents": 595,
+      "priceSource": "Clover inventory export 2026-09-30 (X086)",
+      "cloverId": "XV5JH5JRTQZQJ",
+      "sources": [
+        "X086"
+      ]
+    },
+    {
+      "slug": "swiss-chocolate-bar",
+      "title": "Swiss Chocolate Bar",
+      "category": "chocolate",
+      "priceCents": 795,
+      "priceSource": "Clover inventory export 2026-09-30 (X080)",
+      "cloverId": "9RR55VQ1G5QX0",
+      "sources": [
+        "X080"
+      ]
+    },
+    {
+      "slug": "toblerone",
+      "title": "Toblerone",
+      "category": "chocolate",
+      "brand": "Toblerone",
+      "priceCents": 369,
+      "priceSource": "Clover inventory export 2026-09-30 (X097)",
+      "cloverId": "597721W12N1GJ",
+      "sources": [
+        "X097"
+      ]
+    },
+    {
+      "slug": "cranberry-chocolate-bar",
+      "title": "Cranberry Chocolate Bar",
+      "category": "chocolate",
+      "priceCents": 550,
+      "priceSource": "Clover inventory export 2026-09-30 (X052)",
+      "cloverId": "8C3707GMTVYEY",
+      "sources": [
+        "X052"
+      ]
+    },
+    {
+      "slug": "sea-salt-caramel-fudge",
+      "title": "Sea Salt Caramel Fudge",
+      "category": "fudge",
+      "priceCents": 1095,
+      "priceSource": "Clover inventory export 2026-09-30 (X074)",
+      "cloverId": "WMDPKYW91TAQP",
+      "sources": [
+        "X074"
+      ]
+    },
+    {
+      "slug": "cranberry-bog-frogs",
+      "title": "Cranberry Bog Frogs",
+      "category": "candy",
+      "priceCents": 1995,
+      "priceSource": "Clover inventory export 2026-09-30 (X051)",
+      "cloverId": "YX99FBS491EKW",
+      "sources": [
+        "X051"
+      ]
+    },
+    {
+      "slug": "salt-water-taffy",
+      "title": "Salt Water Taffy",
+      "category": "candy",
+      "priceCents": 750,
+      "priceSource": "Clover inventory export 2026-09-30 (X050)",
+      "cloverId": "KWB91FQK67RT4",
+      "sources": [
+        "X050"
+      ]
+    },
+    {
+      "slug": "sugar-free-salt-water-taffy",
+      "title": "Sugar-Free Salt Water Taffy",
+      "category": "candy",
+      "priceCents": 825,
+      "priceSource": "Clover inventory export 2026-09-30 (X081)",
+      "cloverId": "NWDNF0WE46FFR",
+      "sources": [
+        "X081"
+      ]
+    },
+    {
+      "slug": "sugar-free-mix",
+      "title": "Sugar-Free Mix",
+      "category": "candy",
+      "priceCents": 1095,
+      "priceSource": "Clover inventory export 2026-09-30 (X084)",
+      "cloverId": "80CV69WNZ4NQE",
+      "sources": [
+        "X084"
+      ]
+    },
+    {
+      "slug": "small-sugar-free-bag",
+      "title": "Small Sugar-Free Bag",
+      "category": "candy",
+      "priceCents": 545,
+      "priceSource": "Clover inventory export 2026-09-30 (X085)",
+      "cloverId": "V4MG3R2H5VEW4",
+      "sources": [
+        "X085"
+      ]
+    },
+    {
+      "slug": "jordan-almonds-small",
+      "title": "Jordan Almonds — Small",
+      "category": "candy",
+      "priceCents": 695,
+      "priceSource": "Clover inventory export 2026-09-30 (X047)",
+      "cloverId": "QVVC4416K76M6",
+      "sources": [
+        "X047"
+      ]
+    },
+    {
+      "slug": "jordan-almonds-medium",
+      "title": "Jordan Almonds — Medium",
+      "category": "candy",
+      "priceCents": 1295,
+      "priceSource": "Clover inventory export 2026-09-30 (X048)",
+      "cloverId": "NC5S0S1VV4QJA",
+      "sources": [
+        "X048"
+      ]
+    },
+    {
+      "slug": "jordan-almonds-large",
+      "title": "Jordan Almonds — Large",
+      "category": "candy",
+      "priceCents": 1995,
+      "priceSource": "Clover inventory export 2026-09-30 (X049)",
+      "cloverId": "4DV6K702AC51Y",
+      "sources": [
+        "X049"
+      ]
+    },
+    {
+      "slug": "peelerz",
+      "title": "Peelerz",
+      "category": "candy",
+      "priceCents": 445,
+      "priceSource": "Clover inventory export 2026-09-30 (X056)",
+      "cloverId": "05X6YE7NNK3QM",
+      "sources": [
+        "X056"
+      ]
+    },
+    {
+      "slug": "swedish-fish",
+      "title": "Swedish Fish",
+      "category": "candy",
+      "priceCents": 375,
+      "priceSource": "Clover inventory export 2026-09-30 (X031)",
+      "cloverId": "GSGZ348QSGQZE",
+      "sources": [
+        "X031"
+      ]
+    },
+    {
+      "slug": "gummy-bears",
+      "title": "Gummy Bears",
+      "category": "candy",
+      "priceCents": 375,
+      "priceSource": "Clover inventory export 2026-09-30 (X032)",
+      "cloverId": "HPYFV4SRKFJ4M",
+      "sources": [
+        "X032"
+      ]
+    },
+    {
+      "slug": "black-licorice",
+      "title": "Black Licorice",
+      "category": "candy",
+      "priceCents": 895,
+      "priceSource": "Clover inventory export 2026-09-30 (X100)",
+      "cloverId": "MKRYPXPP1WH4W",
+      "sources": [
+        "X100"
+      ]
+    },
+    {
+      "slug": "sour-flush-candy",
+      "title": "Sour Flush Candy",
+      "category": "candy",
+      "priceCents": 475,
+      "priceSource": "Clover inventory export 2026-09-30 (X078)",
+      "cloverId": "58Z5RDSPWWTXM",
+      "sources": [
+        "X078"
+      ]
+    },
+    {
+      "slug": "flush-candy",
+      "title": "Flush Candy",
+      "category": "candy",
+      "priceCents": 350,
+      "priceSource": "Clover inventory export 2026-09-30 (X082)",
+      "cloverId": "VHS9QS45YQJZT",
+      "sources": [
+        "X082"
+      ]
+    },
+    {
+      "slug": "charleston-chew",
+      "title": "Charleston Chew",
+      "category": "candy",
+      "brand": "Charleston Chew",
+      "priceCents": 385,
+      "priceSource": "Clover inventory export 2026-09-30 (X036)",
+      "cloverId": "FH0EPTXVE9CRG",
+      "sources": [
+        "X036"
+      ]
+    },
+    {
+      "slug": "skybar",
+      "title": "Skybar",
+      "category": "candy",
+      "brand": "Skybar",
+      "priceCents": 325,
+      "priceSource": "Clover inventory export 2026-09-30 (X037)",
+      "cloverId": "ZS3QG9E9GMPPR",
+      "sources": [
+        "X037"
+      ]
+    },
+    {
+      "slug": "golden-coin",
+      "title": "Golden Coin",
+      "category": "candy",
+      "priceCents": 100,
+      "priceSource": "Clover inventory export 2026-09-30 (X010)",
+      "cloverId": "MR4R4CR845W4W",
+      "sources": [
+        "X010"
+      ]
+    },
+    {
+      "slug": "tic-tac",
+      "title": "Tic Tac",
+      "category": "candy",
+      "brand": "Tic Tac",
+      "priceCents": 199,
+      "priceSource": "Clover inventory export 2026-09-30 (X029)",
+      "cloverId": "X1SFEMWXWX3AJ",
+      "sources": [
+        "X029"
+      ]
+    },
+    {
+      "slug": "lollipops",
+      "title": "Lollipops",
+      "category": "candy",
+      "priceCents": 425,
+      "priceSource": "Clover inventory export 2026-09-30 (X038)",
+      "cloverId": "DTH7MVVAH5P0A",
+      "sources": [
+        "X038"
+      ]
+    },
+    {
+      "slug": "mini-pop",
+      "title": "Mini Pop",
+      "category": "candy",
+      "priceCents": 100,
+      "priceSource": "Clover inventory export 2026-09-30 (X055)",
+      "cloverId": "RZH4SR4QFA44R",
+      "sources": [
+        "X055"
+      ]
+    },
+    {
+      "slug": "flower-pop",
+      "title": "Flower Pop",
+      "category": "candy",
+      "priceCents": 325,
+      "priceSource": "Clover inventory export 2026-09-30 (X087)",
+      "cloverId": "QM9A3Y90543FT",
+      "sources": [
+        "X087"
+      ]
+    },
+    {
+      "slug": "baklava",
+      "title": "Baklava",
+      "category": "fresh-treats",
+      "priceCents": 395,
+      "priceSource": "Clover inventory export 2026-09-30 (X009)",
+      "cloverId": "NBF2PB8PXDTPJ",
+      "perishable": true,
+      "sources": [
+        "X009"
+      ]
+    },
+    {
+      "slug": "biscoff-cookie",
+      "title": "Biscoff Cookie",
+      "category": "fresh-treats",
+      "priceCents": 199,
+      "priceSource": "Clover inventory export 2026-09-30 (X068)",
+      "cloverId": "0TNHX7YP7AB7P",
+      "perishable": true,
+      "sources": [
+        "X068"
+      ]
+    },
+    {
+      "slug": "pug-teddy",
+      "title": "Pug Teddy",
+      "category": "gift-add-ons",
+      "priceCents": 1695,
+      "priceSource": "Clover inventory export 2026-09-30 (X065)",
+      "cloverId": "4YS18CCZ8FACM",
+      "sources": [
+        "X065"
+      ]
+    },
+    {
+      "slug": "blessed-teddy-bear",
+      "title": "Blessed Teddy Bear",
+      "category": "gift-add-ons",
+      "priceCents": 1895,
+      "priceSource": "Clover inventory export 2026-09-30 (X066)",
+      "cloverId": "VAB88VFQNCMJT",
+      "sources": [
+        "X066"
+      ]
+    },
+    {
+      "slug": "little-brown-teddy",
+      "title": "Little Brown Teddy",
+      "category": "gift-add-ons",
+      "priceCents": 1095,
+      "priceSource": "Clover inventory export 2026-09-30 (X067)",
+      "cloverId": "FG1K4PP017F44",
+      "sources": [
+        "X067"
+      ]
     }
-  ]
+  ],
+  "homePage": {
+    "_comment": "Mood-board placeholders (D32): filled only into an empty photo strip; staging-only until approved.",
+    "stripImages": [
+      "moodboard/strip-1-hydrangea-vase.jpg",
+      "moodboard/strip-2-truffles.jpg",
+      "moodboard/strip-3-pink-bow-box.jpg",
+      "moodboard/strip-4-hydrangeas.jpg",
+      "moodboard/strip-5-blue-ribbon-boxes.jpg"
+    ]
+  }
 }

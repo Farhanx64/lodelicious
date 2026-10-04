@@ -14,10 +14,11 @@ import {
 } from "./types";
 
 export const DEFAULT_SIZES: SizeRule[] = [
-  { code: "small", label: "Small", minItems: 6, maxItems: 8, packagingCents: 1995, premiumCap: 1, basketSizeIn: "12", capacityUnits: null },
-  { code: "medium", label: "Medium", minItems: 10, maxItems: 12, packagingCents: 2495, premiumCap: 2, basketSizeIn: "14", capacityUnits: null },
-  { code: "large", label: "Large", minItems: 12, maxItems: 14, packagingCents: 2995, premiumCap: 3, basketSizeIn: "18", capacityUnits: null },
-  { code: "extra_large", label: "Extra large", minItems: 18, maxItems: 20, packagingCents: 3795, premiumCap: 4, basketSizeIn: "18–20", capacityUnits: null },
+  { code: "small", label: "Small", minItems: 6, maxItems: 8, packagingCents: 1995, premiumCap: 1, basketSizeIn: "12", capacityUnits: null, enabled: true },
+  { code: "medium", label: "Medium", minItems: 10, maxItems: 12, packagingCents: 2495, premiumCap: 2, basketSizeIn: "14", capacityUnits: null, enabled: true },
+  { code: "large", label: "Large", minItems: 12, maxItems: 14, packagingCents: 2995, premiumCap: 3, basketSizeIn: "18", capacityUnits: null, enabled: true },
+  // Off until there is enough variety to fill it well (Lody, 2026-09-30, D27).
+  { code: "extra_large", label: "Extra large", minItems: 18, maxItems: 20, packagingCents: 3795, premiumCap: 4, basketSizeIn: "18–20", capacityUnits: null, enabled: false },
 ];
 
 /** The chart's large sympathy basket is 13–16 items, an intentional exception (PRD AC 02). */
@@ -163,12 +164,15 @@ export function parseSettings(doc: Row): GiftSettings {
       premiumCap: count(r.premiumCap, `${where} premium maximum`),
       basketSizeIn: String(r.basketSizeIn ?? ""),
       capacityUnits: nullableCount(r.capacityUnits, `${where} capacity`),
+      // Rows saved before the switch existed were all offered.
+      enabled: r.enabled !== false,
     };
     range(rule.minItems, rule.maxItems, where);
     return rule;
   });
   const codes = sizes.map((s) => s.code);
   if (new Set(codes).size !== codes.length) throw new GiftSettingsError("Each basket size may appear only once");
+  if (!sizes.some((s) => s.enabled)) throw new GiftSettingsError("Offer at least one basket size");
 
   const countOverrides = rows(doc.countOverrides).map((r, i): CountOverride => {
     const where = `Count override ${i + 1}`;

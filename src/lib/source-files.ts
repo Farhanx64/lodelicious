@@ -11,6 +11,7 @@ export const SOURCE_FILES = [
   { file: "doordash-2026-09-25.csv", source: "doordash" },
   { file: "owner-product-cards-2026-09-26.csv", source: "owner_product_card" },
   { file: "supplied-baby-containers-2026-09-26.csv", source: "supplier_spec" },
+  { file: "clover-export-2026-09-30.csv", source: "clover_export" },
 ] as const;
 
 export function readSourceRows(dataDir = path.resolve(process.cwd(), "data/source")): SourceRow[] {

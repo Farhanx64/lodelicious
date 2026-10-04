@@ -24,6 +24,8 @@ export type SizeRule = {
   basketSizeIn: string;
   /** Total fit units the container holds; null = enforce counts only (products not measured). */
   capacityUnits: number | null;
+  /** Shown in the builder and accepted at checkout. Off = kept configured but not offered (D27). */
+  enabled: boolean;
 };
 
 /** Gift-type-specific count range, e.g. large sympathy 13–16 from the owner's chart. */
@@ -109,6 +111,7 @@ export type GiftRequest =
 
 export type ViolationCode =
   | "UNKNOWN_PRODUCT"
+  | "SIZE_UNAVAILABLE"
   | "INVALID_QUANTITY"
   | "NOT_ELIGIBLE"
   | "REPEAT_LIMIT"
