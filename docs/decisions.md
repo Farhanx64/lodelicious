@@ -278,6 +278,70 @@ WCAG 2.2.2 requires that movement can be stopped, so:
 Swipe and trackpad scrolling use native scroll-snap. When the cards don't overflow, the controls are
 not rendered at all.
 
+## D34 — Tax classes, unapproved until Lody confirms (2026-10-05)
+
+Tax comes from **Settings → Tax classes**: each class has a name, a rate in basis points
+(625 = 6.25%) and an "approved" tick. Products may name a class; others use the default class in
+**Checkout & reservations**, which also names the class for basket packaging.
+
+- Tax is rounded half-up per line.
+- The seed creates one class, Clover's 6.25% "Sales Tax", **unapproved**. Massachusetts generally
+  exempts food, so Lody must confirm which items are taxable.
+- While any class in a sale is unapproved, totals say "Estimated tax (to be confirmed)". A real
+  (non-test) payment provider will refuse to take orders until tax is approved (PRD: "no pending
+  policy becomes a silent checkout default").
+
+## D35 — Bag, checkout and orders; test payments only (2026-10-05)
+
+- **The bag:**
+  - It holds shop products only, in a server-side `carts` record that only the server can read.
+  - The browser has an httpOnly random token, not a price. Prices, availability, the in-store
+    reserve and tax are re-read at every view and at checkout.
+  - Unavailable lines block checkout; over-stock quantities are reduced with a note.
+- **Checkout:**
+  - Fields: contact details, a pickup time from admin-set pickup hours (slot length, hours of
+    notice, days ahead, closed dates) and notes.
+  - Pickup is the only method: local delivery is DoorDash (D28), and USPS comes with milestone 6.
+- **Orders:**
+  - An immutable snapshot of what was bought at what price, with separate payment status (pending,
+    paid, failed, refunded) and fulfillment status.
+  - A double submit is one order: the idempotency key is unique, and a simultaneous duplicate
+    returns the winner.
+  - Guest confirmation pages need a secret URL token; only its hash is stored.
+  - Staff can read orders and fulfillment staff can move them along. Only owner and manager can
+    change payment status (OPS 01). Snapshot fields are read-only for everyone.
+- **Payments:**
+  - A `PaymentProvider` interface. Only a **test provider** exists, and only outside production:
+    "Place test order", no money moves, and orders are flagged as test.
+  - Production has no provider, so ordering is closed with "call to order" until Clover is
+    connected with Lody's approval (milestone 6).
+- **Not yet:**
+  - stock reservations or decrements (milestone 5)
+  - order emails (no sending configured; logged instead)
+
+## D36 — Custom baskets are reservations with a deposit (2026-10-05)
+
+At the project lead's direction, Build a Basket is separate from the bag: a finished basket is
+**reserved**, and a deposit is paid up front.
+
+- **Admin settings** (Checkout & reservations → Basket deposits):
+  - percentage or flat amount
+  - the value (default 25%)
+  - whether customers may pay in full instead
+  - baskets' own hours of notice (default 48)
+- **Deposit maths:** the deposit is worked out on the basket total including tax, never more than
+  that total, and rounded half-up. The balance is due at pickup.
+- **Validation:** the basket is re-validated on the server with fresh prices and stock
+  (`validateGift`). It travels to the reservation form in a signed, short-lived cookie, so the
+  browser can't change it.
+- **Reservations tab:** /admin → Orders → Reservations holds:
+  - the basket snapshot and assembly instructions
+  - the gift message and requests
+  - deposit, paid and balance due
+  - payment and reservation statuses
+
+  Baskets with dietary or special requests start in "Needs staff review" (GFT 06).
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

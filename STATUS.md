@@ -27,6 +27,32 @@ in-house Clover sync (D10).
 - Storefront shell: black/cream/gold tokens (AA contrast), bundled OFL fonts, skip link, staging banner, footer from `store-settings`.
 - CI: install, types, typecheck, lint, tests, migration-on-empty-DB, build.
 
+## Milestone 4 — bag, checkout, basket reservations — 2026-10-05 (D34–D36)
+
+- **Shop products:**
+  - Product pages have "Add to bag".
+  - The bag (/cart) re-prices every time.
+  - Checkout takes contact details and a pickup time, then places a test order and shows a
+    confirmation page with a private link.
+  - /admin → Orders holds the immutable snapshots.
+- **Custom baskets:**
+  - "Reserve this basket" leads to /reserve, where the customer pays a deposit (or the full amount,
+    if allowed) and picks a pickup time.
+  - A confirmation page follows, and /admin → **Reservations** holds the assembly instructions,
+    deposit and balance due.
+  - Deposit type and value, pay-in-full and notice period are all set in /admin.
+- **Admin settings:**
+  - Tax classes; the seeded 6.25% is unapproved.
+  - Pickup hours, slot length, notice, days ahead and closed dates.
+- **Live site:** payments are test-only, so ordering is closed there until Clover is connected.
+  There is no stock movement yet (milestone 5) and no order emails yet.
+- **Checks:**
+  - 232 tests pass.
+  - The browser flow covers product → bag → checkout → confirmation, a wrong link → 404, and
+    builder → reserve → deposit → confirmation.
+  - The live site shows no order buttons.
+  - No overflow at 390 px or with 200% text.
+
 ## Shop Favorites layouts — 2026-10-04 (D33)
 
 - **Layout choice:** /admin → Home page lets Lody pick a slider (the default), a 2 × 2 grid or a
@@ -173,6 +199,7 @@ Screenshots (home shell since replaced by `m3-*`):
 - **Stock counts in Clover**: the export has none. Also: split the shared Phillips bar and Princess items, add the ceramics, bassinet and fudges to Clover, and say which teddy the card shows (`docs/clover-sync-needs.md`).
 - Clover API access for the in-house sync (inventory-only token Lody creates) — needed by milestone 5.
 - DoorDash page link for local delivery.
+- Which products are taxable and at what rate (tax classes, D34); pickup hours, notice periods and closed dates; basket deposit amount (D36).
 - "Our story" text for the footer, in her own words (Store settings).
 - Her own photos for the home-page photo strip (Home page settings), and acceptance of the gold-text contrast deviation (D31).
 - Photos, descriptions, allergen info and basket eligibility for the 49 products added from Clover.

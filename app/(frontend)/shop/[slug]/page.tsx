@@ -4,9 +4,12 @@ import { notFound } from "next/navigation";
 
 import { AvailabilityNote, formatPrice } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
+import { AddToBag, type BagOption } from "@/components/checkout/AddToBag";
 import type { Category, Media } from "@/payload-types";
 import { getProduct } from "@/src/lib/catalog/queries";
+import { previewStockEnabled } from "@/src/lib/catalog/preview";
 import { sellableUnits } from "@/src/lib/catalog/product";
+import { priceCart } from "@/src/lib/checkout/cart";
 import { formatCents } from "@/src/lib/money";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
@@ -31,6 +34,12 @@ export default async function ProductPage({ params }: Props) {
   const category = typeof product.category === "object" ? (product.category as Category) : null;
   const images = (product.images ?? []).map((i) => i.image as Media | number);
   const units = sellableUnits(product);
+  // Options that can go in the bag now (the bag re-checks everything at checkout).
+  const bagOptions: BagOption[] = priceCart(
+    units.map((u) => ({ unitId: u.id, quantity: 1 })),
+    [product],
+    { previewStock: previewStockEnabled(), taxClasses: [], defaultTaxClassId: null },
+  ).payable.map((l) => ({ unitId: l.unitId, label: l.optionLabel, priceCents: l.unitPriceCents }));
   const price = formatPrice(product);
   const dietary = [
     product.nutFree !== "unknown" ? NUT_FREE[product.nutFree] : null,
@@ -100,10 +109,14 @@ export default async function ProductPage({ params }: Props) {
             </section>
           )}
 
-          <p className="mb-8 border-l-4 border-gold bg-paper p-4">
-            Online ordering is being prepared. To order now, call{" "}
-            <a href={telHref(store.phone)}>{store.phone}</a> or visit us at {store.street}, {store.locality}.
-          </p>
+          {bagOptions.length > 0 ? (
+            <AddToBag options={bagOptions} />
+          ) : (
+            <p className="mb-8 border-l-4 border-gold bg-paper p-4">
+              Not available to order online right now. To order, call <a href={telHref(store.phone)}>{store.phone}</a> or visit us at {store.street},{" "}
+              {store.locality}.
+            </p>
+          )}
 
           <section aria-labelledby="allergens" className="border-t border-line pt-6">
             <h2 id="allergens" className="mb-2 text-xl">

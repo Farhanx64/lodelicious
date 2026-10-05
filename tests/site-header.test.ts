@@ -28,6 +28,13 @@ describe("SiteHeader", () => {
     }
   });
 
+  it("shows how many items are in the bag, spoken as part of the bag link", () => {
+    const withBag = renderToStaticMarkup(createElement(SiteHeader, { staging: false, storeName: "Souset-Pink", bagCount: 3 }));
+    expect(withBag).toContain('aria-label="Shopping bag, 3 items"');
+    expect(withBag).toMatch(/data-bag-count="true"[^>]*>3</);
+    expect(html).not.toContain("data-bag-count");
+  });
+
   it("hides the staging note in production", () => {
     expect(html).not.toContain("Staging preview");
   });

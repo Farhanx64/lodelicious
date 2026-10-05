@@ -51,6 +51,7 @@ export type SeedReport = {
   products: { created: string[]; existing: string[] };
   presentationImages: string[];
   homePage: string[];
+  taxClass: string | null;
 };
 
 type AllergenRow = { product: string; nut_free: string; vegan: string; notes: string; section: string };
@@ -96,6 +97,7 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
     products: { created: [], existing: [] },
     presentationImages: [],
     homePage: [],
+    taxClass: null,
   };
 
   const categoryIds = new Map<string, number | string>();
@@ -203,6 +205,29 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
   });
   if (changed) {
     await payload.updateGlobal({ slug: "gift-builder-settings", data: { specialPresentations }, overrideAccess: true });
+  }
+
+  // Starting tax class (D34): Clover's 6.25% "Sales Tax", NOT approved — Lody must confirm which
+  // products it applies to. Only created when no tax class exists, and only fills empty settings.
+  const taxClasses = await payload.find({ collection: "tax-classes", limit: 1, depth: 0, overrideAccess: true });
+  if (taxClasses.totalDocs === 0) {
+    const created = await payload.create({
+      collection: "tax-classes",
+      data: {
+        name: "Sales tax 6.25% (from Clover — to confirm)",
+        rateBasisPoints: 625,
+        approved: false,
+        notes: "Copied from Clover's default \"Sales Tax\" (inventory export 2026-09-30). Massachusetts generally exempts food; confirm which products are taxable before approving.",
+      },
+      overrideAccess: true,
+    });
+    report.taxClass = created.name;
+    const checkout = await payload.findGlobal({ slug: "checkout-settings", depth: 0, overrideAccess: true });
+    await payload.updateGlobal({
+      slug: "checkout-settings",
+      data: { defaultTaxClass: checkout.defaultTaxClass ?? created.id, packagingTaxClass: checkout.packagingTaxClass ?? created.id },
+      overrideAccess: true,
+    });
   }
 
   // Home page photos: fill each empty slot once; anything staff set in /admin is left alone.

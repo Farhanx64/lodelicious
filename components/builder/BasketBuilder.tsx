@@ -2,7 +2,7 @@
 
 import { useId, useMemo, useState, useTransition } from "react";
 
-import { checkBasket } from "@/app/(frontend)/build-a-basket/actions";
+import { checkBasket, startReservation } from "@/app/(frontend)/build-a-basket/actions";
 import type { BuilderDisplay } from "@/src/lib/catalog/builder-data";
 import {
   assessFeasibility,
@@ -48,6 +48,8 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
   const [message, setMessage] = useState("");
   const [requests, setRequests] = useState("");
   const [serverResult, setServerResult] = useState<GiftValidation | { error: string } | null>(null);
+  const [reserving, startReserve] = useTransition();
+  const [reserveError, setReserveError] = useState<string | null>(null);
   const [checking, startCheck] = useTransition();
 
   const catalog = useMemo(() => catalogOf(products), [products]);
@@ -411,10 +413,30 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         <div aria-live="polite">
           {serverResult && "error" in serverResult && <p className="mt-3 text-sm text-error">{serverResult.error}</p>}
           {serverResult && !("error" in serverResult) && serverResult.complete && (
-            <p className="mt-3 border-l-4 border-gold bg-cream p-3 text-sm">
-              Your basket checks out at <strong>{formatCents(serverResult.totals.totalCents)}</strong> before tax and delivery. Online checkout is coming
-              soon — call <a href={phoneHref}>{phone}</a> and we&rsquo;ll make it for you.
-            </p>
+            <div className="mt-3 border-l-4 border-gold bg-cream p-3 text-sm">
+              <p className="mb-3">
+                Your basket checks out at <strong>{formatCents(serverResult.totals.totalCents)}</strong> before tax. Baskets are made to order: reserve
+                yours with a deposit and pay the rest at pickup. Questions? Call <a href={phoneHref}>{phone}</a>.
+              </p>
+              <button
+                type="button"
+                disabled={reserving}
+                onClick={() =>
+                  startReserve(async () => {
+                    const r = await startReservation({ request, message, requests });
+                    if (r?.error) setReserveError(r.error);
+                  })
+                }
+                className="min-h-11 w-full bg-gold-text px-4 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
+              >
+                {reserving ? "One moment…" : "Reserve this basket"}
+              </button>
+              {reserveError && (
+                <p role="alert" className="mt-2 text-error">
+                  {reserveError}
+                </p>
+              )}
+            </div>
           )}
           {serverResult && !("error" in serverResult) && !serverResult.complete && (
             <ul className="mt-3 flex flex-col gap-1 text-sm text-error">
