@@ -70,16 +70,35 @@ export const ICONS = [
 
 const linkClass = "caps inline-flex min-h-11 items-center text-[0.78rem] text-nav no-underline hover:text-gold-text hover:underline";
 
-export function SiteHeader({ staging, storeName, tagline }: { staging: boolean; storeName: string; tagline?: string | null }) {
+export function SiteHeader({
+  staging,
+  storeName,
+  tagline,
+  bagCount = 0,
+}: {
+  staging: boolean;
+  storeName: string;
+  tagline?: string | null;
+  bagCount?: number;
+}) {
   const icons = (
     <ul className="flex flex-wrap items-center gap-1">
-      {ICONS.map((icon) => (
-        <li key={icon.href}>
-          <Link href={icon.href} aria-label={icon.label} className="inline-flex size-11 items-center justify-center text-gold-text hover:text-nav">
-            {icon.svg}
-          </Link>
-        </li>
-      ))}
+      {ICONS.map((icon) => {
+        const isBag = icon.href === "/cart";
+        const label = isBag && bagCount > 0 ? `${icon.label}, ${bagCount} item${bagCount === 1 ? "" : "s"}` : icon.label;
+        return (
+          <li key={icon.href}>
+            <Link href={icon.href} aria-label={label} className="relative inline-flex size-11 items-center justify-center text-gold-text hover:text-nav">
+              {icon.svg}
+              {isBag && bagCount > 0 && (
+                <span aria-hidden="true" data-bag-count className="absolute top-1 right-0 min-w-5 rounded-full bg-gold-text px-1 text-center text-[0.7rem] leading-5 text-paper">
+                  {bagCount}
+                </span>
+              )}
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 

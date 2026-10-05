@@ -291,6 +291,12 @@ export const Products: CollectionConfig = {
               ],
             },
             {
+              name: "taxClass",
+              type: "relationship",
+              relationTo: "tax-classes",
+              admin: { description: "Leave empty to use the default tax class (Settings → Checkout & reservations)." },
+            },
+            {
               name: "sourceRecords",
               type: "relationship",
               relationTo: "source-records",

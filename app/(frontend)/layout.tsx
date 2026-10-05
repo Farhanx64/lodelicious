@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "../globals.css";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { bagCount } from "@/src/lib/checkout/session";
 import { getStoreSettings, isStaging } from "@/src/lib/store";
 
 // Bundled OFL fonts (app/fonts/LICENSE.md): served from this site, no third-party requests,
@@ -44,7 +45,7 @@ export default async function FrontendLayout({ children }: Readonly<{ children: 
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <SiteHeader staging={staging} storeName={store.name} tagline={store.tagline} />
+        <SiteHeader staging={staging} storeName={store.name} tagline={store.tagline} bagCount={await bagCount()} />
         <main id="main" tabIndex={-1} className="flex-1 py-10">
           {children}
         </main>
