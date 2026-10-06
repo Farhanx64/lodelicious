@@ -17,13 +17,16 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 | `collections/`, `globals/` | Payload schema and access rules |
 | `src/lib/` | Framework-free logic (money in cents, CSV, system checks, audit diff, import) with unit tests |
 | `src/lib/gifts/` | Gift-builder rules engine: counts, packaging, premium caps, budget, repeats, stock, fit, special presentations |
+| `src/lib/checkout/` | Bag pricing, tax classes, basket deposits, pickup slots, and the order and reservation services (D34–D36) |
+| `src/lib/payments/` | Payment provider interface. Only a test provider exists, never in production, until Clover (milestone 6) |
+| `components/brand/`, `components/checkout/` | SOUSET-PINK lockup, bow and awning; bag, checkout and reservation UI |
 | `src/access/roles.ts` | Staff roles: owner (Lody), manager (Faisal), fulfillment |
 | `migrations/` | Database migrations — production never auto-pushes schema |
 | `data/source/` | Verbatim source evidence (Clover, price screenshot, DoorDash, owner product cards, allergen chart, supplier specs, basket chart) |
 | `data/catalog/catalog.json` | Starting catalog for `npm run seed:catalog` |
 | `data/assets/` | Logo master, product photos, product cards, supplier images (see its README) |
 | `scripts/` | `doctor.ts`, `check-migrations.ts`, `seed-source-records.ts`, `seed-catalog.ts` (run via `payload run`) |
-| `tests/` | Source-data guard tests and Payload integration tests |
+| `tests/` | Source-data guard tests, page-render tests and Payload integration tests (catalog, checkout, reservations, permissions) |
 | `server.js` | Passenger/LiteSpeed entry point (no top-level await — see comment) |
 
 ## Local development
@@ -63,6 +66,9 @@ npm run doctor           # this shell's runtime vs host requirements + DB reacha
 
 The web process can have different env/NODE_OPTIONS from SSH: log in to `/admin`, then open
 `/ops/system-check`.
+
+Orders and basket reservations are under /admin → Orders. Tax classes, pickup hours and basket
+deposits are under /admin → Settings → Checkout & reservations.
 
 ## Rules this codebase follows
 
