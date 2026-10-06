@@ -1,10 +1,79 @@
 # Project status
 
-Last updated: 2026-09-30 · Branch: `claude/sweet-meitner-2hnl84`
+Last updated: 2026-10-06 · `main` at 99362a3 (PR #4 merged, CI green)
 
 **Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
-(confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an
-in-house Clover sync (D10).
+(confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first
+WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-house Clover sync
+(D10). Storefront design: the SOUSET-PINK mood board (D31).
+
+## Where we left off
+
+**Built and merged:**
+- **Admin:**
+  - Every product, price, stock count, photo, basket rule, setting and order is editable in /admin.
+  - Staff roles: owner, manager and fulfillment.
+  - Changes are audited.
+- **Catalog:**
+  - 71 products, reconciled against Lody's cards and her Clover export.
+  - Clover's price wins (D25).
+  - Each product has an in-store reserve (D26).
+- **Storefront:**
+  - Pages: home, shop, product pages, Baby Gifts, Build a Basket, About.
+  - SOUSET-PINK design (D31).
+  - Mood-board placeholder photos, shown on staging only (D32).
+  - Shop Favorites layout choice (D33).
+- **Milestone 4:**
+  - Bag → checkout → order, for pickup only.
+  - Custom baskets are reserved with an admin-set deposit (D36).
+  - Admin Orders and Reservations tabs.
+  - Tax classes (D34).
+- **Checks:** 232 automated tests, plus browser-checked flows.
+
+**What a customer can do today:**
+- **Live site:** nothing can be bought yet, for three reasons:
+  1. Stock is uncounted, so every product shows "Currently unavailable".
+  2. There is no payment provider in production, so checkout and reservations show "call to order".
+  3. The only tax class (6.25% from Clover) is unapproved.
+- **Staging:** with `PREVIEW_ASSUME_STOCK=true`, staging treats stock as available. There,
+  checkout and basket reservations run end to end with a **test payment**, and no money moves.
+
+**Waiting on Lody** (details in "Unresolved inputs" below and `docs/clover-sync-needs.md`):
+1. **Clover stock:**
+   - Stock counts in Clover.
+   - Split the Dark/Milk bars and the two Princess box styles into separate Clover items.
+   - Add the ceramics, bassinet and fudges to Clover.
+   - Say which teddy the card shows.
+2. **Clover access:** an inventory-only API token for the sync (milestone 5). Later, the ecommerce
+   keys and her approval of Clover's fees (milestone 6).
+3. **Tax:** which items are taxable, and the rate.
+4. **Pickup and deposits:** pickup hours, notice periods, closed dates and the basket deposit
+   amount.
+5. **Store settings:** the DoorDash link and her "Our story" text.
+6. **Photos:** her own photos to replace the placeholders; photos and allergen info for the 49
+   products added from Clover.
+7. **Home page:** 8–12 Shop Favorites ticked.
+8. **Design:** acceptance of the gold-text contrast deviation (D31).
+
+**Next build, in recommended order:**
+1. **Finish milestone 3.** None of it needs inputs from Lody:
+   - Gift Baskets (curated baskets as products)
+   - Events (chocolate-fountain inquiry)
+   - Contact and policy pages
+   - An inquiry form for Baby White, Cowboy and filled ceramics
+2. **Milestone 5, inventory and the Clover sync:**
+   - component stock deductions
+   - holds during checkout
+   - an outbox to Clover
+   - scheduled stock reads
+
+   Needs Lody's counts and token.
+3. **Milestone 6, payments and shipping:**
+   - Clover payments, replacing the test provider behind `src/lib/payments`
+   - USPS rates
+   - order emails
+
+   Needs keys, fee approval and email sending.
 
 ## Milestones
 
@@ -12,10 +81,10 @@ in-house Clover sync (D10).
 | --- | --- | --- |
 | 1 | Project setup | **Done** (rebuilt on Payload) |
 | 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | **Done** |
-| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **In progress** — catalog, Shop, product pages, Baby Gifts, **Build a Basket** done; Gift Baskets, Events, About, Contact, policies next |
-| 4 | Cart, checkout, order snapshots, staff assembly views | Not started |
-| 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | Not started |
-| 6 | Clover embedded payments, USPS rates — fixture-tested until credentials exist | Not started |
+| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **Mostly done**: catalog, Shop, product pages, Baby Gifts, Build a Basket and About are built. Remaining: Gift Baskets, Events, Contact, policies, inquiry form |
+| 4 | Cart, checkout, order snapshots, staff assembly views | **Done (test payments)**: bag, checkout, orders, basket reservations with deposits (D34–D36) |
+| 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | Not started: needs Clover stock counts and an inventory-only token |
+| 6 | Clover embedded payments, USPS rates, fixture-tested until credentials exist | Not started: needs Clover ecommerce keys, fee approval, USPS credentials |
 
 ## Milestone 1 — completed
 
@@ -221,6 +290,14 @@ Screenshots (home shell since replaced by `m3-*`):
 
 ## Next concrete step
 
-Milestone 3 (part 3): curated Gift Baskets as products, Events (fountain inquiry), About, Contact
-and policy pages, and an inquiry form for Baby White / Cowboy / filled ceramics. Then milestone 4
-(cart, checkout, order snapshots) so a built basket can be added to a cart.
+Finish milestone 3. These need no inputs from Lody:
+- Gift Baskets: curated baskets as products.
+- Events: the chocolate-fountain inquiry.
+- Contact and policy pages.
+- An inquiry form for Baby White, Cowboy and filled ceramics.
+
+Then:
+- milestone 5 (Clover sync), once Lody's stock counts and token arrive
+- milestone 6 (payments, shipping, emails)
+
+See "Where we left off" at the top.

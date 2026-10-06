@@ -7,8 +7,7 @@ The link works only while your computer is on and the two commands below keep ru
 1. One-time setup (Node 24):
 
    ```bash
-   git clone https://github.com/Farhanx64/lodelicious && cd lodelicious
-   git checkout claude/sweet-meitner-2hnl84
+   git clone https://github.com/Farhanx64/lodelicious && cd lodelicious   # main has everything merged
    npm ci
    cp .env.example .env
    ```
@@ -18,7 +17,7 @@ The link works only while your computer is on and the two commands below keep ru
    ```
    PAYLOAD_SECRET=<run: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
    APP_ENV=staging
-   PREVIEW_ASSUME_STOCK=true      # lets Lody try Build a Basket before stock is counted
+   PREVIEW_ASSUME_STOCK=true      # lets Lody try the bag, checkout and Build a Basket before stock is counted
    ```
 
 2. Load the catalog and build:
@@ -43,9 +42,16 @@ The link works only while your computer is on and the two commands below keep ru
    It prints a `https://<random>.trycloudflare.com` address — send that to Lody. It changes every
    time you restart the tunnel. (ngrok works the same way but needs a free account.)
 
-What Lody will see: the staging banner, real products and prices from her cards, "Currently
-unavailable" on shop pages (no stock counted), and a working Build a Basket in preview mode.
-Nothing can be ordered or paid for. Search engines are told not to index staging.
+What Lody will see, with `PREVIEW_ASSUME_STOCK=true`:
+- the SOUSET-PINK design with the staging banner
+- real products and Clover prices
+- **Add to bag → checkout** with a **"Place test order"** button
+- **Build a Basket → Reserve this basket**, with the deposit and a test payment
+
+No money moves, test orders and reservations are clearly marked in /admin → Orders, and search
+engines are told not to index staging. Without that setting, shop pages say "Currently
+unavailable" because no stock is counted yet. The live site (`APP_ENV=production`) keeps ordering
+closed until Clover payments are connected.
 
 To give Lody her own admin login: in /admin → Staff → Users → Create, role **Owner**, and share
 the password with her privately (not over the tunnel page or email in plain text if avoidable).
