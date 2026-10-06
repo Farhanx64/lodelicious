@@ -207,17 +207,17 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
     await payload.updateGlobal({ slug: "gift-builder-settings", data: { specialPresentations }, overrideAccess: true });
   }
 
-  // Starting tax class (D34): Clover's 6.25% "Sales Tax", NOT approved — Lody must confirm which
-  // products it applies to. Only created when no tax class exists, and only fills empty settings.
+  // Starting tax class (D34): Clover's 6.25% "Sales Tax", approved — Lody confirmed it applies to
+  // all products. Only created when no tax class exists, and only fills empty settings.
   const taxClasses = await payload.find({ collection: "tax-classes", limit: 1, depth: 0, overrideAccess: true });
   if (taxClasses.totalDocs === 0) {
     const created = await payload.create({
       collection: "tax-classes",
       data: {
-        name: "Sales tax 6.25% (from Clover — to confirm)",
+        name: "Sales tax 6.25%",
         rateBasisPoints: 625,
-        approved: false,
-        notes: "Copied from Clover's default \"Sales Tax\" (inventory export 2026-09-30). Massachusetts generally exempts food; confirm which products are taxable before approving.",
+        approved: true,
+        notes: "Confirmed by Lody (2026-10-06): applies to all products. Clover inventory export v2 lists every item on the default \"Sales Tax\" (6.25%), with no per-item overrides.",
       },
       overrideAccess: true,
     });

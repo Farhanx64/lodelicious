@@ -278,15 +278,18 @@ WCAG 2.2.2 requires that movement can be stopped, so:
 Swipe and trackpad scrolling use native scroll-snap. When the cards don't overflow, the controls are
 not rendered at all.
 
-## D34 — Tax classes, unapproved until Lody confirms (2026-10-05)
+## D34 — Tax classes, approved by Lody (2026-10-05, updated 2026-10-06)
 
 Tax comes from **Settings → Tax classes**: each class has a name, a rate in basis points
 (625 = 6.25%) and an "approved" tick. Products may name a class; others use the default class in
 **Checkout & reservations**, which also names the class for basket packaging.
 
 - Tax is rounded half-up per line.
-- The seed creates one class, Clover's 6.25% "Sales Tax", **unapproved**. Massachusetts generally
-  exempts food, so Lody must confirm which items are taxable.
+- The seed creates one class, Clover's 6.25% "Sales Tax", **approved**. On 2026-10-06 Lody confirmed
+  it applies to all products; the Clover inventory export v2 lists all 105 items on the default
+  Sales Tax with no per-item overrides. It is the default and packaging class.
+- Existing databases seeded before this change hold the class unapproved — tick "approved" in
+  /admin → Tax classes (the seed is create-only and won't change it).
 - While any class in a sale is unapproved, totals say "Estimated tax (to be confirmed)". A real
   (non-test) payment provider will refuse to take orders until tax is approved (PRD: "no pending
   policy becomes a silent checkout default").

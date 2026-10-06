@@ -57,8 +57,8 @@ beforeAll(async () => {
 });
 
 describe("tax class seed (D34)", () => {
-  it("starts with Clover's 6.25% as the unapproved default", () => {
-    expect(ctx.taxClasses).toEqual([expect.objectContaining({ rateBasisPoints: 625, approved: false })]);
+  it("starts with Clover's 6.25% as the approved default", () => {
+    expect(ctx.taxClasses).toEqual([expect.objectContaining({ rateBasisPoints: 625, approved: true })]);
     expect(ctx.defaultTaxClassId).toBe(ctx.taxClasses[0].id);
     expect(ctx.packagingTaxClassId).toBe(ctx.taxClasses[0].id);
   });
@@ -93,7 +93,7 @@ describe("bag and order (D35)", () => {
       testMode: true,
       customer: CONTACT,
       pickup: { date: "2026-10-06", start: "11:00", end: "12:00", label: "Tuesday, October 6, 11:00 AM–12:00 PM" },
-      totals: { subtotalCents: 850, taxCents: 53, totalCents: 903, taxApproved: false },
+      totals: { subtotalCents: 850, taxCents: 53, totalCents: 903, taxApproved: true },
     });
     expect(await findByToken(payload, "orders", first.number, "wrong-token")).toBeNull();
     expect((await priceBag(payload, token, ctx)).payable).toEqual([]);
