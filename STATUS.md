@@ -31,10 +31,11 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 - **Checks:** 232 automated tests, plus browser-checked flows.
 
 **What a customer can do today:**
-- **Live site:** nothing can be bought yet, for three reasons:
+- **Live site:** nothing can be bought yet, for two reasons:
   1. Stock is uncounted, so every product shows "Currently unavailable".
   2. There is no payment provider in production, so checkout and reservations show "call to order".
-  3. The only tax class (6.25% from Clover) is unapproved.
+  (Tax is settled: 6.25% on all products, confirmed by Lody — D34. If the live database was seeded
+  earlier, tick "approved" on the tax class in /admin.)
 - **Staging:** with `PREVIEW_ASSUME_STOCK=true`, staging treats stock as available. There,
   checkout and basket reservations run end to end with a **test payment**, and no money moves.
 
@@ -46,14 +47,13 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
    - Say which teddy the card shows.
 2. **Clover access:** an inventory-only API token for the sync (milestone 5). Later, the ecommerce
    keys and her approval of Clover's fees (milestone 6).
-3. **Tax:** which items are taxable, and the rate.
-4. **Pickup and deposits:** pickup hours, notice periods, closed dates and the basket deposit
+3. **Pickup and deposits:** pickup hours, notice periods, closed dates and the basket deposit
    amount.
-5. **Store settings:** the DoorDash link and her "Our story" text.
-6. **Photos:** her own photos to replace the placeholders; photos and allergen info for the 49
+4. **Store settings:** the DoorDash link and her "Our story" text.
+5. **Photos:** her own photos to replace the placeholders; photos and allergen info for the 49
    products added from Clover.
-7. **Home page:** 8–12 Shop Favorites ticked.
-8. **Design:** acceptance of the gold-text contrast deviation (D31).
+6. **Home page:** 8–12 Shop Favorites ticked.
+7. **Design:** acceptance of the gold-text contrast deviation (D31).
 
 **Next build, in recommended order:**
 1. **Finish milestone 3.** None of it needs inputs from Lody:
@@ -111,7 +111,7 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
     deposit and balance due.
   - Deposit type and value, pay-in-full and notice period are all set in /admin.
 - **Admin settings:**
-  - Tax classes; the seeded 6.25% is unapproved.
+  - Tax classes; the seeded 6.25% applies to all products and is approved (D34).
   - Pickup hours, slot length, notice, days ahead and closed dates.
 - **Live site:** payments are test-only, so ordering is closed there until Clover is connected.
   There is no stock movement yet (milestone 5) and no order emails yet.
@@ -268,7 +268,7 @@ Screenshots (home shell since replaced by `m3-*`):
 - **Stock counts in Clover**: the export has none. Also: split the shared Phillips bar and Princess items, add the ceramics, bassinet and fudges to Clover, and say which teddy the card shows (`docs/clover-sync-needs.md`).
 - Clover API access for the in-house sync (inventory-only token Lody creates) — needed by milestone 5.
 - DoorDash page link for local delivery.
-- Which products are taxable and at what rate (tax classes, D34); pickup hours, notice periods and closed dates; basket deposit amount (D36).
+- Pickup hours, notice periods and closed dates; basket deposit amount (D36).
 - "Our story" text for the footer, in her own words (Store settings).
 - Her own photos for the home-page photo strip (Home page settings), and acceptance of the gold-text contrast deviation (D31).
 - Photos, descriptions, allergen info and basket eligibility for the 49 products added from Clover.
@@ -286,7 +286,7 @@ Screenshots (home shell since replaced by `m3-*`):
 - Sympathy packaging and premium caps: assumed equal to the standard size (D15) — confirm with Lody.
 - Cowboy / Baby White: price, premium cap, and whether chosen items are charged on top of the base price (D18).
 - Product categories for Baby White choices (defaults "candy", "chocolate") must match milestone-3 product categories.
-- All other PRD "Remaining inputs" (cowboy/Baby White prices, ceramic basis, scheduling cutoffs, shipping data, fountain terms, tax/policies).
+- All other PRD "Remaining inputs" (cowboy/Baby White prices, ceramic basis, scheduling cutoffs, shipping data, fountain terms, policies).
 
 ## Next concrete step
 

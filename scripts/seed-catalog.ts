@@ -25,6 +25,6 @@ for (const [kind, r] of Object.entries({ categories: report.categories, media: r
   console.log(`${kind}: ${r.created.length} created, ${r.existing.length} already present (left unchanged)`);
 }
 if (report.presentationImages.length) console.log(`presentation photos linked: ${report.presentationImages.join(", ")}`);
-if (report.taxClass) console.log(`tax class created (unapproved): ${report.taxClass}`);
+if (report.taxClass) console.log(`tax class created (approved): ${report.taxClass}`);
 if (report.homePage.length) console.log(`home page placeholder photos set: ${report.homePage.join(", ")}`);
 process.exit(0);
