@@ -12,9 +12,13 @@ import { Categories } from "./collections/Categories";
 import { Inquiries } from "./collections/Inquiries";
 import { Media } from "./collections/Media";
 import { Orders } from "./collections/Orders";
+import { Outbox } from "./collections/Outbox";
 import { Products } from "./collections/Products";
 import { Reservations } from "./collections/Reservations";
 import { SourceRecords } from "./collections/SourceRecords";
+import { StockAdjustments } from "./collections/StockAdjustments";
+import { StockHolds } from "./collections/StockHolds";
+import { StockMovements } from "./collections/StockMovements";
 import { SyncJobs } from "./collections/SyncJobs";
 import { TaxClasses } from "./collections/TaxClasses";
 import { Users } from "./collections/Users";
@@ -22,6 +26,7 @@ import { CheckoutSettings } from "./globals/CheckoutSettings";
 import { EventSettings } from "./globals/EventSettings";
 import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { HomePage } from "./globals/HomePage";
+import { InventorySettings } from "./globals/InventorySettings";
 import { Policies } from "./globals/Policies";
 import { StoreSettings } from "./globals/StoreSettings";
 
@@ -44,8 +49,8 @@ export default buildConfig({
       titleSuffix: " — Lodelicious admin",
     },
   },
-  collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs],
-  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings, Policies],
+  collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs, StockMovements, StockHolds, StockAdjustments, Outbox],
+  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings, Policies, InventorySettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {

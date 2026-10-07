@@ -2,8 +2,9 @@ import type { CollectionConfig } from "payload";
 
 import { isOwner, isStaff, nobody } from "../src/access/roles";
 import { auditCollection } from "../src/hooks/audit";
+import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
-import { customerFields, frozen, identityFields, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
+import { customerFields, frozen, identityFields, inventoryFields, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
 
 /**
  * Shop orders (D35). Created only by checkout through the Local API; the lines and totals are an
@@ -16,11 +17,14 @@ export const Orders: CollectionConfig = {
   admin: {
     useAsTitle: "number",
     group: "Orders",
-    defaultColumns: ["number", "customer.name", "pickup.label", "paymentStatus", "fulfillmentStatus", "totals.totalCents", "testMode"],
+    defaultColumns: ["number", "customer.name", "pickup.label", "paymentStatus", "fulfillmentStatus", "stockStatus", "totals.totalCents", "testMode"],
     listSearchableFields: ["number", "customer.name", "customer.email"],
   },
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
-  hooks: { afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "staffNotes"])] },
+  hooks: {
+    beforeChange: [guardStockStatus],
+    afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus")],
+  },
   fields: [
     ...identityFields,
     {
@@ -75,6 +79,7 @@ export const Orders: CollectionConfig = {
       ],
     },
     paymentReference,
+    ...inventoryFields,
     { name: "staffNotes", type: "textarea" },
   ],
 };

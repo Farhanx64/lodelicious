@@ -4,6 +4,7 @@ import type { Category, Media, Product } from "@/payload-types";
 
 import { getGiftSettings } from "../gifts/load";
 import type { BuilderProduct, GiftSettings } from "../gifts/types";
+import { applyInventoryView, type InventoryConfig } from "../inventory/view";
 import { isImagePublishable } from "../media";
 import { previewStockEnabled } from "./preview";
 import { toBuilderProducts } from "./product";
@@ -27,8 +28,19 @@ export type BuilderCatalog = {
   previewStock: boolean;
 };
 
-/** Core loader, usable from tests and services that already hold a Payload instance. */
-export async function loadBuilderCatalogFrom(payload: Payload): Promise<BuilderCatalog> {
+export type BuilderStockOptions = {
+  now?: Date;
+  /** A checkout's own holds don't count against it. */
+  exceptOwner?: string | null;
+  config?: InventoryConfig;
+};
+
+/**
+ * Core loader, usable from tests and services that already hold a Payload instance. Stock is what
+ * the shop can sell now: other customers' holds are subtracted, counts older than the allowed age
+ * are "stale" (unavailable), and a curated basket with contents is as many as its parts allow.
+ */
+export async function loadBuilderCatalogFrom(payload: Payload, opts: BuilderStockOptions = {}): Promise<BuilderCatalog> {
   const [settings, { docs }] = await Promise.all([
     getGiftSettings(payload),
     payload.find({
@@ -50,12 +62,14 @@ export async function loadBuilderCatalogFrom(payload: Payload): Promise<BuilderC
   const previewStock = previewStockEnabled();
   const products: BuilderProduct[] = [];
   const display: BuilderDisplay[] = [];
+  const seen = await applyInventoryView(payload, docs as Product[], opts);
 
-  for (const doc of docs as Product[]) {
+  for (const doc of seen.products) {
     const category = typeof doc.category === "object" ? (doc.category as Category) : null;
     const media = doc.images?.[0]?.image;
     const image = typeof media === "object" && isImagePublishable(media as Media) ? (media as Media) : null;
-    for (const unit of toBuilderProducts(doc)) {
+    for (const built of toBuilderProducts(doc)) {
+      const unit = seen.staleUnits.has(built.id) ? { ...built, stock: { state: "stale" as const } } : built;
       products.push(previewStock && unit.stock.state !== "known" ? { ...unit, stock: { state: "known", quantity: 99 } } : unit);
       display.push({
         id: unit.id,
