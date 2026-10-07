@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import type { Order, Product, Reservation } from "@/payload-types";
 import { sellableUnits } from "@/src/lib/catalog/product";
-import { changeBag, findByToken, loadCheckoutContext, newCartToken, placeOrder, priceBag, priceBasket, reserveBasket, type BasketDraft, type CheckoutContext } from "@/src/lib/checkout/service";
+import { changeBag, findByToken, isNumberCollision, loadCheckoutContext, newCartToken, placeOrder, priceBag, priceBasket, reserveBasket, type BasketDraft, type CheckoutContext } from "@/src/lib/checkout/service";
 import { reconcilePaidHeld } from "@/src/lib/inventory/settle";
 import { applyMovements } from "@/src/lib/inventory/ledger";
 import { loadBuilderCatalogFrom } from "@/src/lib/catalog/builder-catalog";
@@ -195,6 +195,26 @@ describe("holds while paying (INV 04)", () => {
     expect(await movementsFor(payload, p.id)).toHaveLength(1);
     const orders = await payload.find({ collection: "orders", where: { number: { equals: failed.number } }, depth: 0, overrideAccess: true });
     expect(orders.docs[0]).toMatchObject({ paymentStatus: "paid", stockStatus: "committed" });
+  });
+
+  it("are released when staff cancel the order while it is still waiting for payment", async () => {
+    const p = await makeProduct(w, { stock: 2, reserve: 1 });
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    let started!: () => void;
+    const inFlight = new Promise<void>((resolve) => (started = resolve));
+    const slow: PaymentProvider = { ...testProvider, async charge(input) { started(); await gate; return testProvider.charge(input); } };
+    const pending = place(await bagWith(w, p.id), { ...FORM, name: "Cancelled while paying" }, withProvider(slow));
+    await inFlight;
+    const waiting = (await payload.find({ collection: "orders", where: { "customer.name": { equals: "Cancelled while paying" } }, depth: 0, overrideAccess: true })).docs[0];
+    expect(waiting).toMatchObject({ stockStatus: "held" });
+    await payload.update({ collection: "orders", id: waiting.id, data: { fulfillmentStatus: "canceled" }, user: w.fulfillment, overrideAccess: false });
+    const holds = await payload.find({ collection: "stock-holds", where: { product: { equals: p.id } }, depth: 0, overrideAccess: true });
+    expect(holds.docs.map((h) => h.status)).toEqual(["released"]);
+    expect((await order(waiting.number)).stockStatus).toBe("released");
+    expect(await changeBag(payload, newCartToken(), { unitId: String(p.id), quantity: 1, mode: "add" }, ctx, NOW)).toEqual({ ok: true });
+    release();
+    await pending;
   });
 
   it("are released when the payment provider throws", async () => {
@@ -485,6 +505,27 @@ describe("order numbers (A02)", () => {
     expect(new Set(all).size).toBe(4);
     const highest = (list: string[]) => Math.max(...list.map((n) => Number(n.split("-")[1])));
     expect(highest(more)).toBeGreaterThan(highest(numbers));
+  });
+
+  it("retries only a taken number, not any other failure", async () => {
+    const existing = (await payload.find({ collection: "orders", limit: 1, depth: 0, overrideAccess: true })).docs[0] as Order;
+    const { id, createdAt, updatedAt, ...rest } = existing;
+    void id; void createdAt; void updatedAt;
+    const attempt = async (patch: Record<string, unknown>) => {
+      try {
+        await payload.create({ collection: "orders", data: { ...rest, ...patch } as never, overrideAccess: true });
+      } catch (e) {
+        return e;
+      }
+      return null;
+    };
+    const sameNumber = await attempt({ idempotencyKey: "a-different-key", accessTokenHash: "x" });
+    expect(sameNumber).not.toBeNull();
+    expect(isNumberCollision(sameNumber)).toBe(true);
+    const sameKey = await attempt({ number: "SP-9999", accessTokenHash: "x" });
+    expect(sameKey).not.toBeNull();
+    expect(isNumberCollision(sameKey)).toBe(false);
+    expect(isNumberCollision(new Error("database is locked"))).toBe(false);
   });
 
   it("copes with two simultaneous orders after a deletion", async () => {

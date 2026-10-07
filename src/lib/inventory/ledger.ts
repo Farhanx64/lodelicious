@@ -133,7 +133,10 @@ export const holdKey = (owner: string, unit: UnitRef): string => `${owner}|${uni
  */
 export async function holdStock(payload: Payload, input: HoldInput): Promise<HoldResult> {
   const plan = input.plan.filter((l) => l.quantity > 0);
-  if (plan.length === 0) return { ok: true };
+  if (plan.length === 0) {
+    await releaseHolds(payload, input.owner, input.now); // nothing to hold now, so nothing stays held from before
+    return { ok: true };
+  }
   const now = iso(input.now);
   const expires = iso(new Date(input.now.getTime() + input.ttlMs));
   const stmts: Stmt[] = [

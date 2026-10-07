@@ -214,7 +214,7 @@ async function findByKey(payload: Payload, collection: "orders" | "reservations"
 }
 
 /** True when creating a record failed only because its number is already taken. */
-function isNumberCollision(e: unknown): boolean {
+export function isNumberCollision(e: unknown): boolean {
   const text = `${(e as Error)?.message ?? ""} ${JSON.stringify((e as { data?: unknown })?.data ?? "")}`.toLowerCase();
   return text.includes("number") && /unique|already|invalid/.test(text);
 }

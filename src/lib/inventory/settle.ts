@@ -12,7 +12,7 @@ import { parsePlan, recordKeyOf } from "./records";
 import type { StockStatus } from "./types";
 
 type Collection = "orders" | "reservations";
-type Record = Order | Reservation;
+type StockRecord = Order | Reservation;
 
 const STAFF_REVIEW_FIELD = { orders: "fulfillmentStatus", reservations: "reservationStatus" } as const;
 
@@ -33,7 +33,7 @@ export type SettleResult = "committed" | "needs_attention" | "nothing_to_do";
  * already written are skipped. Call it right after a successful charge, and again for any record
  * found paid but still `held` (a crash, or a payment event that arrived after the hold expired).
  */
-export async function settleStock(payload: Payload, collection: Collection, record: Record, now: Date): Promise<SettleResult> {
+export async function settleStock(payload: Payload, collection: Collection, record: StockRecord, now: Date): Promise<SettleResult> {
   const plan = parsePlan(record.stockPlan);
   if (plan.length === 0) return "nothing_to_do";
   if (record.stockStatus === "committed" || record.stockStatus === "resolved" || record.stockStatus === "needs_attention") return "nothing_to_do";
@@ -68,7 +68,7 @@ export async function settleStock(payload: Payload, collection: Collection, reco
 }
 
 /** Payment did not complete: let go of the hold and say so on the record. */
-export async function releaseStock(payload: Payload, collection: Collection, record: Record, now: Date): Promise<void> {
+export async function releaseStock(payload: Payload, collection: Collection, record: StockRecord, now: Date): Promise<void> {
   if (record.stockOwner) await releaseHolds(payload, record.stockOwner, now);
   if (record.stockStatus === "held") await setStatus(payload, collection, record.id, "released");
 }
@@ -90,7 +90,7 @@ export async function reconcilePaidHeld(payload: Payload, now: Date): Promise<{ 
       depth: 0,
       overrideAccess: true,
     });
-    for (const record of docs as Record[]) {
+    for (const record of docs as StockRecord[]) {
       tally.checked++;
       const result = await settleStock(payload, collection, record, now);
       if (result === "committed") tally.committed++;
