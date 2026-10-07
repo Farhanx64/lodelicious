@@ -9,6 +9,7 @@ import sharp from "sharp";
 import { AuditLog } from "./collections/AuditLog";
 import { Carts } from "./collections/Carts";
 import { Categories } from "./collections/Categories";
+import { Inquiries } from "./collections/Inquiries";
 import { Media } from "./collections/Media";
 import { Orders } from "./collections/Orders";
 import { Products } from "./collections/Products";
@@ -18,6 +19,7 @@ import { SyncJobs } from "./collections/SyncJobs";
 import { TaxClasses } from "./collections/TaxClasses";
 import { Users } from "./collections/Users";
 import { CheckoutSettings } from "./globals/CheckoutSettings";
+import { EventSettings } from "./globals/EventSettings";
 import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { HomePage } from "./globals/HomePage";
 import { StoreSettings } from "./globals/StoreSettings";
@@ -41,8 +43,8 @@ export default buildConfig({
       titleSuffix: " — Lodelicious admin",
     },
   },
-  collections: [Orders, Reservations, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs],
-  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings],
+  collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs],
+  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
