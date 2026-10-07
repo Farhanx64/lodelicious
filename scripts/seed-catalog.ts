@@ -7,7 +7,7 @@
  * script never changes or deletes what staff have edited.
  *
  * On a production database that already has products it refuses to run (it would bring back
- * anything staff deleted or renamed) unless you pass --force or set SEED_FORCE=1 (D41).
+ * anything staff deleted or renamed) unless SEED_FORCE=1 is set in the environment (D41). (`payload run` does not pass --flags to the script.)
  */
 import config from "@payload-config";
 import { getPayload } from "payload";

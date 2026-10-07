@@ -494,7 +494,9 @@ checkout-hardening work (A02, A04, A05, A11, A12, A14, A20) and the integrator (
   `/ops/system-check` and `npm run doctor` gain an **APP_ENV** check: it passes for `production`,
   `local`, `staging` and `test`, and fails (with what the server will do) for unset or unrecognised
   values. Tests run with `APP_ENV=test` (`tests/setup-env.ts`), which is on the allowlist.
-  `.env.example` keeps `APP_ENV=local` for development and says so.
+  `.env.example` keeps `APP_ENV=local` for development and says so. `robots.txt` and the `noindex` meta
+  tag follow the same rule; `app/robots.ts` is now `force-dynamic`, because Next otherwise builds it once
+  and a build made with a different `APP_ENV` would fix the wrong rules into the live site.
 - **Unapproved prices (A06).** `formatPrice`, `priceRange` and the option list live in
   `src/lib/catalog/product.ts`. A product whose price is not approved shows **"Price to be
   confirmed"** and never a number: product cards on every listing (shop, baby gifts, gift baskets,
@@ -577,8 +579,8 @@ checkout-hardening work (A02, A04, A05, A11, A12, A14, A20) and the integrator (
   them names the product. The Add-to-bag button names the option ("Add to bag: Pink") and shows it, even
   when there is only one; the builder's "Add another (2)" button's name now contains those words.
 - **Seed guard (A19).** `npm run seed:catalog` refuses a database that already has products when
-  `APP_ENV` is not local, staging or test, prints why, and exits 1. `SEED_FORCE=1` or `-- --force`
-  overrides it. An empty database, or any local, staging or test one, is unaffected.
+  `APP_ENV` is not local, staging or test, prints why, and exits 1. `SEED_FORCE=1` overrides it
+  (a `--force` flag cannot work: `payload run` passes a script only its positional arguments). An empty database, or any local, staging or test one, is unaffected.
 - **Tests and CI (A22).** Unit tests for each fix, integration tests in `tests/int/audit-fixes.test.ts`
   (first owner, passwords, media access, upload limits, API surface, closed dates, cart purge) and CI
   now fails when `payload migrate:create` finds schema changes no migration covers or writes a file.

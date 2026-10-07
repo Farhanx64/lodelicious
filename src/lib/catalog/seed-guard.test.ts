@@ -31,14 +31,17 @@ describe("checkSeedAllowed (A19)", () => {
     for (const APP_ENV of ["local", "staging", "test"]) expect(run({ APP_ENV }, 500)).toEqual({ allowed: true, forced: false });
   });
 
-  it("allows production with --force or SEED_FORCE, and says it was forced", () => {
-    expect(run({ APP_ENV: "production" }, 120, ["--force"])).toEqual({ allowed: true, forced: true });
+  it("allows production with SEED_FORCE, and says it was forced", () => {
     expect(run({ APP_ENV: "production", SEED_FORCE: "1" }, 120)).toEqual({ allowed: true, forced: true });
     expect(run({ APP_ENV: "production", SEED_FORCE: "true" }, 120)).toEqual({ allowed: true, forced: true });
   });
 
   it("does not take a vague SEED_FORCE as a yes", () => {
     for (const SEED_FORCE of ["0", "", "no", "false", "force"]) expect(run({ APP_ENV: "production", SEED_FORCE }, 120).allowed).toBe(false);
-    expect(isSeedForced({ env: {}, argv: ["--forced"] })).toBe(false);
+    expect(isSeedForced({ env: {} })).toBe(false);
+  });
+
+  it("does not treat a --force argument as a yes: `payload run` never passes flags to the script", () => {
+    expect(run({ APP_ENV: "production" }, 120, ["--force"]).allowed).toBe(false);
   });
 });

@@ -13,7 +13,10 @@ import { isProductionEnv, type EnvLike } from "../app-env";
 export type SeedGuardInput = {
   /** Reads APP_ENV and SEED_FORCE. */
   env: EnvLike;
-  /** Command-line flags after the script name (`--force`). */
+  /**
+   * Command-line arguments after the script name. Not used to force a seed: `payload run` hands a
+   * script only its positional arguments, so a `--force` flag never arrives. Use SEED_FORCE=1.
+   */
   argv: readonly string[];
   /** Products already in the database (published or draft). */
   productCount: number;
@@ -23,8 +26,8 @@ export type SeedGuardResult = { allowed: true; forced: boolean } | { allowed: fa
 
 const TRUTHY = new Set(["1", "true", "yes"]);
 
-export function isSeedForced({ env, argv }: Pick<SeedGuardInput, "env" | "argv">): boolean {
-  return argv.includes("--force") || TRUTHY.has((env.SEED_FORCE ?? "").trim().toLowerCase());
+export function isSeedForced({ env }: Pick<SeedGuardInput, "env">): boolean {
+  return TRUTHY.has((env.SEED_FORCE ?? "").trim().toLowerCase());
 }
 
 export function checkSeedAllowed(input: SeedGuardInput): SeedGuardResult {
@@ -38,7 +41,7 @@ export function checkSeedAllowed(input: SeedGuardInput): SeedGuardResult {
       `Refusing to seed: ${appEnv}, and the database already has ${input.productCount} product${input.productCount === 1 ? "" : "s"}.`,
       "The seed never overwrites edits, but it creates anything that is missing. Run on a live store it would bring back products",
       "that staff deleted, slugs they renamed, a tax class they removed (re-created as approved) and photos they cleared.",
-      "If you really mean to run it, set SEED_FORCE=1 (or pass --force) and run it again.",
+      "If you really mean to run it, set SEED_FORCE=1 in the environment and run it again.",
     ].join("\n"),
   };
 }
