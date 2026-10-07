@@ -19,9 +19,13 @@ export function AvailabilityNote({ product }: { product: Product }) {
   return <p className={`text-sm font-semibold ${tone}`}>{availability.label}</p>;
 }
 
-export function ProductCard({ product }: { product: Product }) {
+/**
+ * `hideUnapprovedPrice`: show "Price on request" instead of a price staff have not approved yet.
+ * Off by default, so other listings are unchanged; /gift-baskets turns it on (D38).
+ */
+export function ProductCard({ product, hideUnapprovedPrice = false }: { product: Product; hideUnapprovedPrice?: boolean }) {
   const image = product.images?.[0]?.image as Media | number | undefined;
-  const price = formatPrice(product);
+  const price = hideUnapprovedPrice && !product.priceApproved ? null : formatPrice(product);
   return (
     // Gold double frame around every product (Lody's board): outer antique-gold line, ivory gap,
     // inner hairline. Decorative only; the title link carries the meaning.
