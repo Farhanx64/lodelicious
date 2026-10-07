@@ -4,6 +4,7 @@ import Link from "next/link";
 import { submitReservation } from "@/app/(frontend)/build-a-basket/actions";
 import { ActionForm } from "@/components/checkout/ActionForm";
 import { ContactFields } from "@/components/checkout/ContactFields";
+import { PaymentChoice } from "@/components/checkout/FormFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
 import { primaryButton } from "@/components/checkout/styles";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
@@ -60,24 +61,12 @@ export default async function ReservePage() {
                 </p>
                 <PickupSelect slots={slots} id="reserve-pickup" />
               </fieldset>
-              <fieldset className="mb-4">
-                <legend className="mb-3 font-display text-xl text-gold-text">Payment</legend>
-                <label className="mb-2 flex gap-3">
-                  <input type="radio" name="payment" value="deposit" defaultChecked className="mt-1 size-5 accent-gold-text" />
-                  <span>
-                    Pay the {depositLabel.toLowerCase()} now: <strong>{formatCents(deposit.chargeNowCents)}</strong>
-                    <span className="block text-sm text-ink-soft">{formatCents(deposit.balanceDueCents)} due at pickup</span>
-                  </span>
-                </label>
-                {ctx.allowPayInFull && (
-                  <label className="flex gap-3">
-                    <input type="radio" name="payment" value="full" className="mt-1 size-5 accent-gold-text" />
-                    <span>
-                      Pay in full now: <strong>{formatCents(basket.totalCents)}</strong>
-                    </span>
-                  </label>
-                )}
-              </fieldset>
+              <PaymentChoice
+                depositLabel={depositLabel}
+                chargeNowText={formatCents(deposit.chargeNowCents)}
+                balanceDueText={formatCents(deposit.balanceDueCents)}
+                fullText={ctx.allowPayInFull ? formatCents(basket.totalCents) : undefined}
+              />
             </ActionForm>
           ) : (
             <p className="border-l-4 border-gold bg-paper p-4">

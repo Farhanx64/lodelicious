@@ -10,6 +10,7 @@ import type { Payload } from "payload";
 
 import type { Product } from "@/payload-types";
 
+import { defaultClosedDates } from "../checkout/closed-dates";
 import { parseCsvRecords } from "../csv";
 import type { GiftType, SpecialCode } from "../gifts/types";
 
@@ -54,6 +55,8 @@ export type SeedReport = {
   presentationImages: string[];
   homePage: string[];
   taxClass: string | null;
+  /** Standing closures written to checkout settings (only when the list was empty), as YYYY-MM-DD. */
+  closedDates: string[];
 };
 
 type AllergenRow = { product: string; nut_free: string; vegan: string; notes: string; section: string };
@@ -89,7 +92,13 @@ export function checkSeed(seed: CatalogSeed, allergens: AllergenRow[], assetsDir
   return problems;
 }
 
-export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens: AllergenRow[], assetsDir: string): Promise<SeedReport> {
+export async function seedCatalog(
+  payload: Payload,
+  seed: CatalogSeed,
+  allergens: AllergenRow[],
+  assetsDir: string,
+  options: { now?: Date } = {},
+): Promise<SeedReport> {
   const problems = checkSeed(seed, allergens, assetsDir);
   if (problems.length) throw new Error(`Catalog seed is invalid:\n- ${problems.join("\n- ")}`);
 
@@ -100,6 +109,7 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
     presentationImages: [],
     homePage: [],
     taxClass: null,
+    closedDates: [],
   };
 
   const categoryIds = new Map<string, number | string>();
@@ -241,6 +251,17 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
   if (Object.keys(homeData).length) {
     await payload.updateGlobal({ slug: "home-page", data: homeData, overrideAccess: true });
     report.homePage.push(...Object.keys(homeData));
+  }
+
+  // Standing closures (A07, PRD FUL 01): Dec 25, Jan 1 and Labor Day, as explicit dates for the
+  // next 18 months. Only fills an empty list; whatever staff entered is never touched.
+  const checkoutSettings = await payload.findGlobal({ slug: "checkout-settings", depth: 0, overrideAccess: true });
+  if (!checkoutSettings.closedDates?.length) {
+    const closed = defaultClosedDates(options.now ?? new Date());
+    if (closed.length) {
+      await payload.updateGlobal({ slug: "checkout-settings", data: { closedDates: closed }, overrideAccess: true });
+      report.closedDates = closed.map((c) => c.date);
+    }
   }
 
   return report;

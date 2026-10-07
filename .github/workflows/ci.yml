@@ -32,4 +32,21 @@ jobs:
       - run: npm test
       - name: Migrations apply to an empty database
         run: NODE_ENV=production DATABASE_URI=file:./.data/migrate-check.db npm run migrate
+      # A collection or global changed without a migration (D23): migrate:create would then write a
+      # new migration. It must say there is nothing to do and leave the migrations folder untouched.
+      - name: Schema matches the migrations (no drift)
+        env:
+          DATABASE_URI: file:./.data/migrate-check.db
+        run: |
+          output="$(npx payload migrate:create drift_check < /dev/null 2>&1)" || true
+          echo "$output"
+          if ! echo "$output" | grep -q "No schema changes"; then
+            echo "::error::The collections or globals have changes that no migration covers. Run 'npx payload migrate:create <name>' locally and commit the new files in migrations/."
+            exit 1
+          fi
+          if [ -n "$(git status --porcelain migrations)" ]; then
+            echo "::error::migrate:create wrote files into migrations/ even though it reported no changes."
+            git status --porcelain migrations
+            exit 1
+          fi
       - run: npm run build

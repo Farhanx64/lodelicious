@@ -65,7 +65,8 @@ describe("/gift-baskets", () => {
     const headings = [...html.matchAll(/<h2[^>]*>([^<]*)<\/h2>/g)].map((m) => m[1]);
     expect(headings).toEqual(["Everyday gift baskets", "Birthday", "Sympathy", "More gift baskets", "Build your own basket", "Seasonal gift boxes"]);
     expect(html).not.toContain("79.95");
-    expect(html.match(/Price on request/g)).toHaveLength(4);
+    expect(html.match(/Price to be confirmed/g)).toHaveLength(4);
+    expect(html).not.toContain("Price on request");
     expect(html.match(/Available by inquiry/g)).toHaveLength(4);
     expect(html).toMatch(/price of a curated basket already includes/i);
   });

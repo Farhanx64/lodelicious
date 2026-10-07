@@ -1,9 +1,11 @@
 /**
  * Payment providers (D35). Only a test provider exists until Clover is connected in milestone 6
  * with Lody's approval; it is unavailable in production, so production cannot take orders yet.
+ * "Production" is anything but an explicit APP_ENV of local, staging or test (D41).
  */
 import crypto from "node:crypto";
 
+import { isPreviewEnv } from "../app-env";
 import type { Cents } from "../money";
 
 export type ChargeInput = { reference: string; amountCents: Cents; idempotencyKey: string };
@@ -22,7 +24,7 @@ export const testProvider: PaymentProvider = {
 };
 
 export function getPaymentProvider(env: Record<string, string | undefined> = process.env): PaymentProvider | null {
-  return env.APP_ENV === "production" ? null : testProvider;
+  return isPreviewEnv(env) ? testProvider : null;
 }
 
 export type OrderingState = { open: true } | { open: false; reason: "no_payments" | "tax_unapproved" };

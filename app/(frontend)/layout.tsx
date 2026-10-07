@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "../globals.css";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { isPreviewEnv } from "@/src/lib/app-env";
 import { bagCount } from "@/src/lib/checkout/session";
 import { getStoreSettings, isStaging } from "@/src/lib/store";
 
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
   },
   description: "Gift baskets, chocolates and sweets from a family-owned shop in Plymouth, Massachusetts.",
   // Staging previews shared with the client must not end up in search results.
-  robots: process.env.APP_ENV === "production" ? undefined : { index: false, follow: false },
+  robots: isPreviewEnv() ? { index: false, follow: false } : undefined,
 };
 
 export const dynamic = "force-dynamic";

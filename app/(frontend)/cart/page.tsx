@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { secondaryButton, primaryButton } from "@/components/checkout/styles";
 import { Summary } from "@/components/checkout/Summary";
+import { PRICE_TO_BE_CONFIRMED } from "@/src/lib/catalog/product";
 import { priceBag } from "@/src/lib/checkout/service";
 import { bagToken, checkoutPayload } from "@/src/lib/checkout/session";
 import { formatCents } from "@/src/lib/money";
@@ -44,9 +45,9 @@ export default async function CartPage() {
                   {line.title}
                   {line.optionLabel ? ` — ${line.optionLabel}` : ""}
                 </Link>
-                <span>{formatCents(line.lineTotalCents)}</span>
+                <span>{line.priceApproved ? formatCents(line.lineTotalCents) : PRICE_TO_BE_CONFIRMED}</span>
               </div>
-              <p className="mb-2 text-sm text-ink-soft">{formatCents(line.unitPriceCents)} each</p>
+              {line.priceApproved && <p className="mb-2 text-sm text-ink-soft">{formatCents(line.unitPriceCents)} each</p>}
               {line.problem && (
                 <p role="alert" className={`mb-2 text-sm ${line.problem.blocking ? "text-error" : "text-ink"}`}>
                   {line.problem.message}

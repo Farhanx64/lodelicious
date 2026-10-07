@@ -5,7 +5,13 @@
 import type { Category, Product } from "@/payload-types";
 
 import type { BuilderProduct, GiftType, SpecialCode } from "../gifts/types";
+import { formatCents } from "../money";
 import { availabilityOf, onlineQuantity, type Availability } from "./availability";
+
+/** Shown wherever a customer would otherwise see a price staff have not approved (audit A06). */
+export const PRICE_TO_BE_CONFIRMED = "Price to be confirmed";
+/** Shown for an approved product that has no price at all. */
+export const PRICE_ON_REQUEST = "Price on request";
 
 type Variant = NonNullable<Product["variants"]>[number];
 
@@ -67,12 +73,39 @@ export function productAvailability(product: Product): Availability {
   return (units.find((u) => u.availability.purchasable) ?? units[0]).availability;
 }
 
-/** Price range across options, for "from $14.95" listings. */
+/**
+ * Price range across options, for "from $14.95" listings. Null when the price has not been
+ * approved: an assumed or unconfirmed price must never reach a customer as a number (A06).
+ */
 export function priceRange(product: Product): { min: number; max: number } | null {
+  if (!product.priceApproved) return null;
   const prices = sellableUnits(product)
     .map((u) => u.priceCents)
     .filter((p): p is number => p !== null);
   return prices.length ? { min: Math.min(...prices), max: Math.max(...prices) } : null;
+}
+
+/**
+ * The price line for a product on cards and product pages: "$14.95", "From $14.95", or
+ * "Price to be confirmed" until staff approve the price. Null only for an approved product with
+ * no price at all (callers say "Price on request").
+ */
+export function formatPrice(product: Product): string | null {
+  if (!product.priceApproved) return PRICE_TO_BE_CONFIRMED;
+  const range = priceRange(product);
+  if (!range) return null;
+  return range.min === range.max ? formatCents(range.min) : `From ${formatCents(range.min)}`;
+}
+
+/** {@link formatPrice} with the "no price" wording filled in, so it is always something to show. */
+export function priceLabel(product: Product): string {
+  return formatPrice(product) ?? PRICE_ON_REQUEST;
+}
+
+/** The price of one option in an options list; blank when it has none. Same approval rule as {@link formatPrice}. */
+export function unitPriceLabel(product: Product, unit: Pick<SellableUnit, "priceCents">): string {
+  if (!product.priceApproved) return PRICE_TO_BE_CONFIRMED;
+  return unit.priceCents !== null ? formatCents(unit.priceCents) : "";
 }
 
 /** Gift-engine view of each sellable unit. */

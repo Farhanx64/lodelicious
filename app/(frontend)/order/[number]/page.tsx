@@ -7,16 +7,17 @@ import { secondaryButton } from "@/components/checkout/styles";
 import { Summary } from "@/components/checkout/Summary";
 import { findByToken } from "@/src/lib/checkout/service";
 import { checkoutPayload } from "@/src/lib/checkout/session";
+import { singleParam } from "@/src/lib/checkout/token-param";
 import { getStoreSettings } from "@/src/lib/store";
 
 export const metadata: Metadata = { title: "Order confirmed", robots: { index: false } };
 
 type OrderLine = { unitId: string; title: string; option: string | null; quantity: number; lineTotalCents: number };
 
-export default async function OrderPage({ params, searchParams }: { params: Promise<{ number: string }>; searchParams: Promise<{ t?: string }> }) {
+export default async function OrderPage({ params, searchParams }: { params: Promise<{ number: string }>; searchParams: Promise<{ t?: string | string[] }> }) {
   const [{ number }, { t }] = await Promise.all([params, searchParams]);
   const [{ payload }, store] = await Promise.all([checkoutPayload(), getStoreSettings()]);
-  const order = await findByToken(payload, "orders", number, t);
+  const order = await findByToken(payload, "orders", number, singleParam(t));
   if (!order) notFound();
   const lines = order.lines as OrderLine[];
 

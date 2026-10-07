@@ -2,17 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AvailabilityNote, formatPrice } from "@/components/catalog/ProductCard";
+import { AvailabilityNote } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { AddToBag, type BagOption } from "@/components/checkout/AddToBag";
 import { primaryButton } from "@/components/checkout/styles";
 import type { Category, Media } from "@/payload-types";
 import { getProduct } from "@/src/lib/catalog/queries";
 import { previewStockEnabled } from "@/src/lib/catalog/preview";
-import { sellableUnits } from "@/src/lib/catalog/product";
+import { PRICE_ON_REQUEST, priceLabel, sellableUnits, unitPriceLabel } from "@/src/lib/catalog/product";
 import { priceCart } from "@/src/lib/checkout/cart";
 import { contactHref, topicForProduct } from "@/src/lib/inquiries/shared";
-import { formatCents } from "@/src/lib/money";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
 
@@ -42,7 +41,7 @@ export default async function ProductPage({ params }: Props) {
     [product],
     { previewStock: previewStockEnabled(), taxClasses: [], defaultTaxClassId: null },
   ).payable.map((l) => ({ unitId: l.unitId, label: l.optionLabel, priceCents: l.unitPriceCents }));
-  const price = formatPrice(product);
+  const price = priceLabel(product);
   const dietary = [
     product.nutFree !== "unknown" ? NUT_FREE[product.nutFree] : null,
     product.vegan === "yes" ? "Vegan" : product.vegan === "no" ? "Not vegan" : null,
@@ -83,7 +82,7 @@ export default async function ProductPage({ params }: Props) {
           <h1 className="mb-2 text-[clamp(2rem,4vw,3rem)]">{product.title}</h1>
           {product.sizeLabel && <p className="mb-3 text-ink-soft">{product.sizeLabel}</p>}
           <div className="mb-4 flex flex-wrap items-baseline gap-4">
-            {price ? <p className="text-2xl font-semibold">{price}</p> : <p>Price on request</p>}
+            {product.priceApproved && price !== PRICE_ON_REQUEST ? <p className="text-2xl font-semibold">{price}</p> : <p>{price}</p>}
             <AvailabilityNote product={product} />
           </div>
 
@@ -102,7 +101,7 @@ export default async function ProductPage({ params }: Props) {
                   <li key={u.id} className="flex flex-wrap justify-between gap-2 px-4 py-3">
                     <span>{u.variantKey ? u.name.replace(`${product.title} — `, "") : u.name}</span>
                     <span className="text-ink-soft">
-                      {u.priceCents !== null ? formatCents(u.priceCents) : ""}
+                      {unitPriceLabel(product, u)}
                       {u.availability.label ? ` · ${u.availability.label}` : ""}
                     </span>
                   </li>
