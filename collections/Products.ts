@@ -2,7 +2,7 @@ import type { CollectionConfig, Field } from "payload";
 
 import { isCommerceManager } from "../src/access/roles";
 import { auditCollection } from "../src/hooks/audit";
-import { checkComponents, pinLiveStock, showLiveStock } from "../src/hooks/product-stock";
+import { checkComponents, noteExplicitStock, pinLiveStock, showLiveStock } from "../src/hooks/product-stock";
 import { slugField } from "../src/fields/slug";
 import { GIFT_TYPES, SPECIAL_CODES } from "../src/lib/gifts/types";
 
@@ -68,6 +68,7 @@ export const Products: CollectionConfig = {
     delete: isCommerceManager,
   },
   hooks: {
+    beforeOperation: [noteExplicitStock],
     beforeChange: [pinLiveStock, checkComponents],
     afterRead: [showLiveStock],
     afterChange: [
