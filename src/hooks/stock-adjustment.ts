@@ -77,7 +77,7 @@ export const applyAdjustment: CollectionBeforeChangeHook = async ({ data, operat
       input = { unit, mode: "delta", amount: delta, reason: "manual_adjustment", idempotencyKey: movementKey("adjustment", requestId, unit), reference, userId, note };
     }
     const result = await apply(payload, [input], now);
-    return { ...data, product: productId, variantKey: unit.variantKey ?? "", user: userId, requestId, result };
+    return { ...data, variantKey: unit.variantKey ?? "", user: userId, requestId, result };
   }
 
   if (kind !== "cancel_restock") fail("Choose what kind of stock change this is.");

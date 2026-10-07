@@ -104,9 +104,9 @@ export async function movementsFor(payload: Payload, productId: number | string)
 }
 
 /** A fresh bag holding `quantity` of a unit. */
-export async function bagWith(world: Pick<World, "payload" | "ctx">, unitId: string | number, quantity = 1): Promise<string> {
+export async function bagWith(world: Pick<World, "payload" | "ctx">, unitId: string | number, quantity = 1, now: Date = NOW): Promise<string> {
   const token = newCartToken();
-  const result = await changeBag(world.payload, token, { unitId: String(unitId), quantity, mode: "add" }, world.ctx);
+  const result = await changeBag(world.payload, token, { unitId: String(unitId), quantity, mode: "add" }, world.ctx, now);
   if (!result.ok) throw new Error(`Could not add ${unitId} to the bag: ${result.error}`);
   return token;
 }

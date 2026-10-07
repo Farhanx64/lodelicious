@@ -139,6 +139,7 @@ export async function changeBag(
   token: string,
   change: { unitId: string; quantity: number; mode: "add" | "set" },
   ctx: CheckoutContext,
+  now: Date = new Date(),
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const unitId = String(change.unitId).slice(0, 80);
   if (!/^\d+(:[\w-]{1,40})?$/.test(unitId)) return { ok: false, error: "That item couldn't be found." };
@@ -151,7 +152,7 @@ export async function changeBag(
     await writeCartLines(payload, token, lines.filter((l) => l.unitId !== unitId));
     return { ok: true };
   }
-  const products = await loadProducts(payload, [unitId.split(":")[0]], { config: ctx.inventory, now: new Date(), exceptOwner: bagOwner(hashToken(token)) });
+  const products = await loadProducts(payload, [unitId.split(":")[0]], { config: ctx.inventory, now, exceptOwner: bagOwner(hashToken(token)) });
   const priced = priceCart([{ unitId, quantity: next }], products, {
     previewStock: previewStockEnabled(),
     taxClasses: ctx.taxClasses,
