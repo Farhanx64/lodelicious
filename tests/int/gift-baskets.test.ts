@@ -60,8 +60,8 @@ describe("adding the baskets to a database that already has the catalog", () => 
       products: seed.products.filter((p) => p.category !== GIFT_BASKET_CATEGORY),
     };
     const first = await seedCatalog(payload, before, allergens, assetsDir);
-    expect(first.categories.created).toHaveLength(6);
-    expect(first.products.created).toHaveLength(71);
+    expect(first.categories.created).toHaveLength(before.categories.length);
+    expect(first.products.created).toHaveLength(before.products.length);
 
     // Staff edit an existing product and a category in /admin.
     const bar = await bySlug("phillips-milk-chocolate-bar");
@@ -72,9 +72,9 @@ describe("adding the baskets to a database that already has the catalog", () => 
     // `npm run seed:catalog` after the upgrade.
     const upgrade = await seedCatalog(payload, seed, allergens, assetsDir);
     expect(upgrade.categories.created).toEqual([GIFT_BASKET_CATEGORY]);
-    expect(upgrade.categories.existing).toHaveLength(6);
+    expect(upgrade.categories.existing).toHaveLength(before.categories.length);
     expect([...upgrade.products.created].sort()).toEqual(SLUGS);
-    expect(upgrade.products.existing).toHaveLength(71);
+    expect(upgrade.products.existing).toHaveLength(before.products.length);
     expect(upgrade.media.created).toEqual([]);
     expect((await bySlug("phillips-milk-chocolate-bar")).priceCents).toBe(450);
     expect((await payload.findByID({ collection: "categories", id: candy.id, overrideAccess: true })).name).toBe("Sweets");

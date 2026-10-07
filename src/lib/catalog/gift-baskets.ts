@@ -23,7 +23,7 @@ type GroupDef = {
 export const GIFT_BASKET_GROUPS: readonly GroupDef[] = [
   {
     key: "everyday",
-    title: "Gift baskets",
+    title: "Everyday gift baskets",
     blurb: "From Small to Extra Large. Open a basket to see what it typically includes.",
     slugs: ["small-gift-basket", "medium-gift-basket", "large-gift-basket", "extra-large-gift-basket"],
   },

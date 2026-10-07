@@ -63,11 +63,27 @@ describe("/gift-baskets", () => {
     ];
     const html = await render();
     const headings = [...html.matchAll(/<h2[^>]*>([^<]*)<\/h2>/g)].map((m) => m[1]);
-    expect(headings).toEqual(["Gift baskets", "Birthday", "Sympathy", "More gift baskets", "Build your own basket", "Seasonal gift boxes"]);
+    expect(headings).toEqual(["Everyday gift baskets", "Birthday", "Sympathy", "More gift baskets", "Build your own basket", "Seasonal gift boxes"]);
     expect(html).not.toContain("79.95");
     expect(html.match(/Price on request/g)).toHaveLength(4);
     expect(html.match(/Available by inquiry/g)).toHaveLength(4);
     expect(html).toMatch(/price of a curated basket already includes/i);
+  });
+
+  it("only says baskets are by inquiry while some are, and leaves purchasable baskets to their own card", async () => {
+    mocks.products = [basket("small-gift-basket", "Small Gift Basket"), basket("medium-gift-basket", "Medium Gift Basket")];
+    expect(await render()).toContain("Curated baskets are available by inquiry for now.");
+
+    mocks.products = [basket("small-gift-basket", "Small Gift Basket"), basket("medium-gift-basket", "Medium Gift Basket", { channel: "online" })];
+    expect(await render()).toContain("Baskets marked “Available by inquiry” are ordered by asking us.");
+
+    mocks.products = [
+      basket("small-gift-basket", "Small Gift Basket", { channel: "online", priceApproved: true, stockState: "known", stockQuantity: 5 }),
+    ];
+    const html = await render();
+    expect(html).not.toMatch(/available by inquiry|ordered by asking/i);
+    expect(html).toContain("$79.95");
+    expect(html).toContain('href="/contact?topic=gift_basket"');
   });
 
   it("shows an approved price as a normal price", async () => {

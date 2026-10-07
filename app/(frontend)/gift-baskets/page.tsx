@@ -16,6 +16,14 @@ export const metadata: Metadata = {
 export default async function GiftBasketsPage() {
   const [products, store] = await Promise.all([listProducts({ category: GIFT_BASKET_CATEGORY }), getStoreSettings()]);
   const groups = groupGiftBaskets(products);
+  // Each card carries its own availability label; this note only explains the inquiry-only ones.
+  const inquiryOnly = products.filter((p) => p.channel === "inquiry_only").length;
+  const inquiryNote =
+    inquiryOnly === 0
+      ? null
+      : inquiryOnly === products.length
+        ? "Curated baskets are available by inquiry for now."
+        : "Baskets marked “Available by inquiry” are ordered by asking us.";
 
   return (
     <div className="mx-auto w-[min(100%-2rem,72rem)]">
@@ -26,9 +34,9 @@ export default async function GiftBasketsPage() {
       </p>
       <div className="mb-10 max-w-[68ch] border-l-4 border-gold bg-paper p-4">
         <p className="mb-2">
-          Curated baskets are available by inquiry for now. Contents vary with availability, so ask us what is in the
-          baskets right now: call <a href={telHref(store.phone)}>{store.phone}</a>, visit us at {store.street},{" "}
-          {store.locality}, or{" "}
+          {inquiryNote && `${inquiryNote} `}
+          Contents vary with availability, so ask us what is in the baskets right now: call{" "}
+          <a href={telHref(store.phone)}>{store.phone}</a>, visit us at {store.street}, {store.locality}, or{" "}
           <Link href="/contact?topic=gift_basket">send us a message about a gift basket</Link>.
         </p>
         <p>Please tell us about any allergy or dietary request when you get in touch.</p>
@@ -66,8 +74,8 @@ export default async function GiftBasketsPage() {
             Build your own basket
           </h2>
           <p className="mb-4">
-            Prefer to choose every item? Pick a size and a budget and fill the basket yourself. A custom basket&rsquo;s
-            total is the items you choose plus a basket and packaging fee for its size.
+            Prefer to choose every item? Pick a size, set a budget if you like, and fill the basket yourself. A custom
+            basket&rsquo;s total is the items you choose plus a basket and packaging fee for its size.
           </p>
           <Link href="/build-a-basket" className={primaryButton}>
             Build your own basket
