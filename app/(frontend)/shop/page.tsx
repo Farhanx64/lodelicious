@@ -72,11 +72,15 @@ export default async function ShopPage({ searchParams }: Props) {
           </p>
         </div>
       ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-5">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
-          ))}
-        </ul>
+        <>
+          {/* The cards' titles are h3, so give them an h2 to sit under (the outline would otherwise jump from h1 to h3). */}
+          <h2 className="sr-only">{active ? `${active.name} products` : "Products"}</h2>
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-5">
+            {products.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </ul>
+        </>
       )}
     </div>
   );

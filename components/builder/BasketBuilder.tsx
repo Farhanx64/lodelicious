@@ -4,6 +4,7 @@ import { useId, useMemo, useState, useTransition } from "react";
 
 import { checkBasket, startReservation } from "@/app/(frontend)/build-a-basket/actions";
 import type { BuilderDisplay } from "@/src/lib/catalog/builder-data";
+import { PRICE_TO_BE_CONFIRMED } from "@/src/lib/catalog/product";
 import {
   assessFeasibility,
   catalogOf,
@@ -273,7 +274,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                         {[d.brand, d.sizeLabel].filter(Boolean).join(" · ")}
                         {product.premium && <span className="ml-1 font-semibold text-gold-text">Premium</span>}
                       </p>
-                      <p className="mt-auto pt-1">{product.priceCents !== null ? formatCents(product.priceCents) : ""}</p>
+                      <p className="mt-auto pt-1">{!product.priceApproved ? PRICE_TO_BE_CONFIRMED : product.priceCents !== null ? formatCents(product.priceCents) : ""}</p>
                       {!status.eligible && quantity === 0 && <p className="text-sm text-ink-soft">{status.message}</p>}
                       <div className="flex items-center gap-2 pt-1">
                         {quantity > 0 && (
@@ -291,7 +292,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                             onClick={() => change(d.id, 1)}
                             disabled={!status.eligible}
                             className="min-h-11 flex-1 bg-gold-text px-3 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
-                            aria-label={quantity > 0 ? `Add another ${d.title}` : `Add ${d.title}`}
+                            aria-label={quantity > 0 ? `Add another (${quantity}) ${d.title}` : `Add ${d.title}`}
                           >
                             {quantity > 0 ? `Add another (${quantity})` : "Add"}
                           </button>

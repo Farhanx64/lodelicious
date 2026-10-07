@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { submitOrder } from "@/app/(frontend)/cart/actions";
 import { ActionForm } from "@/components/checkout/ActionForm";
 import { ContactFields } from "@/components/checkout/ContactFields";
+import { NotesField } from "@/components/checkout/FormFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
-import { field, label } from "@/components/checkout/styles";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
 import { PolicyLinks } from "@/components/policies/PolicyLinks";
 import { availableSlots } from "@/src/lib/checkout/pickup";
@@ -39,10 +39,7 @@ export default async function CheckoutPage() {
                   At {store.street}, {store.locality}. Local delivery is through DoorDash.
                 </p>
                 <PickupSelect slots={slots} id="checkout-pickup" />
-                <label htmlFor="checkout-notes" className={label}>
-                  Notes for the shop (optional)
-                </label>
-                <textarea id="checkout-notes" name="notes" maxLength={500} rows={3} className={field} />
+                <NotesField id="checkout-notes" />
               </fieldset>
             </ActionForm>
           ) : (

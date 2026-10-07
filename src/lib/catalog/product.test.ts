@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Product } from "@/payload-types";
 
-import { priceRange, productAvailability, sellableUnits, toBuilderProducts } from "./product";
+import { PRICE_ON_REQUEST, PRICE_TO_BE_CONFIRMED, formatPrice, priceLabel, priceRange, productAvailability, sellableUnits, toBuilderProducts, unitPriceLabel } from "./product";
 
 function product(patch: Partial<Product> = {}): Product {
   return {
@@ -53,6 +53,40 @@ describe("sellableUnits", () => {
   it("is unavailable when every option's stock is unknown", () => {
     const p = product({ variants: [{ key: "pink", label: "Pink", stockState: "unknown" }] });
     expect(productAvailability(p)).toMatchObject({ purchasable: false, label: "Currently unavailable" });
+  });
+});
+
+describe("price display (A06)", () => {
+  const options = [
+    { key: "pink", label: "Pink", stockState: "known" as const, stockQuantity: 4 },
+    { key: "blue", label: "Blue", stockState: "unknown" as const, priceCents: 2195 },
+  ];
+
+  it("formats an approved price, 'From' when options differ", () => {
+    expect(formatPrice(product())).toBe("$19.95");
+    expect(formatPrice(product({ variants: options }))).toBe("From $19.95");
+    expect(priceLabel(product())).toBe("$19.95");
+  });
+
+  it("never shows an unapproved price: no range, no number, 'Price to be confirmed'", () => {
+    const unapproved = product({ priceApproved: false, variants: options });
+    expect(priceRange(unapproved)).toBeNull();
+    expect(formatPrice(unapproved)).toBe(PRICE_TO_BE_CONFIRMED);
+    expect(priceLabel(unapproved)).toBe("Price to be confirmed");
+    for (const unit of sellableUnits(unapproved)) expect(unitPriceLabel(unapproved, unit)).toBe(PRICE_TO_BE_CONFIRMED);
+    expect(`${formatPrice(unapproved)} ${priceLabel(unapproved)}`).not.toMatch(/\d/);
+  });
+
+  it("shows each option's own price when approved, and nothing for an option with no price", () => {
+    const p = product({ variants: options });
+    expect(sellableUnits(p).map((u) => unitPriceLabel(p, u))).toEqual(["$19.95", "$21.95"]);
+    expect(unitPriceLabel(product({ priceCents: null }), { priceCents: null })).toBe("");
+  });
+
+  it("says 'Price on request' only for an approved product with no price", () => {
+    expect(formatPrice(product({ priceCents: null }))).toBeNull();
+    expect(priceLabel(product({ priceCents: null }))).toBe(PRICE_ON_REQUEST);
+    expect(priceLabel(product({ priceCents: null, priceApproved: false }))).toBe(PRICE_TO_BE_CONFIRMED);
   });
 });
 

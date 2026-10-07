@@ -195,7 +195,7 @@ export type ResolvedPolicy = {
 };
 
 export type ResolveEnv = {
-  /** `isStaging()`: anything other than APP_ENV=production. */
+  /** `isStaging()`: only when APP_ENV is explicitly local, staging or test (D41). */
   staging: boolean;
   contact: ContactFacts;
 };

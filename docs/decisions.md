@@ -425,10 +425,10 @@ category, with a /gift-baskets page.
   basket staff add in /admin that isn't in the map goes in a final "More gift baskets" group.
   The page also links to Build a Basket and, for seasonal gift boxes (inquiry only, nothing to buy),
   to `/contact?topic=gift_box`.
-- **Unapproved prices on cards:** `ProductCard` has an opt-in `hideUnapprovedPrice`, which /gift-baskets
-  turns on so a card says "Price on request" until the price is approved. Other listings are
-  unchanged: the shop grid, the product page and the baby ceramics (D19) still show a stored
-  unapproved price next to their availability label.
+- **Unapproved prices on cards:** `ProductCard` had an opt-in `hideUnapprovedPrice`, which /gift-baskets
+  turned on so a card said "Price on request" until the price was approved. **Superseded by D41 (A06):**
+  every listing, the product page, the builder and the bag now say "Price to be confirmed" for an
+  unapproved price, and the prop is gone.
 - **Going live, per basket, in /admin:** confirm the price and tick "approved", set the channel to
   "Sold online", and count stock. The seed is create-only (D24), so existing databases get the new
   category and products on the next `npm run seed:catalog` and nothing already there changes.
@@ -477,6 +477,118 @@ never writes the terms for Lody.
   checks the two cookie lifetimes against `src/lib/checkout/session.ts`.
 - **Checkout and reserve pages** carry one line linking to the pickup and cancellation policies. It
   only informs: nobody has to agree to policies that aren't approved yet.
+
+## D41 — Security and audit fixes (2026-10-06)
+
+Fixes from the repo audit (`AUDIT.md`, A01–A23) that need no schema change and no change to
+`src/lib/checkout/service.ts`. No migration. The rest of the audit is with the inventory and
+checkout-hardening work (A02, A04, A05, A11, A12, A14, A20) and the integrator (A17, A21, footer).
+
+- **What "live" means (A09).** Everything that is only allowed away from the live store is now an
+  allowlist (`src/lib/app-env.ts`): the test payment provider, unapproved photos, the staging
+  banner, draft policies, `PREVIEW_ASSUME_STOCK`, and the `noindex` robots rules apply **only when
+  `APP_ENV` is explicitly `local`, `staging` or `test`** (case and spaces ignored). `production`, an
+  unset variable and a mistyped one (`prod`, `stage`) are all the live store, so a forgotten variable
+  closes ordering and hides placeholder photos instead of opening them. This refines the wording of
+  D32, D35 and D39 ("APP_ENV=production") to "anything that is not local, staging or test".
+  `/ops/system-check` and `npm run doctor` gain an **APP_ENV** check: it passes for `production`,
+  `local`, `staging` and `test`, and fails (with what the server will do) for unset or unrecognised
+  values. Tests run with `APP_ENV=test` (`tests/setup-env.ts`), which is on the allowlist.
+  `.env.example` keeps `APP_ENV=local` for development and says so. `robots.txt` and the `noindex` meta
+  tag follow the same rule; `app/robots.ts` is now `force-dynamic`, because Next otherwise builds it once
+  and a build made with a different `APP_ENV` would fix the wrong rules into the live site.
+- **Unapproved prices (A06).** `formatPrice`, `priceRange` and the option list live in
+  `src/lib/catalog/product.ts`. A product whose price is not approved shows **"Price to be
+  confirmed"** and never a number: product cards on every listing (shop, baby gifts, gift baskets,
+  home), the product page and its option list, the builder's item cards and the bag (a line whose
+  price was approved when added but is not now). "Price on request" remains only for an approved
+  product with no price. This replaces the opt-in `hideUnapprovedPrice` prop that D38 added; the baby
+  ceramics' assumed prices (D19) are therefore no longer shown. Admin views are unchanged.
+- **Basket requests (A01).** `parseCustomRequest` rejects a selection with a quantity that is not a
+  whole number from 1 to 99 (negative, zero, fractional, `NaN`, huge) or with no product id, and merges
+  a product listed twice into one line (rejecting if the merge passes 99). Both the builder actions and
+  the signed basket cookie read requests through it, so `service.ts` only ever sees clean lines; its own
+  hardening is with the inventory work.
+- **Standing closures (A07).** The catalog seed fills Checkout settings → Closed dates **only when the
+  list is empty**: December 25, January 1 and Labor Day (first Monday of September), PRD FUL 01, as
+  explicit dates for the next **18 months** (`src/lib/checkout/closed-dates.ts`). From October 2026 that
+  is 2026-12-25, 2027-01-01, 2027-09-06, 2027-12-25 and 2028-01-01. The field holds plain dates, and
+  recurring rules would need a schema change, so **Lody adds later years in /admin** (or the seed fills
+  the next 18 months again if the list is ever emptied). Store settings → "Timezone" and "Closed days"
+  remain labels that checkout does not read (pickup uses `America/New_York`, and the closed-day text
+  is for the footer). Wiring or removing them is a schema change, left for later.
+- **Headers, cookies, CSRF, GraphQL (A08).**
+  - `next.config.ts` sets `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff` and
+    `Referrer-Policy: strict-origin-when-cross-origin` on every path, `Referrer-Policy: no-referrer` on
+    `/order/*` and `/reservation/*` (their URL carries the guest token), and `poweredByHeader: false`
+    (Payload's own `X-Powered-By` is suppressed with it). `Strict-Transport-Security: max-age=31536000`
+    (no `includeSubDomains`, no `preload`, since domain changes need Lody's approval) is sent **only for a
+    production build**. Next evaluates `headers()` when it builds, so run `npm run build` on the host with
+    `APP_ENV=production` set. No CSP yet: the admin needs inline scripts, so a report-only policy comes
+    later.
+  - The Payload login cookie is `Secure` unless this is a local, staging or test server not in production
+    mode.
+  - `csrf` is the origin(s) in `NEXT_PUBLIC_SITE_URL` (comma-separated allowed, so apex and www both
+    work) **only when that variable is set**; unset leaves Payload's allowlist off. With it set, the admin
+    must be opened at exactly that origin, or the browser's API calls are treated as logged out.
+  - `graphQL: { disable: true }`: nothing uses it (the admin runs on REST). The `/api/graphql` routes
+    remain and answer 404. The cloudflared tunnel (`docs/preview-and-sharing.md`) works with
+    `NEXT_PUBLIC_SITE_URL` unset or set to the tunnel's https address.
+- **First owner (A03).** `scripts/create-owner.ts` (`npx payload run scripts/create-owner.ts`) creates
+  the first owner from `OWNER_EMAIL` and `OWNER_PASSWORD`, refuses if **any** user exists, applies the
+  password policy and never prints the password. Separately, when `FIRST_OWNER_EMAIL` is set the Users
+  collection rejects any other email for the first account, including `/api/users/first-register` and
+  the admin's create-first-user screen. It is read when the account is created and does nothing once a
+  user exists. Run the script (or open /admin yourself) **before the host is reachable**, and keep
+  `FIRST_OWNER_EMAIL` set.
+- **Photos (A10).** On the live store anonymous reads of Media are limited to photos with
+  `approvedForLaunch`, through the REST list, the file route and its resized files, and related photos
+  on products (which come back unpopulated and show "Photo coming soon"). Staff of every role keep full
+  access; local, staging and test are unchanged.
+- **Passwords and uploads (A23).** Staff passwords need at least 12 characters (at most 128), not a
+  repeated character, run or keyboard row, not a very common password, not built on the shop's name, and
+  under 16 characters a mix of three of lowercase, capitals, numbers and symbols
+  (`src/lib/password-policy.ts`, a Users `beforeValidate` hook). **Not covered:** Payload's
+  reset-password-by-email flow does not pass the new password through collection hooks. There is no
+  email adapter yet, so that flow isn't live. Photos over **15 MB** are refused before Payload resizes
+  them (Payload's own parser cap is 20 MB), and sharp will not decode an image over 64 megapixels.
+  There is no 2FA.
+- **Forms keep what customers typed (A13).** React 19 resets a `<form action>` after the action runs.
+  The checkout, reservation and add-to-bag actions now return the submitted values with the error
+  (`src/lib/checkout/form-state.ts`: only known fields, short strings), and the fields read them as
+  `defaultValue`: `ActionForm` provides them through a context, which `ContactFields`, `PickupSelect`,
+  the notes box and the payment choice (new client components in `components/checkout/`) use. While an
+  action runs the button is `aria-disabled` (a second click is ignored; focus stays), and after an error
+  focus moves to the message. The inquiry forms already did this.
+- **Rate limits and stale bags (A15).** An in-memory limiter keyed by client IP and action
+  (`src/lib/rate-limit.ts`, shared by every bundle through `globalThis`) answers "Too many attempts,
+  please wait a minute and try again." Per minute: add to bag 30, check basket 20, start reservation 20,
+  place order 6, reserve 6, contact 5, fountain 5. Limited form actions still return what the customer
+  typed. It is a speed bump for one Node process: counts reset on restart. The IP is the **last**
+  `X-Forwarded-For` entry (the one the proxy appended), then `X-Real-IP`; with neither, everyone shares
+  one "unknown" bucket, so confirm the host forwards the header. `scripts/purge-carts.ts` deletes shopping
+  bags untouched for over 30 days (`npx payload run scripts/purge-carts.ts`); run it daily from cron.
+- **Error pages (A16).** The storefront has a branded `error.tsx` (Next 16's `retry` prop, never the
+  error message, a short digest reference) and `not-found.tsx`. A repeated `?t=a&t=b` on a receipt link
+  is now a 404 instead of a 500 (`singleParam`, outside `service.ts`). Next only uses a route group's
+  `not-found.tsx` when a page calls `notFound()`: a URL that matches no page still gets Next's default
+  404 because the site has two root layouts (storefront and admin); `experimental.globalNotFound` would
+  fix that and needs a build to verify.
+- **Accessibility (A18, except the footer).** `/shop` has a visually hidden h2 above the cards, so the
+  outline no longer jumps from h1 to h3. Card photos have empty alt text because the title link beside
+  them names the product. The Add-to-bag button names the option ("Add to bag: Pink") and shows it, even
+  when there is only one; the builder's "Add another (2)" button's name now contains those words.
+- **Seed guard (A19).** `npm run seed:catalog` refuses a database that already has products when
+  `APP_ENV` is not local, staging or test, prints why, and exits 1. `SEED_FORCE=1` overrides it
+  (a `--force` flag cannot work: `payload run` passes a script only its positional arguments). An empty database, or any local, staging or test one, is unaffected.
+- **Tests and CI (A22).** Unit tests for each fix, integration tests in `tests/int/audit-fixes.test.ts`
+  (first owner, passwords, media access, upload limits, API surface, closed dates, cart purge) and CI
+  now fails when `payload migrate:create` finds schema changes no migration covers or writes a file.
+  Actions are still pinned by tag.
+
+New environment variables: `FIRST_OWNER_EMAIL`, `OWNER_EMAIL`, `OWNER_PASSWORD`, `SEED_FORCE`.
+Changed meaning: `APP_ENV` (allowlist, must be set to `production` on the live host),
+`NEXT_PUBLIC_SITE_URL` (now enables the CSRF allowlist; the `.env.example` value is commented out).
 
 ## Superseded (WooCommerce build, commit 5c36c77)
 

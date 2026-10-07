@@ -61,7 +61,7 @@ export default async function GiftBasketsPage() {
             {group.blurb && <p className="mb-6 max-w-[68ch]">{group.blurb}</p>}
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-5">
               {group.products.map((p) => (
-                <ProductCard key={p.id} product={p} hideUnapprovedPrice />
+                <ProductCard key={p.id} product={p} />
               ))}
             </ul>
           </section>
