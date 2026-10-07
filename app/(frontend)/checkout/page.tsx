@@ -7,6 +7,7 @@ import { ContactFields } from "@/components/checkout/ContactFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
 import { field, label } from "@/components/checkout/styles";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
+import { PolicyLinks } from "@/components/policies/PolicyLinks";
 import { availableSlots } from "@/src/lib/checkout/pickup";
 import { priceBag } from "@/src/lib/checkout/service";
 import { bagToken, checkoutPayload } from "@/src/lib/checkout/session";
@@ -50,6 +51,7 @@ export default async function CheckoutPage() {
               {store.locality}.
             </p>
           )}
+          <PolicyLinks action="order" />
         </div>
         <Summary
           lines={bag.payable.map((l) => ({ key: l.unitId, title: l.title, detail: l.optionLabel, quantity: l.quantity, totalCents: l.lineTotalCents }))}

@@ -345,6 +345,48 @@ At the project lead's direction, Build a Basket is separate from the bag: a fini
 
   Baskets with dietary or special requests start in "Needs staff review" (GFT 06).
 
+## D39 — Customer policies: Lody approves the text; drafts stay on staging (2026-10-06)
+
+The PRD lists policy pages but says the final text, the reporting deadline, the refund and
+cancellation terms and the privacy terms are not approved. So the website holds the policies but
+never writes the terms for Lody.
+
+- **Five fixed policies:** pickup and delivery, cancellations and refunds, substitutions and
+  dietary requests, damaged or missing items, and privacy, at `/policies/<slug>`, listed at
+  `/policies`. There is no separate allergen policy: the dietary policy shows the existing allergy
+  notice from Store settings.
+- **Admin:** Settings → Policies is a global with one fixed group per policy: title, text (a blank
+  line starts a paragraph), an **Approved** tick and a last-reviewed date. Approving needs text.
+  Owner and manager edit it, and changes are audited. Read access is staff-only so unapproved text
+  isn't published through the REST/GraphQL API; the pages read it on the server.
+- **What a visitor sees** (`resolvePolicy`, `src/lib/policies.ts`):
+
+  | Site | Saved and approved | Saved, not approved | Nothing saved |
+  | --- | --- | --- | --- |
+  | Live (`APP_ENV=production`) | the text | "This policy is being finalised. Please contact us with any questions." | the same message |
+  | Staging and local | the text | the text, with a "Draft — awaiting Lody's approval" banner | built-in draft, with the banner and a list of the terms still to be decided |
+
+  The live site never shows the draft. An approved policy with a blank body counts as not approved.
+  The check uses `APP_ENV` like D32's photos, not `NODE_ENV`, because staging also runs with
+  `NODE_ENV=production`.
+- **Built-in drafts** live in code and are never written to the database, so they can't drift onto
+  the live site. They use only confirmed facts: pickup is free at the shop and takes about an hour
+  depending on workload (not guaranteed); local delivery is through DoorDash; shipping isn't offered
+  online; significant substitutions are discussed first; dietary requests aren't guarantees;
+  custom-order cancellation and refund requests get staff review; and damaged or missing items
+  should be reported promptly. Refund amounts, the cancellation window, whether the basket deposit
+  can be refunded, the reporting deadline, the escalation process, data retention and deletion are
+  stated as "being finalised: contact the shop". Tests fail if a draft contains a price,
+  percentage or deadline.
+- **Privacy facts** come from the code: checkout and reservations collect name, email, phone,
+  pickup time, notes, and for baskets the gift message and requests. Inquiry forms collect name,
+  email, phone, a message and event details. The bag is a server-side record with an httpOnly
+  random token cookie (30 days). The basket being reserved travels in a signed cookie (2 hours).
+  There are no third-party requests or trackers (D13), and card details are never stored. A test
+  checks the two cookie lifetimes against `src/lib/checkout/session.ts`.
+- **Checkout and reserve pages** carry one line linking to the pickup and cancellation policies. It
+  only informs: nobody has to agree to policies that aren't approved yet.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

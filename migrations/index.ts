@@ -8,6 +8,7 @@ import * as migration_20261003_092317_home_page_brand from './20261003_092317_ho
 import * as migration_20261003_225023_home_page_hero from './20261003_225023_home_page_hero';
 import * as migration_20261003_232800_home_favorites_layout from './20261003_232800_home_favorites_layout';
 import * as migration_20261005_210313_checkout_reservations from './20261005_210313_checkout_reservations';
+import * as migration_20261007_021719_policies from './20261007_021719_policies';
 
 export const migrations = [
   {
@@ -59,5 +60,10 @@ export const migrations = [
     up: migration_20261005_210313_checkout_reservations.up,
     down: migration_20261005_210313_checkout_reservations.down,
     name: '20261005_210313_checkout_reservations',
+  },
+  {
+    up: migration_20261007_021719_policies.up,
+    down: migration_20261007_021719_policies.down,
+    name: '20261007_021719_policies'
   },
 ];

@@ -20,6 +20,7 @@ import { Users } from "./collections/Users";
 import { CheckoutSettings } from "./globals/CheckoutSettings";
 import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { HomePage } from "./globals/HomePage";
+import { Policies } from "./globals/Policies";
 import { StoreSettings } from "./globals/StoreSettings";
 
 const filename = fileURLToPath(import.meta.url);
@@ -42,7 +43,7 @@ export default buildConfig({
     },
   },
   collections: [Orders, Reservations, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs],
-  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings],
+  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, Policies],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
