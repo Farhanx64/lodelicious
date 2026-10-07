@@ -138,7 +138,7 @@ export const POLICIES: readonly PolicyDefinition[] = [
         "When you place an order or reserve a custom basket, we ask for your name, email address and phone number, the pickup time you choose, and any notes you want to give the shop. For a custom basket we also keep the basket you built, your gift message and any dietary or special requests.",
         "When you send an inquiry through the contact form or an event inquiry form, we collect your name, email address, phone number, your message and any event details you enter.",
         "The shop uses this information to prepare your order or reservation, to contact you about it (for example before a significant substitution), and to answer your inquiry.",
-        "While you shop, your bag is kept on our server. Your browser holds a random code in a cookie that lasts up to 30 days, so the site can find your bag again. The code contains no personal details and no prices. When you reserve a custom basket, a second cookie that lasts 2 hours carries the basket you are reserving. We do not use cookies for advertising or tracking.",
+        "While you shop, your bag is kept on our server. Your browser holds a random code in a cookie that lasts up to 30 days, so the site can find your bag again. The code contains no personal details and no prices. When you reserve a custom basket, a second cookie that lasts 2 hours carries the basket you are reserving, including your gift message and any requests. We do not use cookies for advertising or tracking.",
         "This website does not use third-party trackers or analytics.",
         "We do not store card numbers or security codes on this website. Card payments are handled by a payment provider, and we keep only a reference to the payment.",
         "Local delivery orders are placed on DoorDash’s own page, not on this website. DoorDash’s own terms and privacy practices apply to what you share with them.",
@@ -148,6 +148,7 @@ export const POLICIES: readonly PolicyDefinition[] = [
       "How long order, reservation and inquiry details are kept.",
       "How a customer asks to see, correct or delete their information.",
       "Who besides the shop’s staff can see it once the payment provider and email sending are connected.",
+      "Whether to mention the web host’s server logs (which can record visitors’ IP addresses) and how long the host keeps them.",
     ],
   },
 ];

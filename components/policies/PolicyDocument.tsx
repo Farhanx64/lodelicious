@@ -15,7 +15,7 @@ function DraftBanner({ policy }: { policy: ResolvedPolicy }) {
         </p>
       ) : (
         <p className="mt-1 text-sm">
-          This text is saved but not approved. The live site shows it only after Approved is ticked in Admin → Policies; until then it says the policy is being finalised.
+          This text is saved but not approved. The live site shows it only after Lody ticks Approved in Admin → Policies; until then it says the policy is being finalised.
         </p>
       )}
       {policy.openTerms.length > 0 && (

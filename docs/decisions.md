@@ -356,9 +356,12 @@ never writes the terms for Lody.
   `/policies`. There is no separate allergen policy: the dietary policy shows the existing allergy
   notice from Store settings.
 - **Admin:** Settings → Policies is a global with one fixed group per policy: title, text (a blank
-  line starts a paragraph), an **Approved** tick and a last-reviewed date. Approving needs text.
-  Owner and manager edit it, and changes are audited. Read access is staff-only so unapproved text
-  isn't published through the REST/GraphQL API; the pages read it on the server.
+  line starts a paragraph), an **Approved** tick and a last-reviewed date. Owner and manager can
+  edit the text and changes are audited, but **only the owner can tick Approved**, nobody can
+  approve a policy with no text, and a manager's change to the title or text of an approved policy
+  clears the tick until Lody approves again. (To let the manager approve, relax the check in
+  `globals/Policies.ts`.) Read access is staff-only so unapproved text isn't published through the
+  REST/GraphQL API; the pages read it on the server.
 - **What a visitor sees** (`resolvePolicy`, `src/lib/policies.ts`):
 
   | Site | Saved and approved | Saved, not approved | Nothing saved |
