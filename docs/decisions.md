@@ -345,6 +345,46 @@ At the project lead's direction, Build a Basket is separate from the bag: a fini
 
   Baskets with dietary or special requests start in "Needs staff review" (GFT 06).
 
+## D37 — Inquiries, chocolate-fountain requests and the Contact page (2026-10-06)
+
+Anything that can't be bought online goes through an **inquiry** that staff review. Nothing is
+booked, ordered or charged by an inquiry, and no email is sent yet (the shop replies by email or
+phone; notification emails come with milestone 6).
+
+- **`inquiries` collection** (/admin → Orders → Inquiries):
+  - Number `INQ-1001`, `INQ-1002`, … from a hidden sequence (the highest used plus one, so a
+    deleted inquiry never causes a clash).
+  - Topics, shared with every page that links to `/contact?topic=…`: `general`, `gift_basket`,
+    `gift_box`, `baby_white`, `cowboy`, `filled_ceramic`, `custom_request`, `fountain`.
+  - Status: new (the start), in review, waiting for the customer, confirmed, declined, closed.
+  - Access: every staff role reads; nobody creates through the API (only the server action does);
+    staff update the status and notes; only the owner deletes.
+  - What the customer wrote, the product, the event details and the estimate are read-only for
+    staff. Only status and staff notes are audited, so the audit log never holds customer details.
+- **`event-settings` global** (Settings → Events (chocolate fountain); owner and manager edit,
+  audited, public read because the prices are public):
+  - The confirmed offer (PRD): $250 for 2 hours including setup and service, $8.50 per person
+    ($5.00 chocolate + $3.50 fruit), and a 25% deposit, with an on/off switch.
+  - Cancellation wording, service area, minimum guests and extra time stay empty. Customers see
+    each one only once it is filled in. "Free cancellation within one week" is not published
+    because the PRD calls it ambiguous.
+- **Fountain estimate** = base + per person × guests, in integer cents, guests a whole number from
+  1 to 1000. It is shown as an estimate that staff confirm. Tax and other approved charges are
+  not computed and are said to be separate, because nobody has said whether a rental is taxable
+  (D34 covers products). The deposit is shown as a percentage only and "requested after we
+  confirm", never as an amount, because its basis is not decided. No deposit is taken online.
+- **The server decides.** `/events` shows a live calculator that uses the same pure function, but
+  the stored estimate is recomputed from the stored settings and anything the browser sends is
+  ignored. The date must not be in the past in America/New_York; the topic comes from a fixed list;
+  `?item=` is matched against published, non-hidden products only and unknown slugs are ignored.
+- **Spam and abuse:** a honeypot field (a hit looks like success but stores nothing), the same
+  submission twice is one inquiry, length limits, and control characters stripped. Next.js checks
+  the Origin of every server-action request (CSRF). There is **no rate limit yet**.
+- **Entry points:** an "Ask about this" link on inquiry-only product pages, Baby White and filled
+  ceramics on Baby Gifts, and Cowboy, Baby White and filled ceramics on Build a Basket (whichever
+  the gift rules mark inquiry-only). The Contact page reads `?topic=` and `?item=`.
+- Migration `inquiries_events`.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

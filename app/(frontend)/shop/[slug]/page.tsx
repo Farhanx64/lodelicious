@@ -5,11 +5,13 @@ import { notFound } from "next/navigation";
 import { AvailabilityNote, formatPrice } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { AddToBag, type BagOption } from "@/components/checkout/AddToBag";
+import { primaryButton } from "@/components/checkout/styles";
 import type { Category, Media } from "@/payload-types";
 import { getProduct } from "@/src/lib/catalog/queries";
 import { previewStockEnabled } from "@/src/lib/catalog/preview";
 import { sellableUnits } from "@/src/lib/catalog/product";
 import { priceCart } from "@/src/lib/checkout/cart";
+import { contactHref, topicForProduct } from "@/src/lib/inquiries/shared";
 import { formatCents } from "@/src/lib/money";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
@@ -112,10 +114,20 @@ export default async function ProductPage({ params }: Props) {
           {bagOptions.length > 0 ? (
             <AddToBag options={bagOptions} />
           ) : (
-            <p className="mb-8 border-l-4 border-gold bg-paper p-4">
-              Not available to order online right now. To order, call <a href={telHref(store.phone)}>{store.phone}</a> or visit us at {store.street},{" "}
-              {store.locality}.
-            </p>
+            <div className="mb-8 border-l-4 border-gold bg-paper p-4">
+              <p>
+                {product.channel === "inquiry_only" ? "Available by inquiry." : "Not available to order online right now."} To order, call{" "}
+                <a href={telHref(store.phone)}>{store.phone}</a> or visit us at {store.street}, {store.locality}.
+              </p>
+              {product.channel === "inquiry_only" && product.slug && (
+                // Inquiry-only products (D37): ask the shop instead of buying online.
+                <p className="mt-3">
+                  <Link href={contactHref({ topic: topicForProduct(category?.slug), item: product.slug })} className={primaryButton}>
+                    Ask about this
+                  </Link>
+                </p>
+              )}
+            </div>
           )}
 
           <section aria-labelledby="allergens" className="border-t border-line pt-6">
