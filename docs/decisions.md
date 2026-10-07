@@ -490,7 +490,7 @@ or "Low stock", never a count.
   `req.transactionID` is never set. (The comment in `src/hooks/audit.ts` saying audit rows share the
   change's transaction is therefore not true today.) `client.transaction()` is no use either: libsql
   opens a second connection for every other caller while it is open, and with SQLite's 0 busy timeout
-  they fail at once with `SQLITE_BUSY`. So every stock change is **one `client.batch(..., "write")`**
+  they fail at once with `SQLITE_BUSY` (the busy timeout is only about 5 ms here). So every stock change is **one `client.batch(..., "write")`**
   (`src/lib/inventory/db.ts`): libsql runs `BEGIN IMMEDIATE`, every statement and `COMMIT` in a single
   synchronous call, so nothing else in the process can run in between, and other processes (the cron
   script) are serialised by SQLite's write lock. The conditions are in the SQL itself: each guarded
@@ -518,7 +518,8 @@ or "Low stock", never a count.
 - **A paid order is never lost (INV 06).** If the stock can't be taken after a successful payment (the hold
   expired and the shelf changed, a count shrank stock, a component went unknown, or the batch failed), the
   paid record is kept, flagged `stockStatus: needs_attention` with a note, moved to "Needs staff review",
-  logged, and **nobody is charged again**. Only a manager can mark it Resolved once the stock is fixed. A
+  logged, and **nobody is charged again**. Only the owner or a manager can mark it Resolved once the stock is fixed.
+  A record that is paid after staff cancelled it is kept and flagged the same way, with nothing taken from stock. A
   late "paid" for a checkout that had been released, or a record found paid but still `held` after a crash,
   is settled by the same code (`settleStock`, run by the cron job): it takes the stock only if it is still
   sellable (the in-store reserve and other holds still apply), otherwise it is flagged.
@@ -530,8 +531,9 @@ or "Low stock", never a count.
   unknown or stale. Components are one level deep, can't be the basket itself, must name an option when
   the component has options, and a basket with contents can't have options of its own; all checked when a
   product is published. Custom-basket reservations deduct their snapshot components. Without contents a
-  basket's own stock is deducted. The tab is always visible: hiding it for other categories needs the
-  category's slug, which the admin form doesn't have.
+  basket's own stock is deducted. The tab shows for the gift-baskets category, or once contents are filled in (a hidden,
+  unstored `categorySlug` field gives the form the slug); after changing a product's category, save it before the tab
+  appears.
 - **Drafts and versions can't write old stock back.** Stock lives on the product row the storefront reads, but
   Payload builds every update from the latest saved *version* (a draft, or the snapshot at the last publish).
   A price-only save, publishing an older draft or restoring a version would otherwise put that version's
@@ -545,8 +547,9 @@ or "Low stock", never a count.
   **Stock adjustments** the owner or a manager records a **count** (sets the quantity to what was counted,
   marks it known and counted now) or an **adjustment** (adds or removes units, never below zero); each is
   applied atomically with its ledger row and outbox event, and the row is the audit record (who, why) and
-  can't be edited or deleted. A count replaces the number: units sold online but not yet packed are still on
-  the shelf, so count before packing or add them back (open question for Lody). Fulfillment staff can only
+  can't be edited or deleted. A count replaces the number, and units sold online are taken off it when the order is paid, even while
+  they are still on the shelf waiting to be packed. So a shelf count must leave out units set aside for paid, unpacked orders
+  (or be taken after packing), or the shop would sell them twice (open question for Lody). Fulfillment staff can only
   restock.
 - **Cancel and restock are separate from refunds.** Cancelling or refunding never changes stock. A
   "Put cancelled stock back" adjustment names an order or reservation and the components to return; it can't
@@ -565,6 +568,12 @@ or "Low stock", never a count.
 - **Fixes that live in checkout.** A02: order and reservation numbers are one above the highest in use (a
   numeric `MAX`), and only a number collision is retried. A01: a basket's components come from the merged,
   validated selections.
+- **Known edges.** Holds belong to a bag (orders) or to a basket, email and pickup time (reservations), not to one record: a
+  late payment for an old order from the same bag can use up a newer checkout's hold, and cancelling releases every hold the
+  bag has. The newer order is then flagged for staff, never oversold. `reserveBasket` now checks contact and pickup before
+  the basket, so those errors come first. Do not switch on `transactionOptions` for the SQLite adapter without re-running
+  the inventory tests: Payload would then swap the shared connection mid-request. A larger `busyTimeout` on the adapter
+  would help writes that collide with the cron script.
 - **Staging.** With `PREVIEW_ASSUME_STOCK`, uncounted stock can still be ordered and is neither held nor
   deducted.
 - Migration `inventory`. New: `stock-movements`, `stock-holds`, `stock-adjustments`, `outbox`, the

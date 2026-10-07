@@ -133,6 +133,16 @@ describe("a curated basket with a bill of materials (INV 01)", () => {
     expect(await changeBag(payload, other, { unitId: String(basket.id), quantity: 1, mode: "add" }, ctx)).toMatchObject({ ok: false });
   });
 
+  it("tells the admin which category a product is in, so the Basket contents tab follows it", async () => {
+    const baskets = await payload.create({ collection: "categories", data: { name: "Gift baskets", slug: "gift-baskets" } as never, overrideAccess: true });
+    const basket = await makeProduct({ payload, category: baskets }, { stock: null });
+    const plain = await makeProduct(w, { stock: 3 });
+    const read = (id: number, user?: typeof w.manager) => payload.findByID({ collection: "products", id, depth: 0, ...(user ? { user } : {}), overrideAccess: false });
+    expect((await read(basket.id, w.manager)).categorySlug).toBe("gift-baskets");
+    expect((await read(plain.id, w.manager)).categorySlug).toBe("sweets");
+    expect((await read(basket.id)).categorySlug).toBeUndefined(); // visitors never get it
+  });
+
   it("is unavailable until every component is counted, and falls back to its own stock without contents", async () => {
     const uncounted = await makeProduct(w, { stock: null });
     const basket = await makeProduct(w, { stock: null, components: [{ product: uncounted.id, quantity: 1 }] });
@@ -213,8 +223,13 @@ describe("holds while paying (INV 04)", () => {
     expect(holds.docs.map((h) => h.status)).toEqual(["released"]);
     expect((await order(waiting.number)).stockStatus).toBe("released");
     expect(await changeBag(payload, newCartToken(), { unitId: String(p.id), quantity: 1, mode: "add" }, ctx, NOW)).toEqual({ ok: true });
+    // The payment then goes through anyway: the paid order is kept and flagged, and no stock is taken for a cancelled order.
     release();
-    await pending;
+    expect((await pending).ok).toBe(true);
+    expect(await order(waiting.number)).toMatchObject({ paymentStatus: "paid", fulfillmentStatus: "canceled", stockStatus: "needs_attention", stockNote: expect.stringMatching(/cancelled/) });
+    expect(await liveStock(payload, p.id)).toBe(2);
+    expect(await movementsFor(payload, p.id)).toEqual([]);
+    expect((await reconcilePaidHeld(payload, NOW)).checked).toBe(0); // the cron leaves it for staff
   });
 
   it("are released when the payment provider throws", async () => {

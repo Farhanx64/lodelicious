@@ -40,6 +40,17 @@ export async function settleStock(payload: Payload, collection: Collection, reco
 
   const reference = record.number;
   let note: string | null = null;
+
+  // Staff cancelled it while the customer was still paying. Taking stock for a cancelled record would
+  // sell the goods twice, so keep the paid record, take nothing and say so.
+  const status = (record as unknown as { [k: string]: unknown })[STAFF_REVIEW_FIELD[collection]];
+  if (status === "canceled") {
+    note = "Paid after the record was cancelled. Nothing was taken from stock. Refund the customer or reinstate the record, then mark this resolved.";
+    console.error(`[inventory] ${reference} was paid after it was cancelled: ${note}`);
+    await setStatus(payload, collection, record.id, "needs_attention", { stockNote: note });
+    return "needs_attention";
+  }
+
   try {
     const result = await commitSale(payload, {
       owner: record.stockOwner ?? null,

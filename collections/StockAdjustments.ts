@@ -54,7 +54,7 @@ export const StockAdjustments: CollectionConfig = {
         step: 1,
         condition: (data) => data?.kind === "count",
         description:
-          "How many are on the shelf now, including units already sold online that haven't been packed yet. This replaces the stored number, marks it counted today and ends any \"unknown\" state.",
+          "How many are on the shelf and free to sell now. Leave out units set aside for paid online orders that haven't been packed yet: they were already taken off the stored number when the order was paid, so counting them would let the shop sell them twice (count after packing, or subtract them). This replaces the stored number, marks it counted now and ends any \"unknown\" state.",
       },
     },
     {

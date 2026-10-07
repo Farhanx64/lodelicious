@@ -4,6 +4,7 @@ import { isCommerceManager } from "../src/access/roles";
 import { auditCollection } from "../src/hooks/audit";
 import { checkComponents, noteExplicitStock, pinLiveStock, showLiveStock } from "../src/hooks/product-stock";
 import { slugField } from "../src/fields/slug";
+import { GIFT_BASKET_CATEGORY } from "../src/lib/catalog/gift-baskets";
 import { GIFT_TYPES, SPECIAL_CODES } from "../src/lib/gifts/types";
 
 const cents = (name: string, label: string, description?: string): Field => ({
@@ -238,6 +239,9 @@ export const Products: CollectionConfig = {
         },
         {
           label: "Basket contents",
+          // Only for curated baskets, or when contents are already filled in. The category's slug comes from the
+          // hidden `categorySlug` field below, so the tab follows a category change once the product is saved.
+          admin: { condition: (data) => data?.categorySlug === GIFT_BASKET_CATEGORY || (Array.isArray(data?.components) && data.components.length > 0) },
           description:
             "Only for ready-made (curated) baskets. Leave empty for everything else. A basket with contents is sold from its components: each one is deducted once when the basket sells, and the basket's own stock is never used. Without contents, the basket's own stock is deducted.",
           fields: [
@@ -344,5 +348,24 @@ export const Products: CollectionConfig = {
       ],
     },
     slugField("title"),
+    {
+      // Not stored: the category's slug for staff, so the admin can show the "Basket contents" tab only where it belongs.
+      name: "categorySlug",
+      type: "text",
+      virtual: true,
+      admin: { hidden: true },
+      hooks: {
+        afterRead: [
+          async ({ data, req, findMany }) => {
+            if (findMany || !req.user) return undefined;
+            const category = (data as { category?: unknown } | undefined)?.category;
+            if (category && typeof category === "object") return (category as { slug?: string | null }).slug ?? undefined;
+            if (category === null || category === undefined) return undefined;
+            const found = await req.payload.findByID({ collection: "categories", id: category as number, depth: 0, overrideAccess: true }).catch(() => null);
+            return found?.slug ?? undefined;
+          },
+        ],
+      },
+    },
   ],
 };
