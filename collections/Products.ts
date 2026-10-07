@@ -2,7 +2,9 @@ import type { CollectionConfig, Field } from "payload";
 
 import { isCommerceManager } from "../src/access/roles";
 import { auditCollection } from "../src/hooks/audit";
+import { checkComponents, noteExplicitStock, pinLiveStock, showLiveStock } from "../src/hooks/product-stock";
 import { slugField } from "../src/fields/slug";
+import { GIFT_BASKET_CATEGORY } from "../src/lib/catalog/gift-baskets";
 import { GIFT_TYPES, SPECIAL_CODES } from "../src/lib/gifts/types";
 
 const cents = (name: string, label: string, description?: string): Field => ({
@@ -30,6 +32,21 @@ const whole = (name: string, label: string, defaultValue?: number, description?:
     value === null || value === undefined || Number.isSafeInteger(value) ? true : "Enter a whole number",
 });
 
+const STOCK_NOTE = "Set by counts, sales and syncs. To change it, record a count or an adjustment under Inventory → Stock adjustments.";
+
+const countedQuantity = (name: string, label: string): Field => ({ ...whole(name, label), admin: { step: 1, readOnly: true, description: STOCK_NOTE } }) as Field;
+
+const stockState = (options: { label: string; value: string }[]): Field => ({
+  name: "stockState",
+  type: "select",
+  required: true,
+  defaultValue: "unknown",
+  options,
+  admin: { readOnly: true, description: STOCK_NOTE },
+});
+
+const countedAt = (description: string): Field => ({ name: "stockCountedAt", type: "date", admin: { readOnly: true, description, date: { pickerAppearance: "dayAndTime" } } });
+
 /**
  * Everything sold or used in gifts. Lody and Faisal add, edit, publish, unpublish and delete
  * products in /admin; fulfillment staff can view but not change them. Drafts keep unfinished
@@ -52,6 +69,9 @@ export const Products: CollectionConfig = {
     delete: isCommerceManager,
   },
   hooks: {
+    beforeOperation: [noteExplicitStock],
+    beforeChange: [pinLiveStock, checkComponents],
+    afterRead: [showLiveStock],
     afterChange: [
       auditCollection([
         "title",
@@ -62,6 +82,7 @@ export const Products: CollectionConfig = {
         "stockQuantity",
         "onlineReserve",
         "variants",
+        "components",
         "premium",
         "giftTypes",
         "basketEligible",
@@ -128,17 +149,11 @@ export const Products: CollectionConfig = {
             {
               type: "row",
               fields: [
-                {
-                  name: "stockState",
-                  type: "select",
-                  required: true,
-                  defaultValue: "unknown",
-                  options: [
-                    { label: "Counted", value: "known" },
-                    { label: "Unknown — not purchasable", value: "unknown" },
-                  ],
-                },
-                whole("stockQuantity", "Quantity on hand"),
+                stockState([
+                  { label: "Counted", value: "known" },
+                  { label: "Unknown — not purchasable", value: "unknown" },
+                ]),
+                countedQuantity("stockQuantity", "Quantity on hand"),
                 whole("lowStockThreshold", "Low-stock label at or below", 3),
                 whole(
                   "onlineReserve",
@@ -148,7 +163,7 @@ export const Products: CollectionConfig = {
                 ),
               ],
             },
-            { name: "stockCountedAt", type: "date", admin: { description: "When stock was last counted against the shelf/Clover." } },
+            countedAt("When stock was last counted against the shelf or Clover. Stock older than the limit in Settings → Inventory is treated as unknown."),
             {
               name: "variants",
               type: "array",
@@ -169,20 +184,15 @@ export const Products: CollectionConfig = {
                 {
                   type: "row",
                   fields: [
-                    {
-                      name: "stockState",
-                      type: "select",
-                      required: true,
-                      defaultValue: "unknown",
-                      options: [
-                        { label: "Counted", value: "known" },
-                        { label: "Unknown", value: "unknown" },
-                      ],
-                    },
-                    whole("stockQuantity", "Quantity on hand"),
+                    stockState([
+                      { label: "Counted", value: "known" },
+                      { label: "Unknown", value: "unknown" },
+                    ]),
+                    countedQuantity("stockQuantity", "Quantity on hand"),
                     { name: "image", type: "upload", relationTo: "media" },
                   ],
                 },
+                { type: "row", fields: [countedAt("When this option was last counted.")] },
               ],
             },
           ],
@@ -225,6 +235,36 @@ export const Products: CollectionConfig = {
               ],
             },
             { name: "assemblyNotes", type: "textarea", admin: { description: "Staff-only notes for packing." } },
+          ],
+        },
+        {
+          label: "Basket contents",
+          // Only for curated baskets, or when contents are already filled in. The category's slug comes from the
+          // hidden `categorySlug` field below, so the tab follows a category change once the product is saved.
+          admin: { condition: (data) => data?.categorySlug === GIFT_BASKET_CATEGORY || (Array.isArray(data?.components) && data.components.length > 0) },
+          description:
+            "Only for ready-made (curated) baskets. Leave empty for everything else. A basket with contents is sold from its components: each one is deducted once when the basket sells, and the basket's own stock is never used. Without contents, the basket's own stock is deducted.",
+          fields: [
+            {
+              name: "components",
+              label: "Components (bill of materials)",
+              type: "array",
+              labels: { singular: "Component", plural: "Components" },
+              admin: {
+                description:
+                  "Empty until Lody supplies the exact contents of each basket. Each component is a product (a chocolate, a container, ribbon or packaging) tracked in its own stock. A basket with contents can't also have options.",
+              },
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    { name: "product", type: "relationship", relationTo: "products", required: true },
+                    { name: "variantKey", label: "Option", type: "text", admin: { description: "The component's option code (e.g. pink), if it has options." } },
+                    { name: "quantity", type: "number", required: true, min: 1, defaultValue: 1, admin: { step: 1, description: "Units of this component in one basket." } },
+                  ],
+                },
+              ],
+            },
           ],
         },
         {
@@ -308,5 +348,24 @@ export const Products: CollectionConfig = {
       ],
     },
     slugField("title"),
+    {
+      // Not stored: the category's slug for staff, so the admin can show the "Basket contents" tab only where it belongs.
+      name: "categorySlug",
+      type: "text",
+      virtual: true,
+      admin: { hidden: true },
+      hooks: {
+        afterRead: [
+          async ({ data, req, findMany }) => {
+            if (findMany || !req.user) return undefined;
+            const category = (data as { category?: unknown } | undefined)?.category;
+            if (category && typeof category === "object") return (category as { slug?: string | null }).slug ?? undefined;
+            if (category === null || category === undefined) return undefined;
+            const found = await req.payload.findByID({ collection: "categories", id: category as number, depth: 0, overrideAccess: true }).catch(() => null);
+            return found?.slug ?? undefined;
+          },
+        ],
+      },
+    },
   ],
 };

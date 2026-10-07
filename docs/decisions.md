@@ -478,6 +478,108 @@ never writes the terms for Lody.
 - **Checkout and reserve pages** carry one line linking to the pickup and cancellation policies. It
   only informs: nobody has to agree to policies that aren't approved yet.
 
+## D40 — Inventory: ledger, holds, bill of materials, outbox (2026-10-07)
+
+The website half of milestone 5, with no Clover network access. Sellable stock for the online shop is
+now **counted − in-store reserve (D26) − other customers' active holds**, per product and per option,
+and unknown or stale counts are not sellable at all. Customers still see only "Currently unavailable"
+or "Low stock", never a count.
+
+- **Atomic changes, and what Payload does not give us.** Payload's transactions are off for SQLite
+  here: the adapter is built without `transactionOptions`, so `beginTransaction` returns null and
+  `req.transactionID` is never set. (The comment in `src/hooks/audit.ts` saying audit rows share the
+  change's transaction is therefore not true today.) `client.transaction()` is no use either: libsql
+  opens a second connection for every other caller while it is open, and with SQLite's 0 busy timeout
+  they fail at once with `SQLITE_BUSY` (the busy timeout is only about 5 ms here). So every stock change is **one `client.batch(..., "write")`**
+  (`src/lib/inventory/db.ts`): libsql runs `BEGIN IMMEDIATE`, every statement and `COMMIT` in a single
+  synchronous call, so nothing else in the process can run in between, and other processes (the cron
+  script) are serialised by SQLite's write lock. The conditions are in the SQL itself: each guarded
+  statement is followed by a check that raises SQLite's "integer overflow" if it changed no row, which
+  rolls the whole batch back and is mapped to "insufficient stock". `SQLITE_BUSY` from another process is
+  retried with jitter. A UNIQUE violation on a movement key means "already applied".
+- **`stock-movements` is the ledger.** One append-only row per change: product, option, signed
+  `delta`, `reason` (sale, reservation, cancel_restock, count_correction, manual_adjustment, sync), the
+  resulting quantity, a reference (order or reservation number), the staff user, a note and a **unique
+  idempotency key** (`sale:<number>.<created ms>:<product>[:<option>]`). Nobody can create, update or
+  delete a row through the API; staff can read. Holds are not movements, so there is no `hold_release`.
+- **Holds (`stock-holds`, staff read).** One row per owner and component, with `expiresAt` (Settings →
+  Inventory → "Checkout hold", default **15 minutes**, to confirm with Lody). Placing an order or reserving
+  a basket **holds every component all-or-nothing before charging**; the owner's earlier holds are
+  replaced in the same batch, so a retry never competes with itself. Owners are the bag's token hash
+  (orders) and a hash of basket, email and pickup (reservations), and an owner's own holds are left out
+  when its own bag or basket is priced. Expired holds are ignored everywhere sellable stock is worked out;
+  `scripts/release-expired-holds.ts` (`npx payload run …`, cron every 5 minutes, no-overlap lock in
+  `sync-jobs`) marks them expired and removes finished ones after 7 days.
+- **How a sale flows.** price → hold (all or nothing) → create the record (`stockStatus: held`, with a frozen
+  copy of what it takes from stock) → charge → **paid:** one batch converts the holds into sale movements
+  (decrement, movement, outbox event and hold marked converted for every component; a component whose key
+  already exists is skipped, so a second submit moves nothing); **declined or error:** holds released,
+  `stockStatus: released`. Customers see the same messages as before.
+- **A paid order is never lost (INV 06).** If the stock can't be taken after a successful payment (the hold
+  expired and the shelf changed, a count shrank stock, a component went unknown, or the batch failed), the
+  paid record is kept, flagged `stockStatus: needs_attention` with a note, moved to "Needs staff review",
+  logged, and **nobody is charged again**. Only the owner or a manager can mark it Resolved once the stock is fixed.
+  A record that is paid after staff cancelled it is kept and flagged the same way, with nothing taken from stock. A
+  late "paid" for a checkout that had been released, or a record found paid but still `held` after a crash,
+  is settled by the same code (`settleStock`, run by the cron job): it takes the stock only if it is still
+  sellable (the in-store reserve and other holds still apply), otherwise it is flagged.
+- **Bill of materials.** Products have an optional `components` list (product, option, quantity), shown on a
+  "Basket contents" tab. It is **empty until Lody supplies the contents; nothing is seeded**. A basket with
+  contents is sold from its components and never from itself, and a component bought on its own in the same
+  order is added to the same line, so each component moves once. Its availability is the smallest of
+  floor(component sellable ÷ quantity), after each component's own reserve, and unknown if any component is
+  unknown or stale. Components are one level deep, can't be the basket itself, must name an option when
+  the component has options, and a basket with contents can't have options of its own; all checked when a
+  product is published. Custom-basket reservations deduct their snapshot components. Without contents a
+  basket's own stock is deducted. The tab shows for the gift-baskets category, or once contents are filled in (a hidden,
+  unstored `categorySlug` field gives the form the slug); after changing a product's category, save it before the tab
+  appears.
+- **Drafts and versions can't write old stock back.** Stock lives on the product row the storefront reads, but
+  Payload builds every update from the latest saved *version* (a draft, or the snapshot at the last publish).
+  A price-only save, publishing an older draft or restoring a version would otherwise put that version's
+  stock over the sales since (this was reproduced). `pinLiveStock` puts the live row's stock (and each
+  option's, matched by key) back into every update; only server code with no signed-in user, and not a
+  restore, that **explicitly** sends stock fields (seeding, tests) keeps them. A product made in the admin
+  starts uncounted. Staff see the live number when they open a product. Renaming an option's key makes it a
+  new option, which starts uncounted. Residual risk: between the hook and the write there is a window of a few
+  microtasks in which a sale could land; the ledger's `quantityAfter` would show it.
+- **Staff change stock through the ledger.** The product form's stock fields are read-only. Under Inventory →
+  **Stock adjustments** the owner or a manager records a **count** (sets the quantity to what was counted,
+  marks it known and counted now) or an **adjustment** (adds or removes units, never below zero); each is
+  applied atomically with its ledger row and outbox event, and the row is the audit record (who, why) and
+  can't be edited or deleted. A count replaces the number, and units sold online are taken off it when the order is paid, even while
+  they are still on the shelf waiting to be packed. So a shelf count must leave out units set aside for paid, unpacked orders
+  (or be taken after packing), or the shop would sell them twice (open question for Lody). Fulfillment staff can only
+  restock.
+- **Cancel and restock are separate from refunds.** Cancelling or refunding never changes stock. A
+  "Put cancelled stock back" adjustment names an order or reservation and the components to return; it can't
+  exceed what that record took minus what was already put back, is all-or-nothing, and is refused for
+  perishable items unless an owner or manager ticks the confirmation. Opened or assembled goods are simply
+  not chosen; nothing returns by itself. Cancelling an order still waiting for payment releases its hold.
+- **Stale stock (INV 05).** Settings → Inventory → "Longest age of a stock count" is **empty (off)**, so
+  nothing changes until Lody sets it. When set, a product or option whose count date is older, or missing, is
+  unknown. Options have their own count date. The check applies when holding stock, not when a paid sale is
+  taken.
+- **Outbox (website half).** Every movement writes one `stock_changed` event in the same batch (product,
+  Clover ID, option, delta, quantity after, movement id, reason, reference), status pending, unique key
+  `stock_changed:<movement key>`. Movements from the Clover read (`sync`) and zero-change recounts write none.
+  Nothing sends them yet; `src/lib/inventory/outbox.ts` holds the retry timing (30 s doubling to 6 h, dead
+  after 8 failures). See `docs/clover-sync-needs.md`.
+- **Fixes that live in checkout.** A02: order and reservation numbers are one above the highest in use (a
+  numeric `MAX`), and only a number collision is retried. A01: a basket's components come from the merged,
+  validated selections.
+- **Known edges.** Holds belong to a bag (orders) or to a basket, email and pickup time (reservations), not to one record: a
+  late payment for an old order from the same bag can use up a newer checkout's hold, and cancelling releases every hold the
+  bag has. The newer order is then flagged for staff, never oversold. `reserveBasket` now checks contact and pickup before
+  the basket, so those errors come first. Do not switch on `transactionOptions` for the SQLite adapter without re-running
+  the inventory tests: Payload would then swap the shared connection mid-request. A larger `busyTimeout` on the adapter
+  would help writes that collide with the cron script.
+- **Staging.** With `PREVIEW_ASSUME_STOCK`, uncounted stock can still be ordered and is neither held nor
+  deducted.
+- Migration `inventory`. New: `stock-movements`, `stock-holds`, `stock-adjustments`, `outbox`, the
+  `inventory-settings` global, `products.components`, per-option `stockCountedAt`, and `stockStatus`,
+  `stockOwner`, `stockPlan`, `stockNote` on orders and reservations.
+
 ## D41 — Security and audit fixes (2026-10-06)
 
 Fixes from the repo audit (`AUDIT.md`, A01–A23) that need no schema change and no change to

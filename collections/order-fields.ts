@@ -64,3 +64,40 @@ export const paymentReference: Field = {
 
 /** Payment state may be changed only by Lody and Faisal (PRD OPS 01: refunds). */
 export const paymentStatusAccess = { update: commerceField };
+
+/**
+ * Where the record stands with the shelf (D40). Written by checkout, never by customers. A
+ * record that was paid but whose stock could not be taken is flagged `needs_attention` and kept:
+ * staff fix the stock, then mark it resolved. Cancelling never restocks.
+ */
+export const inventoryFields: Field[] = [
+  {
+    name: "stockStatus",
+    label: "Stock",
+    type: "select",
+    defaultValue: "none",
+    index: true,
+    access: { update: commerceField },
+    options: [
+      { label: "Not tracked (placed before stock tracking)", value: "none" },
+      { label: "Held while paying", value: "held" },
+      { label: "Taken from stock", value: "committed" },
+      { label: "Needs attention: paid, but stock could not be taken", value: "needs_attention" },
+      { label: "Released (payment did not complete)", value: "released" },
+      { label: "Resolved by staff", value: "resolved" },
+    ],
+    admin: {
+      position: "sidebar",
+      description: "Set by checkout. If this says Needs attention, the order is paid and kept: check the shelf and the stock count, then mark it Resolved. Cancelling an order never puts stock back.",
+    },
+  },
+  { name: "stockOwner", type: "text", access: frozen, admin: { hidden: true } },
+  {
+    name: "stockPlan",
+    label: "Taken from stock",
+    type: "json",
+    access: frozen,
+    admin: { readOnly: true, description: "The components this takes from stock (a basket with contents takes its parts, not itself). Use it when putting cancelled stock back." },
+  },
+  { name: "stockNote", label: "Stock note", type: "textarea", access: frozen, admin: { readOnly: true, description: "Why this needs attention." } },
+];
