@@ -34,11 +34,11 @@ export function FountainOffer({ offer }: { offer: EventOffer }) {
           Plus <strong>{formatCents(terms.perGuestCents)}</strong> per person{breakdown}.
         </li>
         <li>
-          A {formatBasisPoints(terms.depositPercentBasisPoints)}% deposit is requested once we&rsquo;ve confirmed your booking. We never take a deposit on this website.
+          A {formatBasisPoints(terms.depositPercentBasisPoints)}% deposit is requested once we&rsquo;ve confirmed your booking, not when you send the request.
         </li>
       </ul>
       <p className="mb-2">
-        Sending a request books nothing. We confirm availability, the final price, any sales tax and other approved charges, and the details of your event with you before anything is booked.
+        Sending a request books nothing and charges nothing. We confirm availability, the final price, any sales tax and other approved charges, and the details of your event with you before anything is booked.
       </p>
       {extras.length > 0 && (
         <dl className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-x-4 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)]" data-fountain-terms>

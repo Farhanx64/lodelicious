@@ -360,7 +360,8 @@ phone; notification emails come with milestone 6).
   - Access: every staff role reads; nobody creates through the API (only the server action does);
     staff update the status and notes; only the owner deletes.
   - What the customer wrote, the product, the event details and the estimate are read-only for
-    staff. Only status and staff notes are audited, so the audit log never holds customer details.
+    staff. Only status and staff notes are audited, so the audit log never copies the customer's
+    own submission (staff notes are free text, so keep personal details out of them).
 - **`event-settings` global** (Settings → Events (chocolate fountain); owner and manager edit,
   audited, public read because the prices are public):
   - The confirmed offer (PRD): $250 for 2 hours including setup and service, $8.50 per person
@@ -372,14 +373,18 @@ phone; notification emails come with milestone 6).
   1 to 1000. It is shown as an estimate that staff confirm. Tax and other approved charges are
   not computed and are said to be separate, because nobody has said whether a rental is taxable
   (D34 covers products). The deposit is shown as a percentage only and "requested after we
-  confirm", never as an amount, because its basis is not decided. No deposit is taken online.
+  confirm", never as an amount, because its basis is not decided. The form itself charges nothing
+  and takes no deposit; if quote acceptance and payment are added later, they stay on this site
+  through the Clover payment design (PRD).
 - **The server decides.** `/events` shows a live calculator that uses the same pure function, but
   the stored estimate is recomputed from the stored settings and anything the browser sends is
   ignored. The date must not be in the past in America/New_York; the topic comes from a fixed list;
   `?item=` is matched against published, non-hidden products only and unknown slugs are ignored.
 - **Spam and abuse:** a honeypot field (a hit looks like success but stores nothing), the same
-  submission twice is one inquiry, length limits, and control characters stripped. Next.js checks
-  the Origin of every server-action request (CSRF). There is **no rate limit yet**.
+  submission twice is one inquiry, length limits, and control characters stripped. Server actions
+  accept only POST and Next.js rejects a request whose Origin header doesn't match the site's host
+  (or `X-Forwarded-Host`), which is the CSRF protection; on the cPanel proxy that relies on the
+  public host being forwarded, as it already does for checkout. There is **no rate limit yet**.
 - **Entry points:** an "Ask about this" link on inquiry-only product pages, Baby White and filled
   ceramics on Baby Gifts, and Cowboy, Baby White and filled ceramics on Build a Basket (whichever
   the gift rules mark inquiry-only). The Contact page reads `?topic=` and `?item=`.

@@ -48,11 +48,15 @@ describe("EstimateSummary", () => {
     const html = text(render("50"));
     expect(html).toMatch(/Sales tax and any other approved charges are separate/);
     expect(html).toMatch(/25% deposit is requested only after we confirm your booking/);
-    expect(html).toMatch(/nothing is charged on this website/);
+    expect(html).toMatch(/Sending this request charges nothing/);
   });
 
   it("announces changes politely", () => {
-    expect(render("50")).toContain('aria-live="polite"');
+    const html = render("50");
+    expect(html).toContain('aria-live="polite"');
+    // The disclaimer sits outside the live region, so it isn't re-read on every keystroke.
+    expect(html.slice(html.indexOf("</dl>"))).toContain("estimate only");
+    expect(html.slice(html.indexOf('aria-live="polite"'), html.indexOf("</dl>"))).not.toContain("estimate only");
   });
 
   it("says 1 guest, and asks for a count instead of a made-up price when it is not valid", () => {
@@ -71,7 +75,8 @@ describe("FountainOffer", () => {
     expect(html).toContain("$250.00 for 2 hours, including setup and service");
     expect(html).toContain("$8.50 per person ($5.00 chocolate + $3.50 fruit)");
     expect(html).toContain("A 25% deposit is requested once we’ve confirmed your booking");
-    expect(html).toContain("We never take a deposit on this website");
+    expect(html).toContain("not when you send the request");
+    expect(html).toContain("Sending a request books nothing and charges nothing");
   });
 
   it("shows unresolved terms only once they have been filled in", () => {
