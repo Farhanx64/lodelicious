@@ -1,6 +1,7 @@
 # Project status
 
-Last updated: 2026-10-06 · `main` at 99362a3 (PR #4 merged, CI green)
+Last updated: 2026-10-07 · branch `integration/2026-10-06` (milestone 3 finished, security and
+accessibility audit fixes, milestone 5 core in progress). `main` is at f4523fa (PR #7, tax approved).
 
 **Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
 (confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first
@@ -9,71 +10,98 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 
 ## Where we left off
 
-**Built and merged:**
+**Built (on `main` or the integration branch):**
 - **Admin:**
-  - Every product, price, stock count, photo, basket rule, setting and order is editable in /admin.
-  - Staff roles: owner, manager and fulfillment.
+  - Every product, price, stock count, photo, basket rule, setting, policy, order, reservation and
+    inquiry is editable in /admin.
+  - Staff roles: owner, manager and fulfillment. Only the owner approves policies (D39).
   - Changes are audited.
 - **Catalog:**
-  - 71 products, reconciled against Lody's cards and her Clover export.
-  - Clover's price wins (D25).
+  - 80 products (76 published, 4 Cape Cod drafts) in 7 categories, reconciled against Lody's cards
+    and her Clover export. Clover's price wins (D25).
+  - 9 curated gift baskets, inquiry-only, with unapproved prices from the 2026-09-22 public Clover
+    listing (D38).
   - Each product has an in-store reserve (D26).
-- **Storefront:**
-  - Pages: home, shop, product pages, Baby Gifts, Build a Basket, About.
-  - SOUSET-PINK design (D31).
-  - Mood-board placeholder photos, shown on staging only (D32).
-  - Shop Favorites layout choice (D33).
-- **Milestone 4:**
-  - Bag → checkout → order, for pickup only.
-  - Custom baskets are reserved with an admin-set deposit (D36).
-  - Admin Orders and Reservations tabs.
-  - Tax classes (D34).
-- **Checks:** 232 automated tests, plus browser-checked flows.
+  - An unapproved price is never shown: customers see "Price to be confirmed" (D41, audit A06).
+- **Storefront pages:** home, shop, product pages, Gift Baskets, Baby Gifts, Build a Basket, Events
+  (chocolate fountain), About, Contact, policies, bag, checkout and confirmations. SOUSET-PINK design
+  (D31); mood-board placeholder photos on staging only (D32); Shop Favorites layout choice (D33);
+  branded error and not-found pages.
+- **Ordering:** bag → checkout → order for pickup, and custom baskets reserved with a deposit (D34–D36),
+  with test payments only. Tax: 6.25% on all products, approved by Lody (D34).
+- **Inquiries (D37):** /contact, product pages, Baby Gifts and Build a Basket send inquiries to
+  /admin → Orders → Inquiries. /events shows a live fountain estimate ($250 + $8.50 × guests). Nothing
+  is booked or charged, and no email is sent yet.
+- **Policies (D39):** five policies in /admin → Settings → Policies. The live site shows only text Lody
+  has approved; staging shows drafts (built only from confirmed facts) with a banner.
+- **Security and robustness (D41):** see `docs/audit-2026-10-06.md` for the full list.
+  - `APP_ENV` must be exactly `production` live; anything else unset or unknown is treated as live.
+  - The first owner account is locked to `FIRST_OWNER_EMAIL` or created by `scripts/create-owner.ts`.
+  - Security headers, a Secure login cookie, a CSRF allowlist, GraphQL off, and unapproved photos not
+    served live.
+  - Per-IP rate limits on every form, and a cart purge script.
+  - Password policy (12+ characters) and a 15 MB photo upload limit.
+  - Forms keep the customer's entries after an error, and focus moves to the error.
+- **Checks:** see the latest milestone entry below for counts. CI also fails if the schema and
+  migrations drift apart.
 
 **What a customer can do today:**
-- **Live site:** nothing can be bought yet, for two reasons:
+- **Live site:** browse, and send inquiries. Nothing can be bought yet, for two reasons:
   1. Stock is uncounted, so every product shows "Currently unavailable".
   2. There is no payment provider in production, so checkout and reservations show "call to order".
-  (Tax is settled: 6.25% on all products, confirmed by Lody — D34. If the live database was seeded
-  earlier, tick "approved" on the tax class in /admin.)
-- **Staging:** with `PREVIEW_ASSUME_STOCK=true`, staging treats stock as available. There,
-  checkout and basket reservations run end to end with a **test payment**, and no money moves.
+- **Staging:** with `APP_ENV=staging` and `PREVIEW_ASSUME_STOCK=true`, checkout and basket
+  reservations run end to end with a **test payment**, and no money moves.
 
 **Waiting on Lody** (details in "Unresolved inputs" below and `docs/clover-sync-needs.md`):
-1. **Clover stock:**
-   - Stock counts in Clover.
-   - Split the Dark/Milk bars and the two Princess box styles into separate Clover items.
-   - Add the ceramics, bassinet and fudges to Clover.
-   - Say which teddy the card shows.
+1. **Clover stock:** stock counts; split the Dark/Milk bars and the two Princess box styles; add the
+   ceramics, bassinet and fudges to Clover; say which teddy the card shows.
 2. **Clover access:** an inventory-only API token for the sync (milestone 5). Later, the ecommerce
    keys and her approval of Clover's fees (milestone 6).
-3. **Pickup and deposits:** pickup hours, notice periods, closed dates and the basket deposit
-   amount.
-4. **Store settings:** the DoorDash link and her "Our story" text.
-5. **Photos:** her own photos to replace the placeholders; photos and allergen info for the 49
+3. **Pickup and deposits:** pickup hours, notice periods, closed dates after Jan 2028 (the seed adds
+   Dec 25, Jan 1 and Labor Day until then) and the basket deposit amount.
+4. **Policies:** write and approve the five policies (each staging draft lists exactly what she must
+   decide).
+5. **Gift baskets:** approve each price, say what each basket contains (its component list) and
+   send photos. Decide on a verifiable nut-free basket.
+6. **Chocolate fountain:** whether it is taxable, the deposit basis and balance due, cancellation
+   wording, service area, minimum guests and extensions.
+7. **Store settings:** the DoorDash link and her "Our story" text.
+8. **Photos:** her own photos to replace the placeholders; photos and allergen info for the 49
    products added from Clover.
-6. **Home page:** 8–12 Shop Favorites ticked.
-7. **Design:** acceptance of the gold-text contrast deviation (D31).
+9. **Home page:** 8–12 Shop Favorites ticked.
+10. **Design:** acceptance of the gold-text contrast deviation (D31).
 
 **Next build, in recommended order:**
-1. **Finish milestone 3.** None of it needs inputs from Lody:
-   - Gift Baskets (curated baskets as products)
-   - Events (chocolate-fountain inquiry)
-   - Contact and policy pages
-   - An inquiry form for Baby White, Cowboy and filled ceramics
-2. **Milestone 5, inventory and the Clover sync:**
-   - component stock deductions
-   - holds during checkout
-   - an outbox to Clover
-   - scheduled stock reads
-
-   Needs Lody's counts and token.
-3. **Milestone 6, payments and shipping:**
-   - Clover payments, replacing the test provider behind `src/lib/payments`
-   - USPS rates
-   - order emails
-
+1. **Milestone 5 core (in progress):** stock movement ledger, atomic deduction of each component
+   exactly once, expiring holds during checkout, a component list for curated baskets, and a Clover
+   outbox (D40).
+2. **Checkout hardening (from the audit):**
+   - A04: close anonymous product reads.
+   - A05: payment retry defects that would surface with the first real provider.
+   - A11: unique submission keys.
+   - A12: dietary notes trigger staff review.
+   - A14: orders wait for payment before "Preparing".
+   - A20: audit deletes.
+3. **Clover sync worker** against a fake adapter, then live with Lody's token.
+4. **Milestone 6:** Clover payments, USPS rates, and order, reservation and inquiry emails.
    Needs keys, fee approval and email sending.
+
+## Deploying (live or staging)
+
+1. Set `APP_ENV=production` (or `staging`) in the cPanel Node app, and also when running
+   `npm run build`, which bakes in the HSTS header.
+2. Set `NEXT_PUBLIC_SITE_URL` to the exact https origin (comma-separate to add www). The admin then
+   logs in only from that address.
+3. Before the site is reachable, set `FIRST_OWNER_EMAIL`, or create the owner with
+   `OWNER_EMAIL` / `OWNER_PASSWORD` and `npx payload run scripts/create-owner.ts`, then remove
+   `OWNER_PASSWORD`.
+4. Run `npm run migrate`. Run `npm run seed:catalog` only on an empty database (`SEED_FORCE=1`
+   overrides the guard on a live database that already has products).
+5. Cron (cPanel): `npx payload run scripts/purge-carts.ts` daily, plus the inventory jobs from D40
+   once merged.
+6. Log in and open `/ops/system-check`: every line, including `APP_ENV`, must pass.
+7. Confirm LiteSpeed forwards `X-Forwarded-For` and the public host, which the rate limiter and
+   server-action origin check rely on.
 
 ## Milestones
 
@@ -81,10 +109,38 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 | --- | --- | --- |
 | 1 | Project setup | **Done** (rebuilt on Payload) |
 | 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | **Done** |
-| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **Mostly done**: catalog, Shop, product pages, Baby Gifts, Build a Basket and About are built. Remaining: Gift Baskets, Events, Contact, policies, inquiry form |
-| 4 | Cart, checkout, order snapshots, staff assembly views | **Done (test payments)**: bag, checkout, orders, basket reservations with deposits (D34–D36) |
-| 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | Not started: needs Clover stock counts and an inventory-only token |
+| 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **Done** on the integration branch: Gift Baskets (D38), Events and Contact with inquiries (D37), and policies (D39). Content still depends on Lody |
+| 4 | Cart, checkout, order snapshots, staff assembly views | **Done (test payments)**: bag, checkout, orders, basket reservations with deposits (D34–D36). Hardening from the audit is partly done (D41), the rest is next |
+| 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | **In progress**: website-side ledger, holds and outbox (D40). The live Clover sync needs Lody's stock counts and an inventory-only token |
 | 6 | Clover embedded payments, USPS rates, fixture-tested until credentials exist | Not started: needs Clover ecommerce keys, fee approval, USPS credentials |
+
+## Milestone 3 finished, plus audit fixes — 2026-10-06/07 (D37–D41)
+
+- **How it was built:** parallel agents in separate worktrees, merged one by one into
+  `integration/2026-10-06`, with the full CI chain after each wave.
+- **Gift Baskets (D38):** 9 curated baskets seeded create-only from the basket chart and the
+  2026-09-22 public Clover prices. They are inquiry-only with unapproved prices and no photos, and
+  never get a packaging fee (tests at engine and bag level). The "Medium Nut Free" basket is left out:
+  the title is not a verified claim.
+- **Inquiries, Events and Contact (D37):**
+  - An `inquiries` collection with topics, staff review statuses and frozen customer fields.
+  - An `event-settings` global with the fountain terms.
+  - The fountain estimate is recomputed on the server.
+  - A honeypot, idempotent double submits, and numbering that survives deletes.
+- **Policies (D39):**
+  - A `policies` global, owner approval, and drafts on staging only.
+  - Staff-only API read, so drafts are never public.
+  - Checkout and reserve link to the pickup and cancellation policies.
+- **Audit (`docs/audit-2026-10-06.md`):** a read-only review found 0 critical, 4 high, 11 medium and
+  8 low issues.
+  - Fixed in D41: A01, A03, A06, A09, A10, A13, A15, A18, A19, A22; A07, A08, A16 and A23 partly
+    (see the doc).
+  - Fixed by the integrator: A17 (phone menu), plus the footer part of A18.
+  - A02 is fixed in the inventory work (D40).
+  - The rest are scheduled under "Next build".
+- **Footer:** links to gift baskets, the fountain, contact and policies, with 24 px link targets.
+- **Checks after wave 1:** 394 tests pass (up from 232); typecheck, lint, migrations on an empty
+  production database, no schema drift, and the production build are all clean.
 
 ## Milestone 1 — completed
 
@@ -268,7 +324,10 @@ Screenshots (home shell since replaced by `m3-*`):
 - **Stock counts in Clover**: the export has none. Also: split the shared Phillips bar and Princess items, add the ceramics, bassinet and fudges to Clover, and say which teddy the card shows (`docs/clover-sync-needs.md`).
 - Clover API access for the in-house sync (inventory-only token Lody creates) — needed by milestone 5.
 - DoorDash page link for local delivery.
-- Pickup hours, notice periods and closed dates; basket deposit amount (D36).
+- Pickup hours, notice periods, closed dates after Jan 2028; basket deposit amount (D36).
+- Policy terms for all five policies (D39): each staging draft lists what is still open.
+- Curated gift baskets: prices, contents (component list), photos; the nut-free basket (D38).
+- Chocolate fountain: taxability, deposit basis and balance due, cancellation, service area, minimum guests, extensions (D37).
 - "Our story" text for the footer, in her own words (Store settings).
 - Her own photos for the home-page photo strip (Home page settings), and acceptance of the gold-text contrast deviation (D31).
 - Photos, descriptions, allergen info and basket eligibility for the 49 products added from Clover.
@@ -290,14 +349,6 @@ Screenshots (home shell since replaced by `m3-*`):
 
 ## Next concrete step
 
-Finish milestone 3. These need no inputs from Lody:
-- Gift Baskets: curated baskets as products.
-- Events: the chocolate-fountain inquiry.
-- Contact and policy pages.
-- An inquiry form for Baby White, Cowboy and filled ceramics.
-
-Then:
-- milestone 5 (Clover sync), once Lody's stock counts and token arrive
-- milestone 6 (payments, shipping, emails)
-
-See "Where we left off" at the top.
+Merge the inventory branch (D40) into `integration/2026-10-06`, run the full CI chain, then open the
+PR to `main`. After that: the checkout hardening from the audit, the Clover sync worker against a
+fake adapter, and order emails. See "Where we left off" at the top.
