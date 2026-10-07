@@ -18,6 +18,7 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 | `src/lib/` | Framework-free logic with unit tests: money in cents, CSV, system checks, audit diff, import, `app-env.ts` (the APP_ENV allowlist), `rate-limit.ts`, `password-policy.ts`, `policies.ts` (policy drafts and approval) |
 | `src/lib/gifts/` | Gift-builder rules engine: counts, packaging, premium caps, budget, repeats, stock, fit, special presentations |
 | `src/lib/checkout/` | Bag pricing, tax classes, basket deposits, pickup slots, and the order and reservation services (D34–D36) |
+| `src/lib/inventory/` | Stock ledger, atomic write batches, holds, sellable stock, curated-basket components, restock, outbox retry rules and the cron lock (D40) |
 | `src/lib/inquiries/` | Inquiry topics, form parsing, the fountain estimate and the inquiry service (D37) |
 | `src/lib/catalog/` | Catalog queries, availability, price display (unapproved prices show as "Price to be confirmed"), the create-only seed and its guard, gift-basket grouping |
 | `src/lib/payments/` | Payment provider interface. Only a test provider exists, never in production, until Clover (milestone 6) |
@@ -28,7 +29,7 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 | `data/source/` | Verbatim source evidence (Clover, price screenshot, DoorDash, owner product cards, allergen chart, supplier specs, basket chart) |
 | `data/catalog/catalog.json` | Starting catalog for `npm run seed:catalog` |
 | `data/assets/` | Logo master, product photos, product cards, supplier images (see its README) |
-| `scripts/` | Run via `npx payload run scripts/<name>.ts`: `doctor`, `check-migrations`, `seed-source-records`, `seed-catalog` (refuses a live database that has products unless `SEED_FORCE=1`), `create-owner` (first owner from env), `purge-carts` (daily cron) |
+| `scripts/` | Run via `npx payload run scripts/<name>.ts`: `doctor`, `check-migrations`, `seed-source-records`, `seed-catalog` (refuses a live database that has products unless `SEED_FORCE=1`), `create-owner` (first owner from env), `purge-carts` (daily cron), `release-expired-holds` (every 5 minutes) |
 | `tests/` | Source-data guard tests, page-render tests and Payload integration tests (catalog, checkout, reservations, gift baskets, inquiries, policies, security fixes, permissions) |
 | `server.js` | Passenger/LiteSpeed entry point (no top-level await — see comment) |
 
@@ -84,6 +85,11 @@ Orders, basket reservations and inquiries are under /admin → Orders. Under /ad
 - Checkout & reservations: tax classes, pickup hours, closed dates and basket deposits.
 - Events: the chocolate fountain price and terms.
 - Policies: customer policies. Only the owner can approve them, and only approved text shows live.
+- Inventory: the checkout hold time and the optional maximum age of a stock count.
+
+Stock is changed only through /admin → Inventory → Stock adjustments (counts, adjustments,
+restocks). The product form's stock fields are read-only. Every change is a ledger row and queues a
+Clover update in the outbox.
 
 The security and accessibility review and what was fixed are in `docs/audit-2026-10-06.md`.
 

@@ -1,7 +1,7 @@
 # Project status
 
 Last updated: 2026-10-07 · branch `integration/2026-10-06` (milestone 3 finished, security and
-accessibility audit fixes, milestone 5 core in progress). `main` is at f4523fa (PR #7, tax approved).
+accessibility audit fixes, milestone 5 website inventory done). `main` is at f4523fa (PR #7, tax approved).
 
 **Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
 (confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first
@@ -42,6 +42,11 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
   - Per-IP rate limits on every form, and a cart purge script.
   - Password policy (12+ characters) and a 15 MB photo upload limit.
   - Forms keep the customer's entries after an error, and focus moves to the error.
+- **Inventory (D40):** stock ledger with one movement per component per sale, expiring checkout
+  holds (15 min), oversell-proof atomic sales, staff counts and adjustments in /admin → Inventory,
+  explicit restock (never automatic on cancel or refund), an optional stale-count limit, a component
+  list for curated baskets (empty until Lody supplies contents) and a Clover outbox (nothing sends
+  yet).
 - **Checks:** see the latest milestone entry below for counts. CI also fails if the schema and
   migrations drift apart.
 
@@ -72,18 +77,16 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 10. **Design:** acceptance of the gold-text contrast deviation (D31).
 
 **Next build, in recommended order:**
-1. **Milestone 5 core (in progress):** stock movement ledger, atomic deduction of each component
-   exactly once, expiring holds during checkout, a component list for curated baskets, and a Clover
-   outbox (D40).
-2. **Checkout hardening (from the audit):**
+1. **Checkout hardening (from the audit):**
    - A04: close anonymous product reads.
    - A05: payment retry defects that would surface with the first real provider.
    - A11: unique submission keys.
    - A12: dietary notes trigger staff review.
    - A14: orders wait for payment before "Preparing".
    - A20: audit deletes.
-3. **Clover sync worker** against a fake adapter, then live with Lody's token.
-4. **Milestone 6:** Clover payments, USPS rates, and order, reservation and inquiry emails.
+2. **Clover sync worker** reading the outbox, against a fake adapter, then live with Lody's token
+   (`docs/clover-sync-needs.md` lists exactly what it must do).
+3. **Milestone 6:** Clover payments, USPS rates, and order, reservation and inquiry emails.
    Needs keys, fee approval and email sending.
 
 ## Deploying (live or staging)
@@ -97,8 +100,9 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
    `OWNER_PASSWORD`.
 4. Run `npm run migrate`. Run `npm run seed:catalog` only on an empty database (`SEED_FORCE=1`
    overrides the guard on a live database that already has products).
-5. Cron (cPanel): `npx payload run scripts/purge-carts.ts` daily, plus the inventory jobs from D40
-   once merged.
+5. Cron (cPanel): `npx payload run scripts/release-expired-holds.ts` every 5 minutes (expires
+   holds, reconciles late payments) and `npx payload run scripts/purge-carts.ts` daily.
+   Count stock in /admin → Inventory → Stock adjustments, not on the product form.
 6. Log in and open `/ops/system-check`: every line, including `APP_ENV`, must pass.
 7. Confirm LiteSpeed forwards `X-Forwarded-For` and the public host, which the rate limiter and
    server-action origin check rely on.
@@ -111,7 +115,7 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 | 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | **Done** |
 | 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **Done** on the integration branch: Gift Baskets (D38), Events and Contact with inquiries (D37), and policies (D39). Content still depends on Lody |
 | 4 | Cart, checkout, order snapshots, staff assembly views | **Done (test payments)**: bag, checkout, orders, basket reservations with deposits (D34–D36). Hardening from the audit is partly done (D41), the rest is next |
-| 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | **In progress**: website-side ledger, holds and outbox (D40). The live Clover sync needs Lody's stock counts and an inventory-only token |
+| 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | **Website half done** (D40): ledger, holds, atomic sales, BOM, restock, stale stock, outbox. Clover worker not started; the live sync needs Lody's stock counts and an inventory-only token |
 | 6 | Clover embedded payments, USPS rates, fixture-tested until credentials exist | Not started: needs Clover ecommerce keys, fee approval, USPS credentials |
 
 ## Milestone 3 finished, plus audit fixes — 2026-10-06/07 (D37–D41)
@@ -136,11 +140,22 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
   - Fixed in D41: A01, A03, A06, A09, A10, A13, A15, A18, A19, A22; A07, A08, A16 and A23 partly
     (see the doc).
   - Fixed by the integrator: A17 (phone menu), plus the footer part of A18.
-  - A02 is fixed in the inventory work (D40).
+  - A02 (numbering) and the service side of A01 are fixed in the inventory work (D40).
   - The rest are scheduled under "Next build".
 - **Footer:** links to gift baskets, the fountain, contact and policies, with 24 px link targets.
-- **Checks after wave 1:** 394 tests pass (up from 232); typecheck, lint, migrations on an empty
-  production database, no schema drift, and the production build are all clean.
+- **Inventory (D40):** see "Where we left off". Built on single libsql write batches, because
+  Payload transactions are off for SQLite. Conditions are in the SQL, and a failed condition rolls
+  back the whole batch. Stock fields on the product form are read-only, and a hook pins live stock
+  so a stale draft or version can never write old numbers back.
+- **Checks (all three waves merged):** **616 tests pass** (58 files, up from 232). Typecheck and
+  lint are clean. All 13 migrations apply to an empty production database with no schema drift.
+  The production build passes.
+- **Known caveats:**
+  - SQLite's busy timeout is short, so a cron batch could make a customer write fail. Set
+    `busyTimeout` before launch.
+  - Holds belong to a bag, not to an order, so a late payment can use a newer checkout's hold. The
+    newer order is then flagged for staff, never oversold.
+  - The open questions for Lody are in D40.
 
 ## Milestone 1 — completed
 
@@ -349,6 +364,5 @@ Screenshots (home shell since replaced by `m3-*`):
 
 ## Next concrete step
 
-Merge the inventory branch (D40) into `integration/2026-10-06`, run the full CI chain, then open the
-PR to `main`. After that: the checkout hardening from the audit, the Clover sync worker against a
+Open the PR from `integration/2026-10-06` to `main`. After that: the checkout hardening from the audit, the Clover sync worker against a
 fake adapter, and order emails. See "Where we left off" at the top.
