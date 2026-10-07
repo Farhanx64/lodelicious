@@ -3,7 +3,7 @@
  * bag button says which option it adds (A18). Rendered to static markup; the action state is
  * supplied through the same context ActionForm provides.
  */
-import { createElement } from "react";
+import { createElement, type ComponentProps, type ComponentType } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
@@ -57,9 +57,12 @@ describe("fields keep earlier entries after an error", () => {
   });
 });
 
+// ActionForm requires `children` as a prop; createElement (and the lint rule) want them as arguments.
+const ActionFormWithChildren = ActionForm as unknown as ComponentType<Omit<ComponentProps<typeof ActionForm>, "children">>;
+
 describe("ActionForm", () => {
   it("renders the submit button enabled, with no alert, until something happens", () => {
-    const html = renderToStaticMarkup(createElement(ActionForm, { action: async () => ({ error: null }), submitLabel: "Place order", pendingLabel: "Placing order…", children: createElement("p", null, "fields") }));
+    const html = renderToStaticMarkup(createElement(ActionFormWithChildren, { action: async () => ({ error: null }), submitLabel: "Place order", pendingLabel: "Placing order…" }, createElement("p", null, "fields")));
     expect(html).toContain("Place order");
     expect(html).not.toContain("role=\"alert\"");
     expect(html).not.toContain('aria-disabled="true"');
@@ -67,7 +70,7 @@ describe("ActionForm", () => {
   });
 
   it("keeps a native disabled button when the form cannot be submitted at all (no pickup times)", () => {
-    const html = renderToStaticMarkup(createElement(ActionForm, { action: async () => ({ error: null }), submitLabel: "Place order", pendingLabel: "…", disabled: true, children: null }));
+    const html = renderToStaticMarkup(createElement(ActionFormWithChildren, { action: async () => ({ error: null }), submitLabel: "Place order", pendingLabel: "…", disabled: true }));
     expect(html).toMatch(/<button[^>]*\sdisabled(?=[\s=>])/);
   });
 });
