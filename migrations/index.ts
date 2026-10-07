@@ -9,6 +9,7 @@ import * as migration_20261003_225023_home_page_hero from './20261003_225023_hom
 import * as migration_20261003_232800_home_favorites_layout from './20261003_232800_home_favorites_layout';
 import * as migration_20261005_210313_checkout_reservations from './20261005_210313_checkout_reservations';
 import * as migration_20261007_022011_inquiries_events from './20261007_022011_inquiries_events';
+import * as migration_20261007_023832_policies from './20261007_023832_policies';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20261007_022011_inquiries_events.up,
     down: migration_20261007_022011_inquiries_events.down,
-    name: '20261007_022011_inquiries_events'
+    name: '20261007_022011_inquiries_events',
+  },
+  {
+    up: migration_20261007_023832_policies.up,
+    down: migration_20261007_023832_policies.down,
+    name: '20261007_023832_policies'
   },
 ];

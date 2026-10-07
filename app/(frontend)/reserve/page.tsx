@@ -7,6 +7,7 @@ import { ContactFields } from "@/components/checkout/ContactFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
 import { primaryButton } from "@/components/checkout/styles";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
+import { PolicyLinks } from "@/components/policies/PolicyLinks";
 import { paymentPlan } from "@/src/lib/checkout/deposit";
 import { availableSlots } from "@/src/lib/checkout/pickup";
 import { priceBasket } from "@/src/lib/checkout/service";
@@ -83,6 +84,7 @@ export default async function ReservePage() {
               Online reservations are coming soon. To reserve this basket, call <a href={telHref(store.phone)}>{store.phone}</a>.
             </p>
           )}
+          <PolicyLinks action="reserve" />
         </div>
         <div>
           <Summary
