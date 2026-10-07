@@ -14,6 +14,14 @@ describe("packagingFor (AC 03)", () => {
     expect(packagingFor(settings, "special")).toBe(0);
   });
 
+  it("charges nothing for a curated basket at every configured size, even though the builder charges for each (D38)", () => {
+    for (const size of settings.sizes) {
+      expect(packagingFor(settings, "curated", size.code), size.code).toBe(0);
+      expect(packagingFor(settings, "custom", size.code), size.code).toBe(size.packagingCents);
+      expect(size.packagingCents, size.code).toBeGreaterThan(0);
+    }
+  });
+
   it("requires a size for custom baskets", () => {
     expect(() => packagingFor(settings, "custom")).toThrow(RangeError);
   });

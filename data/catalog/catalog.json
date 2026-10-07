@@ -36,6 +36,12 @@
       "name": "Gift add-ons",
       "sortOrder": 60,
       "description": "Teddy bears, children's books and greeting cards."
+    },
+    {
+      "slug": "gift-baskets",
+      "name": "Gift baskets",
+      "sortOrder": 70,
+      "description": "Ready-made gift baskets, assembled by hand in our Plymouth shop. The price includes the basket and presentation."
     }
   ],
   "media": [
@@ -1334,6 +1340,144 @@
       "cloverId": "FG1K4PP017F44",
       "sources": [
         "X067"
+      ]
+    },
+    {
+      "slug": "small-gift-basket",
+      "title": "Small Gift Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "6–8 items · 12 in basket",
+      "priceCents": 7995,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C17) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes gourmet cheese & crackers, premium chocolates, coffee or tea and a selection of famous delights.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "sources": [
+        "C17"
+      ]
+    },
+    {
+      "slug": "medium-gift-basket",
+      "title": "Medium Gift Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "10–12 items · 14 in basket",
+      "priceCents": 9895,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C13) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes sweet & savory snacks, premium tea or coffee, gourmet chocolates and gourmet cheese & crackers.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "sources": [
+        "C13"
+      ]
+    },
+    {
+      "slug": "large-gift-basket",
+      "title": "Large Gift Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "12–14 items · 18 in basket",
+      "priceCents": 13995,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C09) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes premium chocolates, gourmet pretzels, gourmet snacks and premium coffee or tea.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "sources": [
+        "C09"
+      ]
+    },
+    {
+      "slug": "extra-large-gift-basket",
+      "title": "Extra Large Gift Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "18–20 items · 18–20 in basket",
+      "priceCents": 19999,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C07) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes gourmet cheese & crackers, savory salami, chocolates, truffles, candies and sweet & savory treats.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "sources": [
+        "C07"
+      ]
+    },
+    {
+      "slug": "large-birthday-basket",
+      "title": "Large Birthday Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "12–14 items · 16 in basket",
+      "priceCents": 13995,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C08) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes sweet & savory treats, gourmet snacks, chocolates, a birthday card and festive birthday letters.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "sources": [
+        "C08"
+      ]
+    },
+    {
+      "slug": "large-savory-basket",
+      "title": "Large Savory Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "12–14 items · 16 in basket",
+      "priceCents": 13995,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C10) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes cheese, crackers, an assortment of nuts, olives, pretzels and salami.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "sources": [
+        "C10"
+      ]
+    },
+    {
+      "slug": "small-sympathy-basket",
+      "title": "Small Sympathy Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "6–8 items · 12 in basket",
+      "priceCents": 7995,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C19) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes premium chocolates such as Phillips Chocolate, fresh fruit, savory crackers and a variety of treats.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "perishable": true,
+      "sources": [
+        "C19"
+      ]
+    },
+    {
+      "slug": "medium-sympathy-basket",
+      "title": "Medium Sympathy Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "10–12 items · 14 in basket",
+      "priceCents": 9895,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C15) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes premium chocolates such as Phillips Chocolate, fresh fruit, savory crackers and a variety of treats.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "perishable": true,
+      "sources": [
+        "C15"
+      ]
+    },
+    {
+      "slug": "large-sympathy-basket",
+      "title": "Large Sympathy Basket",
+      "category": "gift-baskets",
+      "sizeLabel": "13–16 items · 16 in basket",
+      "priceCents": 13995,
+      "priceApproved": false,
+      "priceSource": "Public Clover storefront listing 2026-09-22 (C12) — not approved yet, confirm with Lody",
+      "channel": "inquiry_only",
+      "shortDescription": "Typically includes premium chocolates such as Phillips Chocolate, fresh fruit, savory crackers and a variety of treats.",
+      "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
+      "perishable": true,
+      "sources": [
+        "C12"
       ]
     }
   ],

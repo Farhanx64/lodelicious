@@ -345,6 +345,49 @@ At the project lead's direction, Build a Basket is separate from the bag: a fini
 
   Baskets with dietary or special requests start in "Needs staff review" (GFT 06).
 
+## D38 — Curated gift baskets: inquiry-only, price observed but not approved (2026-10-06)
+
+Curated baskets (ready-made, priced as a whole) are catalog products in a new **Gift baskets**
+category, with a /gift-baskets page.
+
+- **Nine baskets:** Small, Medium, Large and Extra Large Gift Basket; Large Birthday; Large Savory;
+  Small, Medium and Large Sympathy. Names, contents, item counts and basket sizes come from the
+  owner's basket chart. Where Clover's name differs ("Medium sympathy gift basket"), the chart's
+  name is used.
+- **Price:** the price observed on the public Clover storefront on 2026-09-22 (C07–C10, C12, C13,
+  C15, C17, C19). It is **not approved**. D25 ("Clover's price wins") covers Lody's inventory
+  export, and that export has no baskets, so it does not approve these older observations. Each
+  product has `priceApproved: false`, a `priceSource` naming the listing and its C ref, and the C
+  row in `sourceRecords`.
+- **Inquiry-only:** `channel: "inquiry_only"`, so customers see "Available by inquiry" and there is
+  no purchase action. Stock is unknown, `basketEligible` is false, allergen and dietary fields are
+  "unknown", and there is no photo ("Photo coming soon"). The seed only fills what the sources
+  state: the sympathy baskets are marked perishable because the chart lists fresh fruit.
+- **Contents are not a BOM:** descriptions say "Typically includes …" using the chart's words, and
+  "Contents vary with availability". The exact components of each basket, and its stock, are
+  undefined until milestone 5.
+- **No second packaging fee (AC 03):** a curated price already includes the basket and
+  presentation. `packagingFor(settings, "curated")` is 0 for every size, the bag never adds a
+  packaging line, and a curated basket is not basket-eligible, so it can't be nested in a custom
+  basket. Tests cover each.
+- **Left out, C14 "Medium Nut Free Basket":** "Nut Free" is a source title, not a verified
+  allergen claim (PRD), and a product named that would make one. Its source record stays for Lody.
+  Customers with a dietary request use the contact form; /gift-baskets asks them to say so.
+- **Extra Large:** the builder's Extra Large size stays off (D27). The curated Extra Large Gift
+  Basket (C07, $199.99) is a separate Clover product, so it is seeded like the others.
+- **Page:** baskets are grouped everyday, birthday, savory and sympathy by an explicit slug map in
+  `src/lib/catalog/gift-baskets.ts` (it also sets the order, since the shop lists by title). A
+  basket staff add in /admin that isn't in the map goes in a final "More gift baskets" group.
+  The page also links to Build a Basket and, for seasonal gift boxes (inquiry only, nothing to buy),
+  to `/contact?topic=gift_box`.
+- **Unapproved prices on cards:** `ProductCard` has an opt-in `hideUnapprovedPrice`, which /gift-baskets
+  turns on so a card says "Price on request" until the price is approved. Other listings are
+  unchanged: the shop grid, the product page and the baby ceramics (D19) still show a stored
+  unapproved price next to their availability label.
+- **Going live, per basket, in /admin:** confirm the price and tick "approved", set the channel to
+  "Sold online", and count stock. The seed is create-only (D24), so existing databases get the new
+  category and products on the next `npm run seed:catalog` and nothing already there changes.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

@@ -26,6 +26,8 @@ export type CatalogSeed = {
     priceCents?: number;
     priceApproved?: boolean;
     priceSource?: string;
+    /** Defaults to "online"; curated baskets are seeded "inquiry_only" (D38). */
+    channel?: Product["channel"];
     shortDescription?: string;
     description?: string;
     images?: string[];
@@ -159,7 +161,7 @@ export async function seedCatalog(payload: Payload, seed: CatalogSeed, allergens
       // Owner product-card and Clover prices count as approved (D22, D25); anything else waits for Lody.
       priceApproved: p.priceApproved ?? p.priceCents !== undefined,
       priceSource: p.priceSource,
-      channel: "online",
+      channel: p.channel ?? "online",
       // Exact counts have not been supplied: unknown stock blocks purchase (PRD INV 05).
       stockState: "unknown",
       variants: (p.variants ?? []).map((v) => ({
