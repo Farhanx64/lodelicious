@@ -9,7 +9,11 @@ import { isPreviewEnv } from "../app-env";
 import type { Cents } from "../money";
 
 export type ChargeInput = { reference: string; amountCents: Cents; idempotencyKey: string };
-export type ChargeResult = { status: "paid" | "failed"; reference: string; message?: string };
+/**
+ * "unknown" means the provider did not say (timeout, dropped connection, pending review): the
+ * customer may or may not have been charged, so checkout never charges again until staff reconcile (D42).
+ */
+export type ChargeResult = { status: "paid" | "failed" | "unknown"; reference: string; message?: string };
 
 export type PaymentProvider = { id: string; test: boolean; charge(input: ChargeInput): Promise<ChargeResult> };
 

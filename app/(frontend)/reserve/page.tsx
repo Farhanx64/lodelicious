@@ -6,6 +6,7 @@ import { ActionForm } from "@/components/checkout/ActionForm";
 import { ContactFields } from "@/components/checkout/ContactFields";
 import { PaymentChoice } from "@/components/checkout/FormFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
+import { SubmissionField } from "@/components/checkout/SubmissionField";
 import { primaryButton } from "@/components/checkout/styles";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
 import { PolicyLinks } from "@/components/policies/PolicyLinks";
@@ -53,6 +54,7 @@ export default async function ReservePage() {
         <div>
           {state.open ? (
             <ActionForm action={submitReservation} submitLabel={ctx.provider?.test ? "Reserve with test payment" : "Reserve and pay"} pendingLabel="Reserving…" disabled={slots.length === 0}>
+              <SubmissionField kind="reservation" />
               <ContactFields prefix="reserve" />
               <fieldset className="mb-4">
                 <legend className="mb-3 font-display text-xl text-gold-text">Pickup</legend>
@@ -88,6 +90,7 @@ export default async function ReservePage() {
           />
           {draft.message && <p className="mt-4 text-sm">Gift message: &ldquo;{draft.message}&rdquo;</p>}
           {draft.requests && <p className="mt-2 text-sm">Requests: {draft.requests} (we&rsquo;ll confirm these with you)</p>}
+          {store.allergyNotice && <p className="mt-4 border-l-4 border-gold bg-paper p-3 text-sm">{store.allergyNotice}</p>}
           <p className="mt-4">
             <Link href="/build-a-basket">Change basket</Link>
           </p>

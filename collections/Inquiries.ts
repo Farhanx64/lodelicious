@@ -1,7 +1,7 @@
 import type { CollectionConfig, Field } from "payload";
 
 import { isOwner, isStaff, nobody } from "../src/access/roles";
-import { auditCollection } from "../src/hooks/audit";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { INQUIRY_STATUSES, INQUIRY_TOPICS, MAX_LOCATION_LENGTH, MAX_MESSAGE_LENGTH, STATUS_LABELS, TOPIC_LABELS } from "../src/lib/inquiries/shared";
 import { MAX_GUESTS, MIN_GUESTS } from "../src/lib/inquiries/estimate";
 
@@ -49,7 +49,7 @@ export const Inquiries: CollectionConfig = {
   // Only the server creates inquiries (overrideAccess); nobody can post one straight to the API.
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   // The audit log records who moved an inquiry along, never the customer's own words or contact details.
-  hooks: { afterChange: [auditCollection(["status", "staffNotes"])] },
+  hooks: { afterChange: [auditCollection(["status", "staffNotes"])], afterDelete: [auditDelete(["number", "status"])] },
   fields: [
     { name: "number", type: "text", required: true, unique: true, index: true, access: frozen },
     { name: "sequence", type: "number", required: true, unique: true, index: true, access: frozen, admin: { hidden: true } },

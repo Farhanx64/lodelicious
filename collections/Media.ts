@@ -4,6 +4,7 @@ import path from "path";
 import { APIError, type Access, type CollectionBeforeOperationHook, type CollectionConfig } from "payload";
 
 import { isCommerceManager, isStaff } from "../src/access/roles";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { isProductionEnv } from "../src/lib/app-env";
 
 const filename = fileURLToPath(import.meta.url);
@@ -58,6 +59,8 @@ export const Media: CollectionConfig = {
   },
   hooks: {
     beforeOperation: [limitUploadSize],
+    afterChange: [auditCollection(["approvedForLaunch", "filename"])],
+    afterDelete: [auditDelete(["approvedForLaunch", "filename"])],
   },
   upload: {
     staticDir: mediaDir,

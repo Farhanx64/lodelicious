@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { isStaff, nobody } from "../src/access/roles";
-import { auditCollection } from "../src/hooks/audit";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { applyAdjustment } from "../src/hooks/stock-adjustment";
 import { ADJUSTMENT_KINDS } from "../src/lib/inventory/types";
 
@@ -34,6 +34,7 @@ export const StockAdjustments: CollectionConfig = {
   hooks: {
     beforeChange: [applyAdjustment],
     afterChange: [auditCollection(["kind", "product", "variantKey", "countedQuantity", "delta", "order", "reservation", "restockLines", "note"])],
+    afterDelete: [auditDelete(["kind", "product", "variantKey", "countedQuantity", "delta", "note"])],
   },
   fields: [
     { name: "kind", type: "select", required: true, defaultValue: "count", options: ADJUSTMENT_KINDS.map((value) => ({ label: KIND_LABELS[value], value })) },
