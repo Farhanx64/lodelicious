@@ -19,6 +19,11 @@ let payload: Payload;
 let manager: User;
 let fulfillment: User;
 
+/** Lody agreed to AI-generated stand-in photos (D46). They stay unapproved for launch, so the live site never shows them. */
+function onlyStandInPhotos(p: Product): boolean {
+  return (p.images ?? []).every(({ image }) => typeof image === "object" && image !== null && image.approvedForLaunch === false && /^AI-generated/.test(image.credit ?? ""));
+}
+
 async function bySlug(slug: string): Promise<Product> {
   const { docs } = await payload.find({ collection: "products", where: { slug: { equals: slug } }, draft: true, overrideAccess: true, depth: 1 });
   return docs[0];
@@ -83,8 +88,8 @@ describe("catalog seed", () => {
       nutFree: "unknown",
       basketEligible: false,
       onlineReserve: 1,
-      images: [],
     });
+    expect(onlyStandInPhotos(bark)).toBe(true);
     expect((bark.sourceRecords as { ref: string }[]).map((r) => r.ref).sort()).toEqual(["P11", "X064"]);
     // "(Nut Free)" in the Clover name is not repeated as a claim in the title.
     expect((await bySlug("dark-chocolate-sea-salt")).title).toBe("Dark Chocolate Sea Salt");
