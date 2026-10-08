@@ -5,7 +5,9 @@ import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { INQUIRY_STATUSES, INQUIRY_TOPICS, MAX_LOCATION_LENGTH, MAX_MESSAGE_LENGTH, STATUS_LABELS, TOPIC_LABELS } from "../src/lib/inquiries/shared";
 import { MAX_GUESTS, MIN_GUESTS } from "../src/lib/inquiries/estimate";
 
-import { customerFields, frozen } from "./order-fields";
+import { sendRecordEmails } from "../src/hooks/send-emails";
+
+import { customerFields, frozen, inquiryEmailFields } from "./order-fields";
 
 const cents = { components: { Cell: "@/components/admin/CentsCell#CentsCell" } };
 const isFountain = (data: Partial<{ topic: string }> | undefined) => data?.topic === "fountain";
@@ -49,7 +51,7 @@ export const Inquiries: CollectionConfig = {
   // Only the server creates inquiries (overrideAccess); nobody can post one straight to the API.
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   // The audit log records who moved an inquiry along, never the customer's own words or contact details.
-  hooks: { afterChange: [auditCollection(["status", "staffNotes"])], afterDelete: [auditDelete(["number", "status"])] },
+  hooks: { afterChange: [auditCollection(["status", "staffNotes"]), sendRecordEmails("inquiries")], afterDelete: [auditDelete(["number", "status"])] },
   fields: [
     { name: "number", type: "text", required: true, unique: true, index: true, access: frozen },
     { name: "sequence", type: "number", required: true, unique: true, index: true, access: frozen, admin: { hidden: true } },
@@ -103,6 +105,7 @@ export const Inquiries: CollectionConfig = {
       access: frozen,
       admin: { condition: isFountain, description: "The fountain prices and deposit percentage in force when the inquiry arrived." },
     },
+    inquiryEmailFields,
     { name: "staffNotes", type: "textarea", admin: { description: "Internal. Never shown to customers." } },
   ],
 };

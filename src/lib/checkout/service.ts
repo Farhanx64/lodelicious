@@ -37,7 +37,7 @@ import { getPaymentProvider, orderingState, type ChargeInput, type ChargeResult,
 import { priceCart, MAX_LINE_QUANTITY, type CartLine, type PricedCart } from "./cart";
 import { paymentPlan, type DepositRule } from "./deposit";
 import { nextSequence } from "./numbering";
-import { assemblyInstructions, formatNumber, hashToken, idempotencyKey, type BasketComponent } from "./order";
+import { accessUrlToken, assemblyInstructions, formatNumber, hashToken, idempotencyKey, type BasketComponent } from "./order";
 import { formatSlot, isAvailableSlot, type PickupSettings, type Slot } from "./pickup";
 import { computeTax, resolveTaxClass, type TaxClass } from "./tax";
 
@@ -196,10 +196,8 @@ function pickSlot(ctx: CheckoutContext, now: Date, raw: unknown, leadHours: numb
 }
 
 /** The URL token for a record is derived from its idempotency key, so a retried submit lands on the same page. */
-function urlToken(kind: string, key: string): string {
-  const secret = process.env.PAYLOAD_SECRET;
-  if (!secret) throw new Error("PAYLOAD_SECRET is required");
-  return crypto.createHmac("sha256", secret).update(`${kind}:${key}`).digest("base64url");
+function urlToken(kind: "order" | "reservation", key: string): string {
+  return accessUrlToken(kind, key);
 }
 
 const PREFIX = { orders: "SP", reservations: "SPR" } as const;

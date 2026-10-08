@@ -49,3 +49,12 @@ export function assemblyInstructions(input: {
   if (input.requests?.trim()) lines.push("", `Customer requests (confirm before packing): ${input.requests.trim()}`);
   return lines.join("\n");
 }
+
+/**
+ * The URL token of a record's private page, derived from its idempotency key so a retried submit lands on the
+ * same page (and so the confirmation email can rebuild the link later, when only the hash is stored).
+ */
+export function accessUrlToken(kind: "order" | "reservation", key: string, secret: string | undefined = process.env.PAYLOAD_SECRET): string {
+  if (!secret) throw new Error("PAYLOAD_SECRET is required");
+  return crypto.createHmac("sha256", secret).update(`${kind}:${key}`).digest("base64url");
+}
