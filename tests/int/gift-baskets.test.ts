@@ -118,14 +118,14 @@ describe("the seeded curated baskets (D38)", () => {
   it("show up in the shop category for customers, in the page's groups", async () => {
     const category = (await payload.find({ collection: "categories", where: { slug: { equals: GIFT_BASKET_CATEGORY } }, overrideAccess: true })).docs[0];
     expect(category).toMatchObject({ name: "Gift baskets", showInShop: true });
-    // Same query as the storefront: anonymous access, published and not hidden.
+    // Same query as the storefront: the visibility rule is the explicit `where` (published, not hidden), read with override (A04, D42).
     const visible = await payload.find({
       collection: "products",
       where: { and: [{ _status: { equals: "published" } }, { channel: { not_equals: "hidden" } }, { "category.slug": { equals: GIFT_BASKET_CATEGORY } }] },
       sort: "title",
       limit: 200,
       depth: 2,
-      overrideAccess: false,
+      overrideAccess: true,
     });
     expect(visible.docs.map((d) => d.slug).sort()).toEqual(SLUGS);
     const groups = groupGiftBaskets(visible.docs);

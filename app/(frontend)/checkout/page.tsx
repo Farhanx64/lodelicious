@@ -6,6 +6,7 @@ import { ActionForm } from "@/components/checkout/ActionForm";
 import { ContactFields } from "@/components/checkout/ContactFields";
 import { NotesField } from "@/components/checkout/FormFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
+import { SubmissionField } from "@/components/checkout/SubmissionField";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
 import { PolicyLinks } from "@/components/policies/PolicyLinks";
 import { availableSlots } from "@/src/lib/checkout/pickup";
@@ -32,6 +33,7 @@ export default async function CheckoutPage() {
         <div>
           {state.open ? (
             <ActionForm action={submitOrder} submitLabel={ctx.provider?.test ? "Place test order" : "Place order"} pendingLabel="Placing order…" disabled={slots.length === 0}>
+              <SubmissionField kind="order" />
               <ContactFields prefix="checkout" />
               <fieldset className="mb-4">
                 <legend className="mb-3 font-display text-xl text-gold-text">Pickup</legend>
@@ -40,6 +42,11 @@ export default async function CheckoutPage() {
                 </p>
                 <PickupSelect slots={slots} id="checkout-pickup" />
                 <NotesField id="checkout-notes" />
+                {store.allergyNotice && (
+                  <p className="mt-3 border-l-4 border-gold bg-paper p-3 text-sm">
+                    <strong>Allergies and dietary needs.</strong> {store.allergyNotice} If you add a note above, our team reads your order before it is prepared.
+                  </p>
+                )}
               </fieldset>
             </ActionForm>
           ) : (

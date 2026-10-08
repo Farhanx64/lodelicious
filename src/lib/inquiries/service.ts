@@ -30,8 +30,9 @@ export async function loadEventOffer(payload: Payload): Promise<EventOffer> {
 }
 
 /**
- * `?item=` lookup: a published, non-hidden product (the same rule as the product page). Run with
- * access control on, so drafts can never be found. Malformed or unknown slugs return null and are ignored.
+ * `?item=` lookup: a published, non-hidden product (the same rule as the product page). Products
+ * are staff-only over REST (A04, D42), so the rule is the explicit `where` below, read with override;
+ * drafts can never be found. Malformed or unknown slugs return null and are ignored.
  */
 export async function findPublishedItem(payload: Payload, rawSlug: unknown): Promise<InquiryItem | null> {
   const slug = parseItemSlug(rawSlug);
@@ -41,7 +42,7 @@ export async function findPublishedItem(payload: Payload, rawSlug: unknown): Pro
     where: { and: [{ slug: { equals: slug } }, { _status: { equals: "published" } }, { channel: { not_equals: "hidden" } }] },
     limit: 1,
     depth: 1,
-    overrideAccess: false,
+    overrideAccess: true,
   });
   const product = docs[0];
   if (!product?.slug) return null;

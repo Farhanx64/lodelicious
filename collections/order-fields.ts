@@ -44,12 +44,32 @@ export const identityFields: Field[] = [
   { name: "idempotencyKey", type: "text", required: true, unique: true, index: true, access: { update: () => false }, admin: { hidden: true } },
   {
     name: "testMode",
+    label: "Test order",
     type: "checkbox",
     defaultValue: false,
     access: frozen,
-    admin: { description: "Placed with the test payment on staging — no money moved.", position: "sidebar" },
+    admin: {
+      description: "Placed with the test payment on staging — no money moved. Never pack or ship a test order.",
+      position: "sidebar",
+      components: { Cell: "@/components/admin/TestOrderCell#TestOrderCell" },
+    },
   },
 ];
+
+/**
+ * How many times checkout has asked the payment provider for this record (D42). Each attempt
+ * after a decline uses a new provider idempotency key (`<record key>:<attempt>`); a retry that
+ * follows an unknown result never charges again until staff reconcile it.
+ */
+export const paymentAttempts: Field = {
+  name: "paymentAttempts",
+  label: "Payment attempts",
+  type: "number",
+  defaultValue: 0,
+  min: 0,
+  access: frozen,
+  admin: { position: "sidebar", readOnly: true, description: "Set by checkout." },
+};
 
 export const paymentReference: Field = {
   name: "payment",

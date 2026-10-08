@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 
-import { anyone, isCommerceManager } from "../src/access/roles";
-import { auditCollection } from "../src/hooks/audit";
+import { isCommerceManager, isStaff } from "../src/access/roles";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { slugField } from "../src/fields/slug";
 
 /** Shop categories. Fully managed in /admin: add, rename, reorder, hide or delete. */
@@ -15,13 +15,15 @@ export const Categories: CollectionConfig = {
   },
   defaultSort: "sortOrder",
   access: {
-    read: anyone,
+    // Staff only (A04, D42): categories not shown in the shop (and their descriptions) are not public. Storefront reads state their own `where`.
+    read: isStaff,
     create: isCommerceManager,
     update: isCommerceManager,
     delete: isCommerceManager,
   },
   hooks: {
     afterChange: [auditCollection(["name", "slug", "showInShop"])],
+    afterDelete: [auditDelete(["name", "slug", "showInShop"])],
   },
   fields: [
     { name: "name", type: "text", required: true },

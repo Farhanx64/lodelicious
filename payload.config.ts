@@ -67,6 +67,9 @@ export default buildConfig({
       url: process.env.DATABASE_URI || `file:${path.resolve(dataDir, "lodelicious.db")}`,
     },
     migrationDir: path.resolve(dirname, "migrations"),
+    // How long a write waits for another connection (the cron scripts, a second request) before
+    // failing with SQLITE_BUSY. The default is 0. Do NOT enable `transactionOptions` (D40, D42).
+    busyTimeout: 5000,
     // Never auto-push schema, even in development. Dev push on SQLite re-creates existing
     // indexes and fails on alternate runs, and it marks the database so that a later
     // non-interactive `payload migrate` silently exits 0 without migrating (D23).

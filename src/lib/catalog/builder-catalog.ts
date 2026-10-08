@@ -48,6 +48,7 @@ export async function loadBuilderCatalogFrom(payload: Payload, opts: BuilderStoc
       where: {
         and: [
           { _status: { equals: "published" } },
+          { channel: { not_equals: "hidden" } },
           { channel: { equals: "online" } },
           { basketEligible: { equals: true } },
         ],
@@ -55,7 +56,9 @@ export async function loadBuilderCatalogFrom(payload: Payload, opts: BuilderStoc
       sort: "title",
       limit: 500,
       depth: 2,
-      overrideAccess: false,
+      // Products are staff-only over REST (A04, D42), so the storefront states its own rules
+      // above (published, online, basket-eligible) and reads with override.
+      overrideAccess: true,
     }),
   ]);
 
@@ -70,7 +73,9 @@ export async function loadBuilderCatalogFrom(payload: Payload, opts: BuilderStoc
     const image = typeof media === "object" && isImagePublishable(media as Media) ? (media as Media) : null;
     for (const built of toBuilderProducts(doc)) {
       const unit = seen.staleUnits.has(built.id) ? { ...built, stock: { state: "stale" as const } } : built;
-      products.push(previewStock && unit.stock.state !== "known" ? { ...unit, stock: { state: "known", quantity: 99 } } : unit);
+      const shown = previewStock && unit.stock.state !== "known" ? { ...unit, stock: { state: "known" as const, quantity: 99 } } : unit;
+      // The builder never needs more than the most one gift can hold, and the exact shelf count is not the customer's business (A04, D42).
+      products.push(shown.stock.state === "known" ? { ...shown, stock: { state: "known", quantity: Math.min(shown.stock.quantity, shown.maxPerGift) } } : shown);
       display.push({
         id: unit.id,
         title: unit.name,

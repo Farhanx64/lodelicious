@@ -4,7 +4,7 @@ import { ROLES, canManageCommerce, hasRole, isOwner, isStaff, ownerField } from 
 import { isPreviewEnv } from "../src/lib/app-env";
 import { sameEmail } from "../src/lib/owner-setup";
 import { passwordProblem } from "../src/lib/password-policy";
-import { auditCollection } from "../src/hooks/audit";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
 
 /**
  * The very first account becomes the owner, whatever roles were submitted. Payload's
@@ -84,6 +84,7 @@ export const Users: CollectionConfig = {
     beforeValidate: [onlyExpectedFirstOwner, enforcePasswordPolicy],
     beforeChange: [firstUserIsOwner],
     afterChange: [auditCollection(["roles", "email"])],
+    afterDelete: [auditDelete(["roles", "email"])],
   },
   fields: [
     {

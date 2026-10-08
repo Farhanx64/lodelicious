@@ -1,10 +1,11 @@
 import type { CollectionConfig } from "payload";
 
 import { isOwner, isStaff, nobody } from "../src/access/roles";
-import { auditCollection } from "../src/hooks/audit";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
+import { advanceWhenPaid } from "../src/hooks/payment-status";
 import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
-import { customerFields, frozen, identityFields, inventoryFields, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
+import { customerFields, frozen, identityFields, inventoryFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
 
 /**
  * Shop orders (D35). Created only by checkout through the Local API; the lines and totals are an
@@ -17,13 +18,14 @@ export const Orders: CollectionConfig = {
   admin: {
     useAsTitle: "number",
     group: "Orders",
-    defaultColumns: ["number", "customer.name", "pickup.label", "paymentStatus", "fulfillmentStatus", "stockStatus", "totals.totalCents", "testMode"],
+    defaultColumns: ["number", "testMode", "customer.name", "pickup.label", "paymentStatus", "fulfillmentStatus", "stockStatus", "totals.totalCents"],
     listSearchableFields: ["number", "customer.name", "customer.email"],
   },
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   hooks: {
-    beforeChange: [guardStockStatus],
+    beforeChange: [guardStockStatus, advanceWhenPaid("orders")],
     afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus")],
+    afterDelete: [auditDelete(["number", "paymentStatus", "fulfillmentStatus", "stockStatus", "testMode"])],
   },
   fields: [
     ...identityFields,
@@ -40,6 +42,7 @@ export const Orders: CollectionConfig = {
             { label: "Pending payment", value: "pending" },
             { label: "Paid", value: "paid" },
             { label: "Failed", value: "failed" },
+            { label: "Unknown: check with the payment provider", value: "unknown" },
             { label: "Refunded", value: "refunded" },
           ],
         },
@@ -47,8 +50,9 @@ export const Orders: CollectionConfig = {
           name: "fulfillmentStatus",
           type: "select",
           required: true,
-          defaultValue: "preparing",
+          defaultValue: "awaiting_payment",
           options: [
+            { label: "Awaiting payment (do not pack)", value: "awaiting_payment" },
             { label: "Needs staff review", value: "staff_review" },
             { label: "Preparing", value: "preparing" },
             { label: "Ready for pickup", value: "ready" },
@@ -79,6 +83,7 @@ export const Orders: CollectionConfig = {
       ],
     },
     paymentReference,
+    paymentAttempts,
     ...inventoryFields,
     { name: "staffNotes", type: "textarea" },
   ],

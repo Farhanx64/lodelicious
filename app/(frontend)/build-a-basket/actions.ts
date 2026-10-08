@@ -6,6 +6,7 @@ import { loadBuilderCatalog } from "@/src/lib/catalog/builder-data";
 import { failedWith, type FormState } from "@/src/lib/checkout/form-state";
 import { reserveBasket } from "@/src/lib/checkout/service";
 import { checkoutPayload, clearBasketDraft, readBasketDraft, saveBasketDraft } from "@/src/lib/checkout/session";
+import { EXPIRED_FORM, verifySubmission } from "@/src/lib/checkout/submission";
 import { catalogOf, validateGift, type GiftValidation } from "@/src/lib/gifts";
 import { parseCustomRequest } from "@/src/lib/gifts/request";
 import { TOO_MANY_ATTEMPTS } from "@/src/lib/rate-limit";
@@ -42,10 +43,12 @@ export type ReserveState = FormState;
 
 export async function submitReservation(_prev: ReserveState, form: FormData): Promise<ReserveState> {
   if (await isRateLimited("submitReservation")) return failedWith(TOO_MANY_ATTEMPTS, form);
+  const submission = verifySubmission("reservation", form.get("submission"));
+  if (!submission) return failedWith(EXPIRED_FORM, form);
   const draft = await readBasketDraft();
   if (!draft) return failedWith("Your basket has expired. Please build it again.", form);
   const { payload, ctx } = await checkoutPayload();
-  const result = await reserveBasket(payload, { draft, form: Object.fromEntries(form) }, ctx);
+  const result = await reserveBasket(payload, { draft, form: Object.fromEntries(form), submission }, ctx);
   if (!result.ok) return failedWith(result.error, form);
   await clearBasketDraft();
   redirect(`/reservation/${result.number}?t=${encodeURIComponent(result.token)}`);
