@@ -461,7 +461,7 @@ export async function placeOrder(
         await releaseHolds(payload, owner, now);
         return { ok: false, error: "The payment didn't go through. Your bag is saved — please try again." };
       }
-      console.info(`[order] ${order.number} placed${order.testMode ? " (test)" : ""}; confirmation email not configured yet`);
+      console.info(`[order] ${order.number} placed${order.testMode ? " (test)" : ""}`);
     }
   } catch (e) {
     // Any error: the customer's stock goes back on the shelf for others.
@@ -673,7 +673,7 @@ export async function reserveBasket(
         await releaseHolds(payload, owner, now);
         return { ok: false, error: "The payment didn't go through. Please try again." };
       }
-      console.info(`[reservation] ${reservation.number} reserved${reservation.testMode ? " (test)" : ""}; confirmation email not configured yet`);
+      console.info(`[reservation] ${reservation.number} reserved${reservation.testMode ? " (test)" : ""}`);
     }
   } catch (e) {
     await releaseHolds(payload, owner, now).catch(() => undefined);
