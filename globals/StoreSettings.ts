@@ -18,7 +18,7 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "tagline", "street", "locality", "phone", "email", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
+    afterChange: [auditGlobal(["name", "tagline", "street", "locality", "phone", "email", "notificationEmail", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
   },
   fields: [
     {
@@ -42,6 +42,15 @@ export const StoreSettings: GlobalConfig = {
         { name: "phone", type: "text", required: true, defaultValue: "(774) 283-4676" },
         { name: "email", type: "email", required: true, defaultValue: "lodelicious1@gmail.com" },
       ],
+    },
+    {
+      name: "notificationEmail",
+      label: "Staff notification email",
+      type: "email",
+      admin: {
+        description:
+          "Where new orders, reservations, inquiries and anything needing attention are emailed to staff (D44). Leave empty to use the shop email above. Nothing is sent until a sending service is approved and connected.",
+      },
     },
     {
       name: "doordashUrl",

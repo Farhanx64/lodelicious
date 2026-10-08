@@ -15,6 +15,7 @@ import { MAX_UPLOAD_BYTES } from "@/collections/Media";
 import type { Media, User } from "@/payload-types";
 import { seedCatalog } from "@/src/lib/catalog/seed";
 import { purgeStaleCarts } from "@/src/lib/checkout/purge-carts";
+import { isImagePublishable } from "@/src/lib/media";
 import { createFirstOwner } from "@/src/lib/owner-setup";
 import { csrfOrigins } from "@/src/lib/security";
 
@@ -180,12 +181,16 @@ describe("media (A10, A23)", () => {
     }
   });
 
-  it("the storefront still gets approved photos on a product, and an unapproved one comes back unpopulated (Photo coming soon)", async () => {
+  it("the storefront still gets approved photos on a product, and shows an unapproved one as Photo coming soon", async () => {
     vi.stubEnv("APP_ENV", "production");
-    const { docs } = await payload.find({ collection: "products", where: { slug: { equals: productSlug } }, depth: 1, overrideAccess: false });
-    const images = (docs[0].images ?? []).map((i) => i.image);
-    expect(images[0]).toBe(unapproved.id); // just the id: ProductImage shows "Photo coming soon"
+    // Products are staff-only over REST (A04, D42), so the storefront reads with override and the page
+    // decides per photo with isImagePublishable (which ProductImage, PhotoStrip and the builder all use).
+    const { docs } = await payload.find({ collection: "products", where: { slug: { equals: productSlug } }, depth: 1, overrideAccess: true });
+    const images = (docs[0].images ?? []).map((i) => i.image as Media);
+    expect(images[0]).toMatchObject({ id: unapproved.id });
+    expect(isImagePublishable(images[0])).toBe(false); // ProductImage shows "Photo coming soon"
     expect(images[1]).toMatchObject({ id: approved.id, alt: "approved-photo" });
+    expect(isImagePublishable(images[1])).toBe(true);
   });
 
   it("refuses a file over 15 MB before it is processed, and says so plainly", async () => {

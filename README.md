@@ -19,6 +19,8 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 | `src/lib/gifts/` | Gift-builder rules engine: counts, packaging, premium caps, budget, repeats, stock, fit, special presentations |
 | `src/lib/checkout/` | Bag pricing, tax classes, basket deposits, pickup slots, and the order and reservation services (D34–D36) |
 | `src/lib/inventory/` | Stock ledger, atomic write batches, holds, sellable stock, curated-basket components, restock, outbox retry rules and the cron lock (D40) |
+| `src/lib/clover/` | Clover inventory sync: adapter interface, fake adapter, refusing HTTP stub, push and pull workers, sync health (D43) |
+| `src/lib/email/` | Transactional email templates, adapter selection (console; SMTP stub), exactly-once sending and retry (D44) |
 | `src/lib/inquiries/` | Inquiry topics, form parsing, the fountain estimate and the inquiry service (D37) |
 | `src/lib/catalog/` | Catalog queries, availability, price display (unapproved prices show as "Price to be confirmed"), the create-only seed and its guard, gift-basket grouping |
 | `src/lib/payments/` | Payment provider interface. Only a test provider exists, never in production, until Clover (milestone 6) |
@@ -29,7 +31,7 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 | `data/source/` | Verbatim source evidence (Clover, price screenshot, DoorDash, owner product cards, allergen chart, supplier specs, basket chart) |
 | `data/catalog/catalog.json` | Starting catalog for `npm run seed:catalog` |
 | `data/assets/` | Logo master, product photos, product cards, supplier images (see its README) |
-| `scripts/` | Run via `npx payload run scripts/<name>.ts`: `doctor`, `check-migrations`, `seed-source-records`, `seed-catalog` (refuses a live database that has products unless `SEED_FORCE=1`), `create-owner` (first owner from env), `purge-carts` (daily cron), `release-expired-holds` (every 5 minutes) |
+| `scripts/` | Run via `npx payload run scripts/<name>.ts`: `doctor`, `check-migrations`, `seed-source-records`, `seed-catalog` (refuses a live database that has products unless `SEED_FORCE=1`), `create-owner` (first owner from env), `purge-carts` (daily cron), `release-expired-holds` (every 5 minutes), `send-pending-emails` (every 10 minutes), `clover-push` / `clover-pull` (once the sync is verified; `CLOVER_DRY_RUN=1` for trials) |
 | `tests/` | Source-data guard tests, page-render tests and Payload integration tests (catalog, checkout, reservations, gift baskets, inquiries, policies, security fixes, permissions) |
 | `server.js` | Passenger/LiteSpeed entry point (no top-level await — see comment) |
 
@@ -53,6 +55,13 @@ Production-like run: `npm run build && NODE_ENV=production npx payload migrate &
 - `NEXT_PUBLIC_SITE_URL` turns on the CSRF allowlist. Leave it unset locally and on tunnels.
 - `FIRST_OWNER_EMAIL` (or `OWNER_EMAIL` / `OWNER_PASSWORD` with `scripts/create-owner.ts`) secures
   the first owner account. Deploy steps are in `STATUS.md` → "Deploying".
+- Email: `EMAIL_TRANSPORT` (unset = console), `EMAIL_FROM`, `EMAIL_REPLY_TO`, `SMTP_*`, and
+  `EMAIL_SEND_LIVE=1` on a live host. Nothing is sent until a service is installed (D44).
+- Clover: `CLOVER_ENVIRONMENT`, `CLOVER_MERCHANT_ID`, `CLOVER_API_TOKEN`, plus `CLOVER_SYNC_LIVE=1`
+  for production and `CLOVER_ADAPTER=fake` for local trials (D43).
+- Secrets (`PAYLOAD_SECRET`, Clover token, SMTP password) live only in the cPanel Node app's
+  environment, never in the repo. Generate `PAYLOAD_SECRET` with
+  `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
 **Dependencies:** change them with npm 11 (bundled with Node 24; on older Node use
 `npx npm@11 install <pkg>`). npm 10 crashes while resolving this tree, but `npm ci` works with

@@ -1,7 +1,7 @@
 # Project status
 
-Last updated: 2026-10-07 · branch `integration/2026-10-06` (milestone 3 finished, security and
-accessibility audit fixes, milestone 5 website inventory done). `main` is at f4523fa (PR #7, tax approved).
+Last updated: 2026-10-08 · branch `integration/wave3` (checkout hardening, Clover sync worker
+against a fake, transactional emails to the console). `main` is at f41fa1e (PR #8).
 
 **Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
 (confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first
@@ -47,6 +47,16 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
   explicit restock (never automatic on cancel or refund), an optional stale-count limit, a component
   list for curated baskets (empty until Lody supplies contents) and a Clover outbox (nothing sends
   yet).
+- **Checkout hardening (D42):** products and categories are staff-only over the API; payments
+  are safe for a real provider (tax gate, per-attempt key, unknown state on timeouts, never a second
+  charge); one order per form submission; orders and reservations wait for payment, and notes send
+  them to staff review; deletes are audited; SQLite busy timeout 5 s.
+- **Clover sync worker (D43):** push (outbox → Clover) and pull (Clover counts → website) jobs
+  with locks, backoff, checkpoints and health lines in `/ops/system-check`. Tested against a fake
+  adapter only; the real HTTP adapter is a refusing stub until verified on Lody's sandbox.
+- **Emails (D44):** order, reservation and inquiry confirmations plus staff notifications, each
+  sent exactly once and never blocking an order. Console only: nothing is sent until Lody picks a
+  sending service.
 - **Checks:** see the latest milestone entry below for counts. CI also fails if the schema and
   migrations drift apart.
 
@@ -76,18 +86,17 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 9. **Home page:** 8–12 Shop Favorites ticked.
 10. **Design:** acceptance of the gold-text contrast deviation (D31).
 
-**Next build, in recommended order:**
-1. **Checkout hardening (from the audit):**
-   - A04: close anonymous product reads.
-   - A05: payment retry defects that would surface with the first real provider.
-   - A11: unique submission keys.
-   - A12: dietary notes trigger staff review.
-   - A14: orders wait for payment before "Preparing".
-   - A20: audit deletes.
-2. **Clover sync worker** reading the outbox, against a fake adapter, then live with Lody's token
-   (`docs/clover-sync-needs.md` lists exactly what it must do).
-3. **Milestone 6:** Clover payments, USPS rates, and order, reservation and inquiry emails.
-   Needs keys, fee approval and email sending.
+**Next build, in recommended order (everything left needs Lody or credentials):**
+1. **Clover sandbox:** with Lody's inventory-only sandbox token, verify the points listed in D43
+   (absolute vs delta stock updates, idempotency, response shape), then run push and pull with
+   `CLOVER_DRY_RUN=1`, then for real on sandbox. Per-option Clover IDs need a small migration once
+   Lody splits the shared items.
+2. **Email sending:** once Lody picks a service and a From domain (SPF, DKIM, DMARC), install
+   `@payloadcms/email-nodemailer` and fill in the SMTP stub (D44).
+3. **Milestone 6:** Clover embedded payments behind `src/lib/payments` (the service is already safe
+   for a real provider, D42), then USPS rates once packing data and credentials exist.
+4. **Browser pass** at 390 px and 200% text over the new pages and forms, then staging review with
+   Lody.
 
 ## Deploying (live or staging)
 
@@ -100,8 +109,12 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
    `OWNER_PASSWORD`.
 4. Run `npm run migrate`. Run `npm run seed:catalog` only on an empty database (`SEED_FORCE=1`
    overrides the guard on a live database that already has products).
-5. Cron (cPanel): `npx payload run scripts/release-expired-holds.ts` every 5 minutes (expires
-   holds, reconciles late payments) and `npx payload run scripts/purge-carts.ts` daily.
+5. Cron (cPanel), each as `npx payload run scripts/<name>.ts`:
+   - `release-expired-holds` every 5 minutes (expires holds, reconciles late payments)
+   - `send-pending-emails` every 10 minutes
+   - `clover-push` every 1–2 minutes and `clover-pull` every 5–15 minutes, only once the Clover
+     sync is verified (D43)
+   - `purge-carts` daily
    Count stock in /admin → Inventory → Stock adjustments, not on the product form.
 6. Log in and open `/ops/system-check`: every line, including `APP_ENV`, must pass.
 7. Confirm LiteSpeed forwards `X-Forwarded-For` and the public host, which the rate limiter and
@@ -114,9 +127,26 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 | 1 | Project setup | **Done** (rebuilt on Payload) |
 | 2 | Gift-builder rules engine (presentations, counts, premium caps, budget, repeats, fit) | **Done** |
 | 3 | Catalog + storefront (products from reviewed source records, pages, search/filters) | **Done** on the integration branch: Gift Baskets (D38), Events and Contact with inquiries (D37), and policies (D39). Content still depends on Lody |
-| 4 | Cart, checkout, order snapshots, staff assembly views | **Done (test payments)**: bag, checkout, orders, basket reservations with deposits (D34–D36). Hardening from the audit is partly done (D41), the rest is next |
-| 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | **Website half done** (D40): ledger, holds, atomic sales, BOM, restock, stale stock, outbox. Clover worker not started; the live sync needs Lody's stock counts and an inventory-only token |
-| 6 | Clover embedded payments, USPS rates, fixture-tested until credentials exist | Not started: needs Clover ecommerce keys, fee approval, USPS credentials |
+| 4 | Cart, checkout, order snapshots, staff assembly views | **Done (test payments)**: bag, checkout, orders, basket reservations with deposits (D34–D36). Hardened from the audit (D41, D42) |
+| 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | **Website half done** (D40): ledger, holds, atomic sales, BOM, restock, stale stock, outbox. Clover push/pull worker built against a fake (D43); the live sync needs Lody's stock counts, an inventory-only token and sandbox verification |
+| 6 | Clover embedded payments, USPS rates, fixture-tested until credentials exist | **Emails built, console only** (D44). Payments and USPS not started: need Clover ecommerce keys, fee approval, USPS credentials and a sending service |
+
+## Checkout hardening, Clover worker and emails — 2026-10-07/08 (D42–D44)
+
+- **Checkout hardening (D42):** the six remaining audit findings (A04, A05, A11, A12, A14, A20)
+  plus the SQLite busy timeout. Migration `checkout_hardening` adds `payment_attempts`.
+- **Clover worker (D43):** no schema change. Matches by `cloverId` only; pull adds unsent website
+  deltas before applying Clover's count and never echoes back. Options (pink/blue, styles) are
+  skipped and reported until they get their own Clover IDs.
+- **Emails (D44):** migration `email_settings` adds sent markers and a staff notification address
+  (Store settings). Console mode marks emails as sent, so connecting a real service later won't
+  email old orders. The SMTP adapter is a stub that refuses to start.
+- **Checks:** **720 tests pass** (65 files). Typecheck and lint clean; all 15 migrations apply to
+  an empty production database with no schema drift; the production build passes. A secret scan of
+  the code, the full git history and the browser bundle found no keys, tokens or passwords.
+- **Open questions for Lody** are listed in D42, D43 and D44: dietary review before payment, who
+  reconciles unknown payments, Clover read frequency and item splits, the sending service, the From
+  domain and the staff address.
 
 ## Milestone 3 finished, plus audit fixes — 2026-10-06/07 (D37–D41)
 
@@ -364,5 +394,5 @@ Screenshots (home shell since replaced by `m3-*`):
 
 ## Next concrete step
 
-Open the PR from `integration/2026-10-06` to `main`. After that: the checkout hardening from the audit, the Clover sync worker against a
-fake adapter, and order emails. See "Where we left off" at the top.
+Merge the wave-3 PR. Then everything left needs Lody or credentials: Clover sandbox verification,
+an email sending service, Clover payments and USPS. See "Next build" at the top.

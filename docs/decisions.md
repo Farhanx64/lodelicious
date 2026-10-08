@@ -692,6 +692,225 @@ New environment variables: `FIRST_OWNER_EMAIL`, `OWNER_EMAIL`, `OWNER_PASSWORD`,
 Changed meaning: `APP_ENV` (allowlist, must be set to `production` on the live host),
 `NEXT_PUBLIC_SITE_URL` (now enables the CSRF allowlist; the `.env.example` value is commented out).
 
+## D42 — Checkout hardening: private product API, payment states, one submission per form (2026-10-07)
+
+Fixes from the repo audit (A04, A05, A11, A12, A14, A20) plus the SQLite busy timeout from D40.
+One migration, `checkout_hardening`.
+
+- **The product API is private (A04).** `products` and `categories` are readable by **staff only**
+  (`isStaff`); an anonymous `GET /api/products` is now "not allowed" (a REST-handler test checks it, and
+  that no staff-only field name appears in the answer). The audit's field-level `read` was **not** used
+  because the storefront reads as anonymous. Instead every storefront and server read states its own
+  rule and passes `overrideAccess: true`: `queries.ts` (`_status = published`, `channel != hidden`),
+  `builder-catalog.ts` (published, not hidden, online, basket-eligible), `loadProducts` in `service.ts`
+  (published, not hidden: a hidden product can't be added to a bag), and the inquiries `findPublishedItem`.
+  The builder is sent each unit's stock **capped at `maxPerGift`** (rules are unchanged: a request over
+  `maxPerGift` is already refused, so a larger count never mattered). Because reads now override access,
+  photos that are not approved for launch are populated on a product; `isImagePublishable` (used by
+  `ProductImage`, `PhotoStrip` and the builder) is the guard, and the A10 test now checks that. Categories had
+  the milder form of the same problem (non-shop categories and their text were public) and are staff-only too.
+  New code that reads these collections for visitors **must** state `published` and `not hidden` itself.
+- **Payments with a live provider (A05).**
+  (a) The tax gate is `orderingState(provider, taxApproved)` after pricing, for both orders and
+  reservations; with no provider at all they still stop before pricing.
+  (b) Each charge has the key `<record key>:<attempt>`. `paymentAttempts` is stored on the record and
+  written **before** the call. A declined record gets the next number, so a gateway can't replay a cached
+  decline; a record still `pending` (a crash mid-charge) keeps its number, so the gateway deduplicates.
+  (c) A reservation retry charges the stored `depositCents` and records the balance from the stored total;
+  editing the deposit setting between attempts changes nothing for that record.
+  (d) `charge()` is wrapped (`chargeSafely`): an exception, a timeout (`PAYMENT_TIMEOUT_MS`, 30 s by default) or
+  an unrecognised answer is **unknown**. A provider may also return `unknown`. The record is kept as
+  `paymentStatus: unknown`, stays awaiting payment, keeps its stock hold (which expires after the hold time;
+  the cron's `reconcilePaidHeld` handles a record that is later marked paid) and the customer's bag, and gets
+  a stock note. The customer is told not to pay again. **Nothing charges again while a record from the same
+  bag or basket is `unknown`**, whatever the customer changes, until staff mark it paid or failed in the
+  admin (owner and manager only, as before). `ChargeResult.status` gained `"unknown"`.
+- **One submission, one record (A11).** The checkout and reserve pages render a hidden `submission`
+  field: a random nonce signed with `PAYLOAD_SECRET` and tied to its form kind (`src/lib/checkout/submission.ts`).
+  The server action verifies it and passes it to the service, which adds it to the idempotency key. A true
+  double submit of one rendered form is one order; the same items, details and slot from a fresh form later
+  is a new order (and a new receipt link). A retry after a decline from the same form is the same record
+  (next attempt). A missing or forged nonce answers "This page has expired. Please reload it", with the
+  customer's entries kept (A13). The service accepts `submission` as optional so older callers keep working;
+  the actions always send it. There is no expiry: the nonce is only an identity.
+- **Allergy and dietary notes (A12).** A paid shop order with non-empty notes, or a paid reservation with
+  requests, goes to **Needs staff review** instead of Preparing or Confirmed. The checkout page shows the
+  Store settings allergy notice next to the notes box (and the reserve page shows it), and says that a note means
+  a person reads the order first. **Payment timing is unchanged and is Lody's decision:** the PRD says an
+  unresolved dietary request should go through an inquiry before payment; today the customer pays first and
+  staff review afterwards. If Lody wants review before payment, that is a separate flow (open question).
+- **Waiting states (A14).** Orders start `awaiting_payment` (default) and become `preparing` (or
+  `staff_review` with notes) only when `paymentStatus` becomes `paid`. Reservations start `awaiting_payment` and
+  become `confirmed` (or `staff_review` with requests) when the deposit or full payment is paid. This is one
+  `beforeChange` hook (`advanceWhenPaid`), so it also applies when staff mark a payment paid by hand, and an
+  order staff cancelled while a charge was in flight stays cancelled. A declined or unknown payment leaves the
+  record awaiting payment; the status labels say "do not pack". New select values: `paymentStatus: unknown`
+  (orders and reservations), `awaiting_payment` (both status fields). This fits D40: `stockStatus`
+  (`held`, `committed`, `needs_attention`, `released`) is unchanged, and `settleStock` still sets `staff_review`
+  when a paid record's stock could not be taken. Test orders show a **TEST** badge in the Test order column of
+  the Orders and Reservations lists (`testMode`, now with a custom cell).
+- **Deletes are audited (A20).** `auditDelete` writes an `audit-log` row with `action: delete`, the user, the
+  record's name/number/email and the last audited values. Applied to products, categories, tax classes, users,
+  orders, reservations, inquiries, media and stock adjustments. Audited fields added: `Media.approvedForLaunch`
+  (media is now audited on change), `Products.taxClass`, `shippable`, `perishable`, `maxPerGift`, `fitUnits`.
+  The comment in `src/hooks/audit.ts` claiming audit rows share the change's transaction is corrected: the
+  SQLite adapter runs without transactions (D40), so the change and its audit row are two writes.
+- **SQLite busy timeout.** `busyTimeout: 5000` on the adapter (the option is a top-level adapter argument in
+  `@payloadcms/db-sqlite` 3.90, applied as `PRAGMA busy_timeout`). `transactionOptions` stays off. The inventory
+  integration tests pass with it.
+- **Migration `checkout_hardening`.** Adds `payment_attempts` to `orders` and `reservations`. Payload's generator
+  also proposed rebuilding both tables to change the stored DEFAULT of the status columns; that rebuild
+  drops the table (it would null `stock_adjustments.order_id`/`reservation_id` if foreign keys are enforced) and nothing
+  needs it, because Payload applies the configured default itself and the new select values are plain text. The
+  migration is hand-trimmed to the two `ALTER TABLE ... ADD`; the snapshot `.json` is the generated one, so the
+  CI drift check stays clean. Existing rows keep their old status values.
+- **For what comes next.** A record is "paid" in exactly two places: `placeOrder`/`reserveBasket` when the
+  provider answers `paid`, and staff changing `paymentStatus` in the admin. The emails work should send
+  "order confirmed" when `paymentStatus` becomes `paid` (or `deposit_paid`/`paid_in_full`), and tell
+  staff-review customers that a person will check their note.
+
+## D43 — Clover inventory sync worker, built against a fake (2026-10-07)
+
+The Clover half of milestone 5 (INV 03, INV 05, INV 06, AC 10). **No network, no credentials: nothing
+in this decision has ever talked to Clover.** The workers are written against an adapter interface
+and tested against an in-memory fake. No schema change and no change to existing files in
+`src/lib/inventory/`; the code is in `src/lib/clover/`.
+
+- **Adapter (`adapter.ts`).** `CloverInventoryAdapter`: `listItems({cursor, limit})` (paginated, with
+  stock), `getItemStock(cloverId)` and `pushStockChange({cloverId, delta, quantityAfter, idempotencyKey})`.
+  Errors are typed: `CloverTransientError` (timeout, rate limit with `retryAfterMs`, 5xx, network) and
+  `CloverPermanentError` (auth, not found, rejected, config). `FakeCloverAdapter` is in memory, records
+  calls, and can be scripted to time out, throttle, return 5xx or reject, or to apply a change and then
+  time out (a lost answer). `getCloverAdapter(env)` returns the fake (only when `APP_ENV` is local,
+  staging or test, and `CLOVER_ADAPTER=fake`, since a fake on the live store would mark real changes as
+  sent), the HTTP adapter (when `CLOVER_MERCHANT_ID` or `CLOVER_API_TOKEN` is set), or `none` (the scripts
+  say so and exit 0).
+- **HTTP adapter (`http-adapter.ts`): a stub, never called in tests.** It refuses to be built unless
+  `CLOVER_ENVIRONMENT` (`sandbox` or `production`), `CLOVER_MERCHANT_ID` and `CLOVER_API_TOKEN` are all set,
+  and refuses `production` unless `CLOVER_SYNC_LIVE=1`. 10 s timeout on every call, IDs checked before
+  they go into a URL, token only in the `Authorization` header and never in a message. Written from
+  general knowledge of Clover's REST API, with no web lookup. **Must be verified in the Clover sandbox
+  before use:** base URLs (EU and Latin America hosts are refused); the `items?expand=itemStock` response
+  shape, page size and which of `quantity` / `stockCount` is on-hand; the `item_stocks` read and update
+  endpoints; **whether the update sets an absolute number or adds a delta** (the stub reads the current
+  quantity, adds the delta and writes the total back, which has a small race with an in-store sale; use a
+  true delta call if one exists); whether any idempotency header is honoured (one is sent; if not, a request
+  that times out after Clover applied it is applied twice on retry, and the next read lets Clover win, so the
+  website only ever sells less); `Retry-After`; the token scopes; whether deleted items are listed; how
+  option-level stock is modelled.
+- **Push (`push.ts`, job lock `clover-push`).** Takes `pending` / `failed` outbox rows with `nextAttemptAt`
+  empty or past, oldest first, in batches of 25. A row is **claimed** by one conditional UPDATE (counts the
+  attempt, moves `nextAttemptAt` out by a 2-minute lease), so a second run, or a run that outlived its lock,
+  cannot send it too; the result write is conditional on the row still being `pending` / `failed` (a row
+  changed under us is counted as `lostRace` and not overwritten). The row's `idempotencyKey` goes to Clover.
+  Success: `sent`, `sentAt`, `lastError` cleared. Transient failure: `afterFailure()` (30 s doubling to 6 h,
+  `dead` after 8) with the message in `lastError`. A 429 is not a failed attempt (attempt undone, the row
+  waits at least 30 s or `Retry-After`, the run stops). Three transient failures in a row stop the run
+  ("Clover is down"; the remaining rows keep their attempts) and the run is recorded as failed. A permanent
+  rejection is `dead` at once; bad credentials stop the run and leave every row untouched. The run stops
+  starting rows after 50 s. A failure never touches the paid order or the website's stock.
+- **Rows with nothing to send to.** The current `products.cloverId` is used (it may have been set after the
+  event was queued). A product with no Clover ID, or an event for one **option** (options have no Clover
+  item of their own, see "Schema" below), is not sent and not retried against Clover: it stays `failed` with
+  `lastError` starting `not mapped:`, is looked at again every 6 hours without using up attempts, and goes
+  out by itself once the ID exists. No new status values were added.
+- **Pull (`pull.ts`, job lock `clover-pull`).** Reads Clover page by page (100 items) and applies each
+  matched product **only through `applyMovements({ mode: "count", reason: "sync", countedAt })`**, key
+  `sync:<run id>:<Clover ID>`: ledger row, known, count date = the moment the page was read, no outbox
+  event (no echo). Every matched item is stamped, even unchanged (a ledger row of 0). **Matching is by
+  `cloverId` only.** Reported and left alone: Clover items with no website product; website products
+  with a Clover ID Clover did not return; website products without a Clover ID; items Clover does not track;
+  a Clover ID shared by more than one website product (a split Clover item is ambiguous; the Philips bar
+  and Princess Assortment until Lody splits them); products with options (no per-option IDs).
+- **Pending deltas.** Before applying, the product's unsent outbox deltas are added to Clover's number:
+  `pending`, `failed` and `dead` rows (a dead row is a sale Clover never got), plus rows `sent` since this
+  page's read began (a push that lands while the page is in flight). That can double count a sale, which
+  only sells less and corrects itself at the next read. The result is floored at 0 (reported as `clamped`).
+  Remaining window: a sale committed between the delta lookup and the count (a few milliseconds) is
+  overwritten; the in-store reserve (D26) covers it. **Open:** a dead row keeps being subtracted until it is
+  dealt with; there is no staff action to retire one yet (outbox is read-only to staff).
+- **Restartable.** The cursor, run id, items seen and counters are saved in `sync-jobs.checkpoint` after
+  every page. A run that stops (50 s budget, Clover down, crash) resumes from it within 24 hours with the same
+  run id, so a replayed page hits the `sync:` keys and is harmless (`alreadyApplied`). When a run finishes the
+  checkpoint keeps its report (`completed: true`) for the staff view and the next run starts fresh.
+- **Dry run.** `CLOVER_DRY_RUN=1` (since `payload run` passes scripts only positional arguments): push
+  counts what it would send; pull reads Clover and reports what it would change. No lock, no writes.
+- **Staff visibility.** `getCloverSyncHealth()` (`health.ts`): pending, retrying, dead, unmapped counts, oldest
+  unsent age, last failure, last success of each job, the last pull report. `/ops/system-check` now has three
+  lines: outbox (fails on any dead event or anything unsent for over an hour), last stock read, last send. Until
+  Clover is configured it shows one informational line that fails only on dead events. No emails or alerts are
+  sent from here (no outside services); staff see it in the system check and in Inventory → Outbox events.
+- **Schema.** No change. **Needed later:** a per-option Clover ID (`variants.cloverId`, in a migration) if
+  options are separate Clover items; until then option stock is neither pushed nor pulled. Outbox events for
+  options wait as `not mapped:`. Also worth considering: a staff action to retire a dead event.
+- **Cron (cPanel), once Lody has given the token and chosen the interval:**
+  `npx payload run scripts/clover-push.ts` every 1 to 2 minutes and `npx payload run scripts/clover-pull.ts`
+  every 5 to 15 minutes. Both exit 0 when another run holds the lock, or Clover is not configured; 1 on failure.
+- **Tests.** Unit (`src/lib/clover/clover.test.ts`): errors, retry timing, the fake, the HTTP adapter's refusals
+  (incomplete, bad environment, production without `CLOVER_SYNC_LIVE=1`) with a stub `fetch`, the factory.
+  Integration (`tests/int/clover-push.test.ts`, `clover-pull.test.ts`) on the real migrations.
+
+## D44 — Transactional emails, built and tested, delivered only to the console (2026-10-07)
+
+PRD AC 07 (notifications). **Nothing in this decision has ever sent an email**: there is no sending
+service, no credentials and no `nodemailer` in `node_modules`. Until Lody approves a service, every
+email goes to the console log. One migration, `email_settings`.
+
+- **What is sent** (`src/lib/email/`):
+  - Customer: order confirmation (number, lines, subtotal, tax, total, pickup slot, the private order link, the
+    store address and phone); different wording when the customer left a note ("a person will read it before
+    your order is packed"). Reservation confirmation (deposit or paid in full, balance due at pickup, pickup,
+    private link; the same staff-review wording for requests). Inquiry receipt ("we'll reply"; nothing booked
+    or charged). Test orders are subject-prefixed `[TEST]`.
+  - Staff: a new paid order, reservation or inquiry; and "needs attention" for an **unknown payment** and for a
+    paid record whose stock is `needs_attention`. Staff emails list the customer's contact details and notes
+    (staff need them) and an admin link. They never include `staffNotes`, the stock note, a payment
+    reference or the token hash; the templates take only the fields they print.
+  - Plain text plus simple HTML (inline styles, no images, fonts or scripts). Customer text is escaped; subjects
+    have control characters removed; only `http(s)` links are rendered as links.
+- **When it is sent (`due.ts`).** From an `afterChange` hook, decided from the saved state: orders when
+  `paymentStatus` is `paid`; reservations when it is `deposit_paid` or `paid_in_full`; never while pending,
+  failed, unknown or refunded, and not for a canceled record. Because it reads state, staff marking an
+  unknown payment paid by hand (the `advanceWhenPaid` path, D42) sends the confirmation then. An **unknown**
+  payment emails staff only (the customer was already told on the page not to pay again). Inquiries send on
+  create; honeypot-dropped ones are never stored, so never email.
+- **Exactly once.** `emails.{confirmationSentAt, staffNotifiedAt, unknownNotifiedAt, attentionNotifiedAt}` on
+  orders and reservations (`confirmationSentAt`, `staffNotifiedAt` on inquiries), read-only in the admin. Before
+  sending, `notify.ts` claims a marker with one conditional `UPDATE ... WHERE marker IS NULL`, so repeated
+  saves, staff edits, two overlapping runs and the retry script never send an email twice. If the send fails
+  the marker is cleared again. A crash between the claim and the send loses that one email (it is never sent
+  twice). **An email failure never fails the write:** the hook and `sendDueEmails` catch everything.
+- **Console mode counts as sent.** With the console adapter the email is "handed over" and the marker is set,
+  so connecting a real service later does **not** email every old order. (If Lody wants the backlog sent, clear
+  the markers.)
+- **The private link** is rebuilt, not stored: the URL token is `HMAC(PAYLOAD_SECRET, kind:idempotencyKey)`
+  (`accessUrlToken` in `checkout/order.ts`, which `service.ts` now calls), so the retry script can email the
+  same link long after checkout. Rotating `PAYLOAD_SECRET` changes every link. It needs `NEXT_PUBLIC_SITE_URL`;
+  if that is unset the email simply omits the link.
+- **Recipients and senders.** Staff go to the new optional Store settings field `notificationEmail`, else the
+  shop email. `EMAIL_FROM` (default: shop name and shop email) and `EMAIL_REPLY_TO` (default: the shop email).
+  Addresses with line breaks or that are not plausible are ignored.
+- **Adapter (`config.ts`, `adapter.ts`, wired in `payload.config.ts`).** `EMAIL_TRANSPORT` unset or `console` is
+  the default (prints the message outside the live store, only a hidden summary on it). `smtp` **refuses to
+  start** unless `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` are set, and on anything
+  that is not local/staging/test (the D41 rule, so unset or mistyped counts as live) also `EMAIL_SEND_LIVE=1`.
+  **The SMTP adapter is a stub**: `@payloadcms/email-nodemailer` is not installed and dependencies were off
+  limits, so a complete SMTP config currently stops the app with "adapter is not installed". The file comment
+  in `adapter.ts` has the few lines to put in once it is installed.
+- **`sendEmail` (`send.ts`).** Wraps `payload.sendEmail` with a 15 s timeout and never throws. It logs one line
+  (`[email] handed over customer_order SP-1001` or `FAILED ...`) with no addresses or names; error text has
+  anything that looks like an address removed.
+- **Retry:** `npx payload run scripts/send-pending-emails.ts` (cron, every 10 minutes) finds paid, unknown and
+  attention records with an empty marker, plus inquiries, and sends them under a `sync-jobs` lock
+  (`send-pending-emails`).
+- **Tests.** The transport is replaced by a capturing function on `payload.sendEmail`; the configured adapter
+  stays the console one, so no test can send.
+- **Not done / for Lody.** Choice of sending service and plan; the From address and domain, with SPF, DKIM and
+  DMARC records on it (PRD: confirm authenticated sending and Reply-To before launch); the staff address;
+  wording sign-off on the customer emails (no policy or delivery promises were added); whether staff-review
+  customers should be told earlier (see D42, review currently happens after payment); shipping and ready-for-pickup
+  emails are not built; the abandoned-bag and refund emails are not built.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

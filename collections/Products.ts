@@ -1,7 +1,7 @@
 import type { CollectionConfig, Field } from "payload";
 
-import { isCommerceManager } from "../src/access/roles";
-import { auditCollection } from "../src/hooks/audit";
+import { isCommerceManager, isStaff } from "../src/access/roles";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { checkComponents, noteExplicitStock, pinLiveStock, showLiveStock } from "../src/hooks/product-stock";
 import { slugField } from "../src/fields/slug";
 import { GIFT_BASKET_CATEGORY } from "../src/lib/catalog/gift-baskets";
@@ -63,7 +63,11 @@ export const Products: CollectionConfig = {
   },
   versions: { drafts: true, maxPerDoc: 25 },
   access: {
-    read: ({ req }) => (req.user ? true : { _status: { equals: "published" } }),
+    // Staff only (A04, D42). Anonymous REST would otherwise return hidden-channel products,
+    // assembly notes, exact stock and unapproved prices. The storefront never reads through this
+    // rule: every server read states its own `where` (published, not hidden) and passes
+    // overrideAccess: true. Do not add a public read back without field-level care.
+    read: isStaff,
     create: isCommerceManager,
     update: isCommerceManager,
     delete: isCommerceManager,
@@ -86,9 +90,15 @@ export const Products: CollectionConfig = {
         "premium",
         "giftTypes",
         "basketEligible",
+        "taxClass",
+        "shippable",
+        "perishable",
+        "maxPerGift",
+        "fitUnits",
         "_status",
       ]),
     ],
+    afterDelete: [auditDelete(["title", "priceCents", "channel", "_status"])],
   },
   fields: [
     {

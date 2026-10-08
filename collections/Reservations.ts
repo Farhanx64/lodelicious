@@ -1,10 +1,12 @@
 import type { CollectionConfig } from "payload";
 
 import { isOwner, isStaff, nobody } from "../src/access/roles";
-import { auditCollection } from "../src/hooks/audit";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
+import { advanceWhenPaid } from "../src/hooks/payment-status";
+import { sendRecordEmails } from "../src/hooks/send-emails";
 import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
-import { customerFields, frozen, identityFields, inventoryFields, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
+import { customerFields, frozen, identityFields, inventoryFields, orderEmailFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
 
 const cents = { components: { Cell: "@/components/admin/CentsCell#CentsCell" } };
 
@@ -18,13 +20,14 @@ export const Reservations: CollectionConfig = {
   admin: {
     useAsTitle: "number",
     group: "Orders",
-    defaultColumns: ["number", "customer.name", "pickup.label", "reservationStatus", "paymentStatus", "stockStatus", "amountPaidCents", "balanceDueCents"],
+    defaultColumns: ["number", "testMode", "customer.name", "pickup.label", "reservationStatus", "paymentStatus", "stockStatus", "amountPaidCents", "balanceDueCents"],
     listSearchableFields: ["number", "customer.name", "customer.email"],
   },
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   hooks: {
-    beforeChange: [guardStockStatus],
-    afterChange: [auditCollection(["paymentStatus", "reservationStatus", "stockStatus", "amountPaidCents", "balanceDueCents", "staffNotes"]), releaseHoldOnCancel("reservationStatus")],
+    beforeChange: [guardStockStatus, advanceWhenPaid("reservations")],
+    afterChange: [auditCollection(["paymentStatus", "reservationStatus", "stockStatus", "amountPaidCents", "balanceDueCents", "staffNotes"]), releaseHoldOnCancel("reservationStatus"), sendRecordEmails("reservations")],
+    afterDelete: [auditDelete(["number", "paymentStatus", "reservationStatus", "stockStatus", "testMode"])],
   },
   fields: [
     ...identityFields,
@@ -35,8 +38,9 @@ export const Reservations: CollectionConfig = {
           name: "reservationStatus",
           type: "select",
           required: true,
-          defaultValue: "confirmed",
+          defaultValue: "awaiting_payment",
           options: [
+            { label: "Awaiting deposit (do not pack)", value: "awaiting_payment" },
             { label: "Needs staff review", value: "staff_review" },
             { label: "Confirmed", value: "confirmed" },
             { label: "Preparing", value: "preparing" },
@@ -56,6 +60,7 @@ export const Reservations: CollectionConfig = {
             { label: "Deposit paid", value: "deposit_paid" },
             { label: "Paid in full", value: "paid_in_full" },
             { label: "Failed", value: "failed" },
+            { label: "Unknown: check with the payment provider", value: "unknown" },
             { label: "Refunded", value: "refunded" },
           ],
         },
@@ -88,7 +93,9 @@ export const Reservations: CollectionConfig = {
     },
     { name: "taxApproved", type: "checkbox", access: frozen },
     paymentReference,
+    paymentAttempts,
     ...inventoryFields,
+    orderEmailFields,
     { name: "staffNotes", type: "textarea" },
   ],
 };

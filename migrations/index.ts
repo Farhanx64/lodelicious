@@ -11,6 +11,8 @@ import * as migration_20261005_210313_checkout_reservations from './20261005_210
 import * as migration_20261007_022011_inquiries_events from './20261007_022011_inquiries_events';
 import * as migration_20261007_023832_policies from './20261007_023832_policies';
 import * as migration_20261007_032358_inventory from './20261007_032358_inventory';
+import * as migration_20261008_002231_checkout_hardening from './20261008_002231_checkout_hardening';
+import * as migration_20261008_010254_email_settings from './20261008_010254_email_settings';
 
 export const migrations = [
   {
@@ -76,6 +78,16 @@ export const migrations = [
   {
     up: migration_20261007_032358_inventory.up,
     down: migration_20261007_032358_inventory.down,
-    name: '20261007_032358_inventory'
+    name: '20261007_032358_inventory',
+  },
+  {
+    up: migration_20261008_002231_checkout_hardening.up,
+    down: migration_20261008_002231_checkout_hardening.down,
+    name: '20261008_002231_checkout_hardening',
+  },
+  {
+    up: migration_20261008_010254_email_settings.up,
+    down: migration_20261008_010254_email_settings.down,
+    name: '20261008_010254_email_settings'
   },
 ];

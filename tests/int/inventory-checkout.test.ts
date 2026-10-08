@@ -140,7 +140,7 @@ describe("a curated basket with a bill of materials (INV 01)", () => {
     const read = (id: number, user?: typeof w.manager) => payload.findByID({ collection: "products", id, depth: 0, ...(user ? { user } : {}), overrideAccess: false });
     expect((await read(basket.id, w.manager)).categorySlug).toBe("gift-baskets");
     expect((await read(plain.id, w.manager)).categorySlug).toBe("sweets");
-    expect((await read(basket.id)).categorySlug).toBeUndefined(); // visitors never get it
+    await expect(read(basket.id)).rejects.toThrow(/not allowed/i); // visitors can't read products at all (A04)
   });
 
   it("is unavailable until every component is counted, and falls back to its own stock without contents", async () => {
@@ -232,14 +232,14 @@ describe("holds while paying (INV 04)", () => {
     expect((await reconcilePaidHeld(payload, NOW)).checked).toBe(0); // the cron leaves it for staff
   });
 
-  it("are released when the payment provider throws", async () => {
+  it("stay while the payment provider throws: the result is unknown, so the stock is kept for the customer until staff reconcile (A05d, D42)", async () => {
     const p = await makeProduct(w, { stock: 2, reserve: 1 });
     const boom: PaymentProvider = { ...testProvider, async charge() { throw new Error("gateway timeout"); } };
-    await expect(place(await bagWith(w, p.id), FORM, withProvider(boom))).rejects.toThrow(/gateway timeout/);
+    expect(await place(await bagWith(w, p.id), FORM, withProvider(boom))).toMatchObject({ ok: false, error: expect.stringMatching(/couldn't confirm your payment/) });
     const holds = await payload.find({ collection: "stock-holds", where: { product: { equals: p.id } }, depth: 0, overrideAccess: true });
-    expect(holds.docs.every((h) => h.status === "released")).toBe(true);
-    expect(await liveStock(payload, p.id)).toBe(2);
-    expect(await changeBag(payload, newCartToken(), { unitId: String(p.id), quantity: 1, mode: "add" }, ctx, NOW)).toEqual({ ok: true });
+    expect(holds.docs.map((h) => h.status)).toEqual(["active"]);
+    expect(await liveStock(payload, p.id)).toBe(2); // nothing sold yet
+    expect(await changeBag(payload, newCartToken(), { unitId: String(p.id), quantity: 1, mode: "add" }, ctx, NOW)).toMatchObject({ ok: false });
   });
 
   it("last for the hold time from Settings → Inventory (15 minutes to start with)", async () => {
@@ -639,6 +639,7 @@ describe("custom basket reservations (D36)", () => {
   });
 
   it("is seen by the builder with other customers' holds taken off", async () => {
+    await payload.update({ collection: "products", id: items[1].id, data: { maxPerGift: 10 }, overrideAccess: true }); // the builder never sees more than one gift can hold (A04)
     const catalog = await loadBuilderCatalogFrom(payload, { now: NOW });
     const counted = (await liveStock(payload, items[1].id))!;
     expect(catalog.products.find((p) => p.id === String(items[1].id))?.stock).toEqual({ state: "known", quantity: counted - 1 }); // minus the in-store reserve

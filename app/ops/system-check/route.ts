@@ -3,6 +3,8 @@ import { headers } from "next/headers";
 import { getPayload } from "payload";
 
 import { canManageCommerce } from "@/src/access/roles";
+import { cloverConfigured } from "@/src/lib/clover/get-adapter";
+import { cloverHealthChecks, getCloverSyncHealth } from "@/src/lib/clover/health";
 import { currentRuntimeEnv } from "@/src/lib/runtime-env";
 import { evaluate } from "@/src/lib/system-check";
 
@@ -20,5 +22,10 @@ export async function GET() {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
   const results = evaluate(currentRuntimeEnv());
+  try {
+    results.push(...cloverHealthChecks(await getCloverSyncHealth(payload, new Date()), cloverConfigured()));
+  } catch (e) {
+    results.push({ check: "Clover sync", expected: "readable", actual: `could not be read: ${(e as Error).message}`, ok: false });
+  }
   return Response.json({ ok: results.every((r) => r.ok), results }, { headers: { "Cache-Control": "no-store" } });
 }
