@@ -140,7 +140,7 @@ and run `npm run build`.
   the schema and `service.ts`. The integrator merged branches one at a time into an integration
   branch, ran the full CI chain, edited the shared files (`SiteHeader`, `SiteFooter`, `STATUS.md`,
   `README.md`), and opened the PR.
-- Each change gets a decision entry in `docs/decisions.md` (next free number: **D46**), placed
+- Each change gets a decision entry in `docs/decisions.md` (next free number: **D47**), placed
   before `## Superseded`.
 - `docs/audit-2026-10-06.md` holds the security and accessibility audit. All 23 findings are fixed
   or partly fixed; the partial ones are listed there (no CSP yet, no 2FA, the decorative

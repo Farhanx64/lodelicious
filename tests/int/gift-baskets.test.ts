@@ -40,6 +40,11 @@ const CONTACT = { name: "Pat Customer", email: "pat@example.test", phone: "(508)
 let payload: Payload;
 let ctx: CheckoutContext;
 
+/** Lody agreed to AI-generated stand-in photos (D46). They stay unapproved for launch, so the live site never shows them. */
+function onlyStandInPhotos(p: Product): boolean {
+  return (p.images ?? []).every(({ image }) => typeof image === "object" && image !== null && image.approvedForLaunch === false && /^AI-generated/.test(image.credit ?? ""));
+}
+
 async function bySlug(slug: string): Promise<Product> {
   const { docs } = await payload.find({ collection: "products", where: { slug: { equals: slug } }, draft: true, overrideAccess: true, depth: 1 });
   return docs[0];
@@ -103,9 +108,9 @@ describe("the seeded curated baskets (D38)", () => {
         premium: false,
         nutFree: "unknown",
         vegan: "unknown",
-        images: [],
         shippable: false,
       });
+      expect(onlyStandInPhotos(p), slug).toBe(true);
       expect(p.priceSource, slug).toContain(`2026-09-22 (${ref})`);
       expect(p.allergenNotes ?? null, slug).toBeNull();
       expect(p.dietarySource ?? null, slug).toBeNull();
