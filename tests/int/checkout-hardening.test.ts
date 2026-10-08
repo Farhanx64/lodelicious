@@ -141,7 +141,7 @@ describe("payments with a live provider (A05)", () => {
     const submission = newSubmission("order");
 
     const first = await place(token, live(provider), FORM, submission);
-    expect(first).toMatchObject({ ok: false, error: expect.stringMatching(/couldn't confirm your payment.*SP-\d+.*don't pay again/s) });
+    expect(first).toMatchObject({ ok: false, error: expect.stringMatching(/couldn't confirm your payment[\s\S]*SP-\d+[\s\S]*don't pay again/) });
     const number = (first as { error: string }).error.match(/SP-\d+/)![0];
     expect(await orderOf(number)).toMatchObject({ paymentStatus: "unknown", fulfillmentStatus: "awaiting_payment", stockStatus: "held" });
     expect((await priceBag(payload, token, ctx, NOW)).payable).toHaveLength(1); // the bag is kept

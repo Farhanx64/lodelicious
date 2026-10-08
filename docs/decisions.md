@@ -692,6 +692,83 @@ New environment variables: `FIRST_OWNER_EMAIL`, `OWNER_EMAIL`, `OWNER_PASSWORD`,
 Changed meaning: `APP_ENV` (allowlist, must be set to `production` on the live host),
 `NEXT_PUBLIC_SITE_URL` (now enables the CSRF allowlist; the `.env.example` value is commented out).
 
+## D42 — Checkout hardening: private product API, payment states, one submission per form (2026-10-07)
+
+Fixes from the repo audit (A04, A05, A11, A12, A14, A20) plus the SQLite busy timeout from D40.
+One migration, `checkout_hardening`.
+
+- **The product API is private (A04).** `products` and `categories` are readable by **staff only**
+  (`isStaff`); an anonymous `GET /api/products` is now "not allowed" (a REST-handler test checks it, and
+  that no staff-only field name appears in the answer). The audit's field-level `read` was **not** used
+  because the storefront reads as anonymous. Instead every storefront and server read states its own
+  rule and passes `overrideAccess: true`: `queries.ts` (`_status = published`, `channel != hidden`),
+  `builder-catalog.ts` (published, not hidden, online, basket-eligible), `loadProducts` in `service.ts`
+  (published, not hidden: a hidden product can't be added to a bag), and the inquiries `findPublishedItem`.
+  The builder is sent each unit's stock **capped at `maxPerGift`** (rules are unchanged: a request over
+  `maxPerGift` is already refused, so a larger count never mattered). Because reads now override access,
+  photos that are not approved for launch are populated on a product; `isImagePublishable` (used by
+  `ProductImage`, `PhotoStrip` and the builder) is the guard, and the A10 test now checks that. Categories had
+  the milder form of the same problem (non-shop categories and their text were public) and are staff-only too.
+  New code that reads these collections for visitors **must** state `published` and `not hidden` itself.
+- **Payments with a live provider (A05).**
+  (a) The tax gate is `orderingState(provider, taxApproved)` after pricing, for both orders and
+  reservations; with no provider at all they still stop before pricing.
+  (b) Each charge has the key `<record key>:<attempt>`. `paymentAttempts` is stored on the record and
+  written **before** the call. A declined record gets the next number, so a gateway can't replay a cached
+  decline; a record still `pending` (a crash mid-charge) keeps its number, so the gateway deduplicates.
+  (c) A reservation retry charges the stored `depositCents` and records the balance from the stored total;
+  editing the deposit setting between attempts changes nothing for that record.
+  (d) `charge()` is wrapped (`chargeSafely`): an exception, a timeout (`PAYMENT_TIMEOUT_MS`, 30 s by default) or
+  an unrecognised answer is **unknown**. A provider may also return `unknown`. The record is kept as
+  `paymentStatus: unknown`, stays awaiting payment, keeps its stock hold (which expires after the hold time;
+  the cron's `reconcilePaidHeld` handles a record that is later marked paid) and the customer's bag, and gets
+  a stock note. The customer is told not to pay again. **Nothing charges again while a record from the same
+  bag or basket is `unknown`**, whatever the customer changes, until staff mark it paid or failed in the
+  admin (owner and manager only, as before). `ChargeResult.status` gained `"unknown"`.
+- **One submission, one record (A11).** The checkout and reserve pages render a hidden `submission`
+  field: a random nonce signed with `PAYLOAD_SECRET` and tied to its form kind (`src/lib/checkout/submission.ts`).
+  The server action verifies it and passes it to the service, which adds it to the idempotency key. A true
+  double submit of one rendered form is one order; the same items, details and slot from a fresh form later
+  is a new order (and a new receipt link). A retry after a decline from the same form is the same record
+  (next attempt). A missing or forged nonce answers "This page has expired. Please reload it", with the
+  customer's entries kept (A13). The service accepts `submission` as optional so older callers keep working;
+  the actions always send it. There is no expiry: the nonce is only an identity.
+- **Allergy and dietary notes (A12).** A paid shop order with non-empty notes, or a paid reservation with
+  requests, goes to **Needs staff review** instead of Preparing or Confirmed. The checkout page shows the
+  Store settings allergy notice next to the notes box (and the reserve page shows it), and says that a note means
+  a person reads the order first. **Payment timing is unchanged and is Lody's decision:** the PRD says an
+  unresolved dietary request should go through an inquiry before payment; today the customer pays first and
+  staff review afterwards. If Lody wants review before payment, that is a separate flow (open question).
+- **Waiting states (A14).** Orders start `awaiting_payment` (default) and become `preparing` (or
+  `staff_review` with notes) only when `paymentStatus` becomes `paid`. Reservations start `awaiting_payment` and
+  become `confirmed` (or `staff_review` with requests) when the deposit or full payment is paid. This is one
+  `beforeChange` hook (`advanceWhenPaid`), so it also applies when staff mark a payment paid by hand, and an
+  order staff cancelled while a charge was in flight stays cancelled. A declined or unknown payment leaves the
+  record awaiting payment; the status labels say "do not pack". New select values: `paymentStatus: unknown`
+  (orders and reservations), `awaiting_payment` (both status fields). This fits D40: `stockStatus`
+  (`held`, `committed`, `needs_attention`, `released`) is unchanged, and `settleStock` still sets `staff_review`
+  when a paid record's stock could not be taken. Test orders show a **TEST** badge in the Test order column of
+  the Orders and Reservations lists (`testMode`, now with a custom cell).
+- **Deletes are audited (A20).** `auditDelete` writes an `audit-log` row with `action: delete`, the user, the
+  record's name/number/email and the last audited values. Applied to products, categories, tax classes, users,
+  orders, reservations, inquiries, media and stock adjustments. Audited fields added: `Media.approvedForLaunch`
+  (media is now audited on change), `Products.taxClass`, `shippable`, `perishable`, `maxPerGift`, `fitUnits`.
+  The comment in `src/hooks/audit.ts` claiming audit rows share the change's transaction is corrected: the
+  SQLite adapter runs without transactions (D40), so the change and its audit row are two writes.
+- **SQLite busy timeout.** `busyTimeout: 5000` on the adapter (the option is a top-level adapter argument in
+  `@payloadcms/db-sqlite` 3.90, applied as `PRAGMA busy_timeout`). `transactionOptions` stays off. The inventory
+  integration tests pass with it.
+- **Migration `checkout_hardening`.** Adds `payment_attempts` to `orders` and `reservations`. Payload's generator
+  also proposed rebuilding both tables to change the stored DEFAULT of the status columns; that rebuild
+  drops the table (it would null `stock_adjustments.order_id`/`reservation_id` if foreign keys are enforced) and nothing
+  needs it, because Payload applies the configured default itself and the new select values are plain text. The
+  migration is hand-trimmed to the two `ALTER TABLE ... ADD`; the snapshot `.json` is the generated one, so the
+  CI drift check stays clean. Existing rows keep their old status values.
+- **For what comes next.** A record is "paid" in exactly two places: `placeOrder`/`reserveBasket` when the
+  provider answers `paid`, and staff changing `paymentStatus` in the admin. The emails work should send
+  "order confirmed" when `paymentStatus` becomes `paid` (or `deposit_paid`/`paid_in_full`), and tell
+  staff-review customers that a person will check their note.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

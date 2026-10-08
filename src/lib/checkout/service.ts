@@ -336,9 +336,6 @@ async function findUnreconciled(payload: Payload, collection: Chargeable, owner:
   return docs[0] ? { number: docs[0].number } : null;
 }
 
-/** Notes or requests typed by the customer need a person to read them before anything is packed (A12). */
-const needsStaffReview = (text: string | null | undefined): boolean => Boolean(text && text.trim());
-
 // ---------------------------------------------------------------- shop orders
 
 export async function placeOrder(
@@ -455,10 +452,9 @@ export async function placeOrder(
         data: {
           paymentStatus: charge.status,
           payment: { provider: provider.id, reference: charge.reference },
-          // Paid orders are packed, unless the customer's notes need a person to read them first (A12).
-          ...(charge.status === "paid" && order.fulfillmentStatus === "awaiting_payment"
-            ? { fulfillmentStatus: needsStaffReview(order.notes) ? ("staff_review" as const) : ("preparing" as const) }
-            : {}),
+          // On "paid" the `advanceWhenPaid` hook moves an order that is still awaiting payment to
+          // preparing, or to staff review when the customer left notes (A12, A14). It reads the
+          // record as saved, so an order staff cancelled while the charge was in flight stays cancelled.
           ...(charge.status !== "paid" && order.stockStatus === "held" ? { stockStatus: "released" as const } : {}),
         },
         overrideAccess: true,
@@ -666,9 +662,7 @@ export async function reserveBasket(
                 amountPaidCents: chargeCents,
                 balanceDueCents: reservation.totalCents - chargeCents,
                 payment: { provider: provider.id, reference: charge.reference },
-                ...(reservation.reservationStatus === "awaiting_payment"
-                  ? { reservationStatus: needsStaffReview(input.draft.requests) ? ("staff_review" as const) : ("confirmed" as const) }
-                  : {}),
+                // `advanceWhenPaid` then confirms it, or sends it to staff review when there are requests (A12, A14).
               }
             : {
                 paymentStatus: "failed",
