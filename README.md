@@ -3,6 +3,8 @@
 Source for the souset-pink.com store: **Payload 3 + Next.js 16** on SQLite, run as a cPanel Node.js
 app (Passenger/LiteSpeed) on Namecheap Stellar Business. Same architecture as `Farhanx64/pasto-hair`.
 
+**AI agents and new developers: start with [`docs/AI-HANDOFF.md`](docs/AI-HANDOFF.md).**
+
 Requirements: `Lodelicious-Gifts-and-Sweets-PRD.docx` v2.0 (September 25, 2026). Progress, test
 results and open inputs: [`STATUS.md`](STATUS.md). Engineering decisions, including why this is not
 the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
