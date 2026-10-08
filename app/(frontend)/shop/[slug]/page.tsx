@@ -6,7 +6,7 @@ import { AvailabilityNote } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { AddToBag, type BagOption } from "@/components/checkout/AddToBag";
 import { primaryButton } from "@/components/checkout/styles";
-import type { Category, Media } from "@/payload-types";
+import type { Category } from "@/payload-types";
 import { getProduct } from "@/src/lib/catalog/queries";
 import { previewStockEnabled } from "@/src/lib/catalog/preview";
 import { PRICE_ON_REQUEST, priceLabel, sellableUnits, unitPriceLabel } from "@/src/lib/catalog/product";
@@ -14,6 +14,7 @@ import { priceCart } from "@/src/lib/checkout/cart";
 import { contactHref, topicForProduct } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
+import { publishableProductImages } from "@/src/lib/media";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -33,7 +34,7 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const category = typeof product.category === "object" ? (product.category as Category) : null;
-  const images = (product.images ?? []).map((i) => i.image as Media | number);
+  const images = publishableProductImages(product.images);
   const units = sellableUnits(product);
   // Options that can go in the bag now (the bag re-checks everything at checkout).
   const bagOptions: BagOption[] = priceCart(
