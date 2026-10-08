@@ -2,7 +2,7 @@
 
 ## Status (2026-10-07)
 
-**The website half is built (D40); the Clover half is not started.** It needs Lody's stock counts and an API token. These pieces are already in place:
+**The website half is built (D40) and the sync worker is built against a fake Clover (D43). Nothing has talked to the real Clover yet:** that needs Lody's stock counts and an API token, and a check of the real API in Clover's sandbox. These pieces are already in place:
 
 - **Merchant ID received.** The account is SOUSET-PINK. The ID is kept in the server's
   `CLOVER_MERCHANT_ID` setting, not in the code.
@@ -20,6 +20,26 @@
   can list their components, and Settings → Inventory has a (switched-off) limit on how old a count may be.
 - **Cron lock:** `sync-jobs` now holds a no-overlap lock for `scripts/release-expired-holds.ts`; the Clover jobs
   can use the same `acquireJobLock`. Its checkpoint column is still unused.
+
+## What the sync worker does now (D43)
+
+- **Built and tested with a fake:** `scripts/clover-push.ts` sends the outbox (claim, idempotency key,
+  backoff, dead after 8, throttle and "Clover is down" stops, 50 s budget); `scripts/clover-pull.ts` reads Clover
+  page by page into the ledger as `sync` counts (stamps every item, adds unsent website sales back, matches by
+  Clover ID only, saves a checkpoint). `CLOVER_DRY_RUN=1` makes either one report without changing anything.
+  Staff see health in `/ops/system-check`. Details and the list of things to verify in the sandbox: D43.
+- **Cron lines for cPanel** (after the token is in the server's settings):
+  - `npx payload run scripts/clover-push.ts` every 1 to 2 minutes
+  - `npx payload run scripts/clover-pull.ts` every 5 to 15 minutes (Lody picks)
+  - plus the existing `npx payload run scripts/release-expired-holds.ts` every 5 minutes
+- **Server settings:** `CLOVER_ENVIRONMENT` (`sandbox` first), `CLOVER_MERCHANT_ID`, `CLOVER_API_TOKEN`.
+  The live account additionally needs `CLOVER_SYNC_LIVE=1`; without it the worker refuses to start.
+  `CLOVER_DRY_RUN=1` for a trial run. Until these are set, both scripts say "not configured" and do nothing.
+- **Must be checked in the sandbox before going live:** absolute or delta stock update, the real response
+  shapes, whether Clover honours an idempotency key, the rate limits. Do not point it at the live account first.
+- **Needs Lody (besides the list below):** for the Philips bar and Princess Assortment (shared Clover items) the
+  pull skips both products and reports them until the Clover items are split. Options (pink / blue) are neither
+  pushed nor pulled until each has its own Clover item and the website gets a per-option Clover ID (a later migration).
 
 ## What the sync worker needs from the website (built in D40)
 

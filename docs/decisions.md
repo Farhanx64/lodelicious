@@ -692,6 +692,87 @@ New environment variables: `FIRST_OWNER_EMAIL`, `OWNER_EMAIL`, `OWNER_PASSWORD`,
 Changed meaning: `APP_ENV` (allowlist, must be set to `production` on the live host),
 `NEXT_PUBLIC_SITE_URL` (now enables the CSRF allowlist; the `.env.example` value is commented out).
 
+## D43 — Clover inventory sync worker, built against a fake (2026-10-07)
+
+The Clover half of milestone 5 (INV 03, INV 05, INV 06, AC 10). **No network, no credentials: nothing
+in this decision has ever talked to Clover.** The workers are written against an adapter interface
+and tested against an in-memory fake. No schema change and no change to existing files in
+`src/lib/inventory/`; the code is in `src/lib/clover/`.
+
+- **Adapter (`adapter.ts`).** `CloverInventoryAdapter`: `listItems({cursor, limit})` (paginated, with
+  stock), `getItemStock(cloverId)` and `pushStockChange({cloverId, delta, quantityAfter, idempotencyKey})`.
+  Errors are typed: `CloverTransientError` (timeout, rate limit with `retryAfterMs`, 5xx, network) and
+  `CloverPermanentError` (auth, not found, rejected, config). `FakeCloverAdapter` is in memory, records
+  calls, and can be scripted to time out, throttle, return 5xx or reject, or to apply a change and then
+  time out (a lost answer). `getCloverAdapter(env)` returns the fake (only when `APP_ENV` is local,
+  staging or test, and `CLOVER_ADAPTER=fake`, since a fake on the live store would mark real changes as
+  sent), the HTTP adapter (when `CLOVER_MERCHANT_ID` or `CLOVER_API_TOKEN` is set), or `none` (the scripts
+  say so and exit 0).
+- **HTTP adapter (`http-adapter.ts`): a stub, never called in tests.** It refuses to be built unless
+  `CLOVER_ENVIRONMENT` (`sandbox` or `production`), `CLOVER_MERCHANT_ID` and `CLOVER_API_TOKEN` are all set,
+  and refuses `production` unless `CLOVER_SYNC_LIVE=1`. 10 s timeout on every call, IDs checked before
+  they go into a URL, token only in the `Authorization` header and never in a message. Written from
+  general knowledge of Clover's REST API, with no web lookup. **Must be verified in the Clover sandbox
+  before use:** base URLs (EU and Latin America hosts are refused); the `items?expand=itemStock` response
+  shape, page size and which of `quantity` / `stockCount` is on-hand; the `item_stocks` read and update
+  endpoints; **whether the update sets an absolute number or adds a delta** (the stub reads the current
+  quantity, adds the delta and writes the total back, which has a small race with an in-store sale; use a
+  true delta call if one exists); whether any idempotency header is honoured (one is sent; if not, a request
+  that times out after Clover applied it is applied twice on retry, and the next read lets Clover win, so the
+  website only ever sells less); `Retry-After`; the token scopes; whether deleted items are listed; how
+  option-level stock is modelled.
+- **Push (`push.ts`, job lock `clover-push`).** Takes `pending` / `failed` outbox rows with `nextAttemptAt`
+  empty or past, oldest first, in batches of 25. A row is **claimed** by one conditional UPDATE (counts the
+  attempt, moves `nextAttemptAt` out by a 2-minute lease), so a second run, or a run that outlived its lock,
+  cannot send it too; the result write is conditional on the row still being `pending` / `failed` (a row
+  changed under us is counted as `lostRace` and not overwritten). The row's `idempotencyKey` goes to Clover.
+  Success: `sent`, `sentAt`, `lastError` cleared. Transient failure: `afterFailure()` (30 s doubling to 6 h,
+  `dead` after 8) with the message in `lastError`. A 429 is not a failed attempt (attempt undone, the row
+  waits at least 30 s or `Retry-After`, the run stops). Three transient failures in a row stop the run
+  ("Clover is down"; the remaining rows keep their attempts) and the run is recorded as failed. A permanent
+  rejection is `dead` at once; bad credentials stop the run and leave every row untouched. The run stops
+  starting rows after 50 s. A failure never touches the paid order or the website's stock.
+- **Rows with nothing to send to.** The current `products.cloverId` is used (it may have been set after the
+  event was queued). A product with no Clover ID, or an event for one **option** (options have no Clover
+  item of their own, see "Schema" below), is not sent and not retried against Clover: it stays `failed` with
+  `lastError` starting `not mapped:`, is looked at again every 6 hours without using up attempts, and goes
+  out by itself once the ID exists. No new status values were added.
+- **Pull (`pull.ts`, job lock `clover-pull`).** Reads Clover page by page (100 items) and applies each
+  matched product **only through `applyMovements({ mode: "count", reason: "sync", countedAt })`**, key
+  `sync:<run id>:<Clover ID>`: ledger row, known, count date = the moment the page was read, no outbox
+  event (no echo). Every matched item is stamped, even unchanged (a ledger row of 0). **Matching is by
+  `cloverId` only.** Reported and left alone: Clover items with no website product; website products
+  with a Clover ID Clover did not return; website products without a Clover ID; items Clover does not track;
+  a Clover ID shared by more than one website product (a split Clover item is ambiguous; the Philips bar
+  and Princess Assortment until Lody splits them); products with options (no per-option IDs).
+- **Pending deltas.** Before applying, the product's unsent outbox deltas are added to Clover's number:
+  `pending`, `failed` and `dead` rows (a dead row is a sale Clover never got), plus rows `sent` since this
+  page's read began (a push that lands while the page is in flight). That can double count a sale, which
+  only sells less and corrects itself at the next read. The result is floored at 0 (reported as `clamped`).
+  Remaining window: a sale committed between the delta lookup and the count (a few milliseconds) is
+  overwritten; the in-store reserve (D26) covers it. **Open:** a dead row keeps being subtracted until it is
+  dealt with; there is no staff action to retire one yet (outbox is read-only to staff).
+- **Restartable.** The cursor, run id, items seen and counters are saved in `sync-jobs.checkpoint` after
+  every page. A run that stops (50 s budget, Clover down, crash) resumes from it within 24 hours with the same
+  run id, so a replayed page hits the `sync:` keys and is harmless (`alreadyApplied`). When a run finishes the
+  checkpoint keeps its report (`completed: true`) for the staff view and the next run starts fresh.
+- **Dry run.** `CLOVER_DRY_RUN=1` (since `payload run` passes scripts only positional arguments): push
+  counts what it would send; pull reads Clover and reports what it would change. No lock, no writes.
+- **Staff visibility.** `getCloverSyncHealth()` (`health.ts`): pending, retrying, dead, unmapped counts, oldest
+  unsent age, last failure, last success of each job, the last pull report. `/ops/system-check` now has three
+  lines: outbox (fails on any dead event or anything unsent for over an hour), last stock read, last send. Until
+  Clover is configured it shows one informational line that fails only on dead events. No emails or alerts are
+  sent from here (no outside services); staff see it in the system check and in Inventory → Outbox events.
+- **Schema.** No change. **Needed later:** a per-option Clover ID (`variants.cloverId`, in a migration) if
+  options are separate Clover items; until then option stock is neither pushed nor pulled. Outbox events for
+  options wait as `not mapped:`. Also worth considering: a staff action to retire a dead event.
+- **Cron (cPanel), once Lody has given the token and chosen the interval:**
+  `npx payload run scripts/clover-push.ts` every 1 to 2 minutes and `npx payload run scripts/clover-pull.ts`
+  every 5 to 15 minutes. Both exit 0 when another run holds the lock, or Clover is not configured; 1 on failure.
+- **Tests.** Unit (`src/lib/clover/clover.test.ts`): errors, retry timing, the fake, the HTTP adapter's refusals
+  (incomplete, bad environment, production without `CLOVER_SYNC_LIVE=1`) with a stub `fetch`, the factory.
+  Integration (`tests/int/clover-push.test.ts`, `clover-pull.test.ts`) on the real migrations.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,
