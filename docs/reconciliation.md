@@ -27,8 +27,9 @@ here for Lody to confirm. All values in USD.
 Still unresolved (not seeded as products): P05 Dark Chocolate Covered Almonds, P09 Turtles Bars,
 P11 Vegan Bark, P14 Chocolate Tulips, P16 Chocolate Covered Cherries, P17 Chocolate Pretzels
 (multi-piece), P18 Chocolate Pretzels 2pc, C02/C06/C16 pancake flavors, C05 Dubai Chocolate,
-C11/C18 Strawberry Dubai Cups, D05 Macarons, curated baskets C07–C19 — no card, photo or current
-price was supplied. They remain in **Source records** (unreviewed) for Lody to disposition.
+C11/C18 Strawberry Dubai Cups, D05 Macarons — no card, photo or current price was supplied. They
+remain in **Source records** (unreviewed) for Lody to disposition. The curated baskets are the
+exception: see "Curated gift baskets" below.
 
 ⚠ = Clover or the screenshot shows a different price: if the in-store Clover price is still
 correct, the website will disagree with the register until one of them is updated.
@@ -132,3 +133,30 @@ What the export does **not** contain:
 - **Savory (Lody will name them later):** Focaccia Crisps X030, Smoked Almonds X033, Summer Sausage X058
 - **OMNIYA, until the Lebanese in-store-only question is settled:** X002–X007, X034, X060–X062, X083
 - **Already on the site:** Teddy Bear X039 / Teddy Bear Vintage Collection X040, pending the teddy question above
+
+# Curated gift baskets (2026-10-06, D38)
+
+Nine curated baskets are seeded as products in the **Gift baskets** category. Price: the public
+Clover storefront observation of 2026-09-22 (the C rows below). Contents, item counts and basket
+sizes: the owner's basket chart. The price is **not approved** (Lody's Clover export, D25, has no
+baskets), the channel is inquiry-only, and stock is unknown.
+
+| Website product | Clover public (ref) | Chart row | Seeded price | Status |
+| --- | --- | --- | --- | --- |
+| Small Gift Basket | Small Gift Basket 79.95 (C17) | small, 6–8 items, 12 in | 79.95 | unapproved, inquiry-only |
+| Medium Gift Basket | Medium Gift Basket 98.95 (C13) | medium, 10–12 items, 14 in | 98.95 | unapproved, inquiry-only |
+| Large Gift Basket | Large Gift Basket 139.95 (C09) | large, 12–14 items, 18 in | 139.95 | unapproved, inquiry-only |
+| Extra Large Gift Basket | Extra Large gift basket 199.99 (C07) | extra_large, 18–20 items, 18–20 in | 199.99 | unapproved, inquiry-only; builder's Extra Large stays off (D27) |
+| Large Birthday Basket | Large Birthday Basket 139.95 (C08) | large_birthday, 12–14 items, 16 in | 139.95 | unapproved, inquiry-only |
+| Large Savory Basket | Large Savory Basket 139.95 (C10) | large_savory, 12–14 items, 16 in | 139.95 | unapproved, inquiry-only |
+| Small Sympathy Basket | Small sympathy basket 79.95 (C19) | small_sympathy, 6–8 items, 12 in | 79.95 | unapproved, inquiry-only |
+| Medium Sympathy Basket | Medium sympathy gift basket 98.95 (C15) | medium_sympathy, 10–12 items, 14 in | 98.95 | unapproved, inquiry-only |
+| Large Sympathy Basket | Large Sympathy Gift Basket 139.95 (C12) | large_sympathy, 13–16 items, 16 in | 139.95 | unapproved, inquiry-only |
+
+- **Not seeded:** C14 "Medium Nut Free Basket" (98.95). "Nut Free" is a source title, not a verified
+  allergen claim, so there is no product by that name. It stays in Source records, and customers with
+  a dietary request use the contact form.
+- **Other C rows are not baskets:** C01–C06, C11, C16, C18 (pancakes, cards, books, Dubai items,
+  Strawberry Dubai Cups) and C20 (teddy bear) are handled as before.
+- **For Lody:** approve or change each price, say what each basket contains and how much stock there is
+  (the chart lists typical contents, not an exact list), and send photos.

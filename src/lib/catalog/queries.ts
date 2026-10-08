@@ -5,6 +5,8 @@ import { getPayload, type Where } from "payload";
 
 import type { Category, Product } from "@/payload-types";
 
+import { applyInventoryView } from "../inventory/view";
+
 /**
  * Storefront reads. All run with access control ON (overrideAccess: false) as an anonymous
  * visitor, so drafts and anything else staff haven't published can never leak onto the site.
@@ -45,7 +47,7 @@ export async function listProducts(opts: { q?: string; category?: string; featur
     depth: 2,
     ...PUBLIC,
   });
-  return docs;
+  return (await applyInventoryView(payload, docs)).products;
 }
 
 export async function getProduct(slug: string): Promise<Product | null> {
@@ -57,5 +59,5 @@ export async function getProduct(slug: string): Promise<Product | null> {
     depth: 2,
     ...PUBLIC,
   });
-  return docs[0] ?? null;
+  return docs[0] ? (await applyInventoryView(payload, [docs[0]])).products[0] : null;
 }

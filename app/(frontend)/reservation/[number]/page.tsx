@@ -6,6 +6,7 @@ import { Bow } from "@/components/brand/Bow";
 import { secondaryButton } from "@/components/checkout/styles";
 import { findByToken } from "@/src/lib/checkout/service";
 import { checkoutPayload } from "@/src/lib/checkout/session";
+import { singleParam } from "@/src/lib/checkout/token-param";
 import { formatCents } from "@/src/lib/money";
 import { getStoreSettings } from "@/src/lib/store";
 
@@ -13,10 +14,10 @@ export const metadata: Metadata = { title: "Basket reserved", robots: { index: f
 
 type Snapshot = { title: string; components: { productId: string; name: string; quantity: number }[]; message?: string; requests?: string };
 
-export default async function ReservationPage({ params, searchParams }: { params: Promise<{ number: string }>; searchParams: Promise<{ t?: string }> }) {
+export default async function ReservationPage({ params, searchParams }: { params: Promise<{ number: string }>; searchParams: Promise<{ t?: string | string[] }> }) {
   const [{ number }, { t }] = await Promise.all([params, searchParams]);
   const [{ payload }, store] = await Promise.all([checkoutPayload(), getStoreSettings()]);
-  const r = await findByToken(payload, "reservations", number, t);
+  const r = await findByToken(payload, "reservations", number, singleParam(t));
   if (!r) notFound();
   const basket = r.basket as Snapshot;
 

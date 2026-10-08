@@ -29,6 +29,8 @@ export type PricedLine = {
   quantity: number;
   unitPriceCents: Cents;
   lineTotalCents: Cents;
+  /** False when staff have not approved the price: the bag must not show it as a price (A06). */
+  priceApproved: boolean;
   taxClass: TaxClass | null;
   taxCents: Cents;
   problem: LineProblem | null;
@@ -106,6 +108,7 @@ export function priceCart(cart: readonly CartLine[], products: readonly Product[
       quantity,
       unitPriceCents,
       lineTotalCents,
+      priceApproved: Boolean(product.priceApproved),
       taxClass,
       taxCents: 0,
       problem,

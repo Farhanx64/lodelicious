@@ -2,8 +2,9 @@ import type { CollectionConfig } from "payload";
 
 import { isOwner, isStaff, nobody } from "../src/access/roles";
 import { auditCollection } from "../src/hooks/audit";
+import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
-import { customerFields, frozen, identityFields, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
+import { customerFields, frozen, identityFields, inventoryFields, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
 
 const cents = { components: { Cell: "@/components/admin/CentsCell#CentsCell" } };
 
@@ -17,11 +18,14 @@ export const Reservations: CollectionConfig = {
   admin: {
     useAsTitle: "number",
     group: "Orders",
-    defaultColumns: ["number", "customer.name", "pickup.label", "reservationStatus", "paymentStatus", "amountPaidCents", "balanceDueCents"],
+    defaultColumns: ["number", "customer.name", "pickup.label", "reservationStatus", "paymentStatus", "stockStatus", "amountPaidCents", "balanceDueCents"],
     listSearchableFields: ["number", "customer.name", "customer.email"],
   },
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
-  hooks: { afterChange: [auditCollection(["paymentStatus", "reservationStatus", "amountPaidCents", "balanceDueCents", "staffNotes"])] },
+  hooks: {
+    beforeChange: [guardStockStatus],
+    afterChange: [auditCollection(["paymentStatus", "reservationStatus", "stockStatus", "amountPaidCents", "balanceDueCents", "staffNotes"]), releaseHoldOnCancel("reservationStatus")],
+  },
   fields: [
     ...identityFields,
     {
@@ -84,6 +88,7 @@ export const Reservations: CollectionConfig = {
     },
     { name: "taxApproved", type: "checkbox", access: frozen },
     paymentReference,
+    ...inventoryFields,
     { name: "staffNotes", type: "textarea" },
   ],
 };

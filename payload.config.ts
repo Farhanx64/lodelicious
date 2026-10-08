@@ -9,18 +9,27 @@ import sharp from "sharp";
 import { AuditLog } from "./collections/AuditLog";
 import { Carts } from "./collections/Carts";
 import { Categories } from "./collections/Categories";
+import { Inquiries } from "./collections/Inquiries";
 import { Media } from "./collections/Media";
 import { Orders } from "./collections/Orders";
+import { Outbox } from "./collections/Outbox";
 import { Products } from "./collections/Products";
 import { Reservations } from "./collections/Reservations";
 import { SourceRecords } from "./collections/SourceRecords";
+import { StockAdjustments } from "./collections/StockAdjustments";
+import { StockHolds } from "./collections/StockHolds";
+import { StockMovements } from "./collections/StockMovements";
 import { SyncJobs } from "./collections/SyncJobs";
 import { TaxClasses } from "./collections/TaxClasses";
 import { Users } from "./collections/Users";
 import { CheckoutSettings } from "./globals/CheckoutSettings";
+import { EventSettings } from "./globals/EventSettings";
 import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { HomePage } from "./globals/HomePage";
+import { InventorySettings } from "./globals/InventorySettings";
+import { Policies } from "./globals/Policies";
 import { StoreSettings } from "./globals/StoreSettings";
+import { csrfOrigins } from "./src/lib/security";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -41,9 +50,14 @@ export default buildConfig({
       titleSuffix: " — Lodelicious admin",
     },
   },
-  collections: [Orders, Reservations, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs],
-  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings],
+  collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs, StockMovements, StockHolds, StockAdjustments, Outbox],
+  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings, Policies, InventorySettings],
   editor: lexicalEditor(),
+  // Cookie-authenticated API requests are accepted only from the site's own origin(s) when
+  // NEXT_PUBLIC_SITE_URL is set; unset leaves the allowlist off (local dev, tunnels, tests) (A08, D41).
+  csrf: csrfOrigins(process.env),
+  // Nothing uses GraphQL (the admin and storefront use the Local API and REST). The routes stay but answer 404 (A08, D41).
+  graphQL: { disable: true },
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
