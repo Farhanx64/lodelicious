@@ -29,6 +29,7 @@ import { HomePage } from "./globals/HomePage";
 import { InventorySettings } from "./globals/InventorySettings";
 import { Policies } from "./globals/Policies";
 import { StoreSettings } from "./globals/StoreSettings";
+import { emailAdapterFromEnv } from "./src/lib/email/adapter";
 import { csrfOrigins } from "./src/lib/security";
 
 const filename = fileURLToPath(import.meta.url);
@@ -52,6 +53,8 @@ export default buildConfig({
   },
   collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs, StockMovements, StockHolds, StockAdjustments, Outbox],
   globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings, Policies, InventorySettings],
+  // Transactional email (D44): the console by default; SMTP only with complete settings (and EMAIL_SEND_LIVE=1 on the live store).
+  email: emailAdapterFromEnv(process.env),
   editor: lexicalEditor(),
   // Cookie-authenticated API requests are accepted only from the site's own origin(s) when
   // NEXT_PUBLIC_SITE_URL is set; unset leaves the allowlist off (local dev, tunnels, tests) (A08, D41).

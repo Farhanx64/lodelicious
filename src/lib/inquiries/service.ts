@@ -127,8 +127,8 @@ export async function submitInquiry(payload: Payload, input: { kind: InquiryKind
     estimateCents: estimate?.totalCents ?? null,
     estimateTerms: estimate && offer ? estimateSnapshot(estimate, offer) : null,
   });
-  // Emails arrive in a later milestone; until then staff see new inquiries in /admin.
-  console.info(`[inquiry] ${created.number} received (${created.topic}); notification email not configured yet`);
+  // The receipt and the staff note are sent by the afterChange hook on inquiries (D44).
+  console.info(`[inquiry] ${created.number} received (${created.topic})`);
   return { ok: true, number: created.number };
 }
 

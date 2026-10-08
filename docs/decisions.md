@@ -850,6 +850,67 @@ and tested against an in-memory fake. No schema change and no change to existing
   (incomplete, bad environment, production without `CLOVER_SYNC_LIVE=1`) with a stub `fetch`, the factory.
   Integration (`tests/int/clover-push.test.ts`, `clover-pull.test.ts`) on the real migrations.
 
+## D44 — Transactional emails, built and tested, delivered only to the console (2026-10-07)
+
+PRD AC 07 (notifications). **Nothing in this decision has ever sent an email**: there is no sending
+service, no credentials and no `nodemailer` in `node_modules`. Until Lody approves a service, every
+email goes to the console log. One migration, `email_settings`.
+
+- **What is sent** (`src/lib/email/`):
+  - Customer: order confirmation (number, lines, subtotal, tax, total, pickup slot, the private order link, the
+    store address and phone); different wording when the customer left a note ("a person will read it before
+    your order is packed"). Reservation confirmation (deposit or paid in full, balance due at pickup, pickup,
+    private link; the same staff-review wording for requests). Inquiry receipt ("we'll reply"; nothing booked
+    or charged). Test orders are subject-prefixed `[TEST]`.
+  - Staff: a new paid order, reservation or inquiry; and "needs attention" for an **unknown payment** and for a
+    paid record whose stock is `needs_attention`. Staff emails list the customer's contact details and notes
+    (staff need them) and an admin link. They never include `staffNotes`, the stock note, a payment
+    reference or the token hash; the templates take only the fields they print.
+  - Plain text plus simple HTML (inline styles, no images, fonts or scripts). Customer text is escaped; subjects
+    have control characters removed; only `http(s)` links are rendered as links.
+- **When it is sent (`due.ts`).** From an `afterChange` hook, decided from the saved state: orders when
+  `paymentStatus` is `paid`; reservations when it is `deposit_paid` or `paid_in_full`; never while pending,
+  failed, unknown or refunded, and not for a canceled record. Because it reads state, staff marking an
+  unknown payment paid by hand (the `advanceWhenPaid` path, D42) sends the confirmation then. An **unknown**
+  payment emails staff only (the customer was already told on the page not to pay again). Inquiries send on
+  create; honeypot-dropped ones are never stored, so never email.
+- **Exactly once.** `emails.{confirmationSentAt, staffNotifiedAt, unknownNotifiedAt, attentionNotifiedAt}` on
+  orders and reservations (`confirmationSentAt`, `staffNotifiedAt` on inquiries), read-only in the admin. Before
+  sending, `notify.ts` claims a marker with one conditional `UPDATE ... WHERE marker IS NULL`, so repeated
+  saves, staff edits, two overlapping runs and the retry script never send an email twice. If the send fails
+  the marker is cleared again. A crash between the claim and the send loses that one email (it is never sent
+  twice). **An email failure never fails the write:** the hook and `sendDueEmails` catch everything.
+- **Console mode counts as sent.** With the console adapter the email is "handed over" and the marker is set,
+  so connecting a real service later does **not** email every old order. (If Lody wants the backlog sent, clear
+  the markers.)
+- **The private link** is rebuilt, not stored: the URL token is `HMAC(PAYLOAD_SECRET, kind:idempotencyKey)`
+  (`accessUrlToken` in `checkout/order.ts`, which `service.ts` now calls), so the retry script can email the
+  same link long after checkout. Rotating `PAYLOAD_SECRET` changes every link. It needs `NEXT_PUBLIC_SITE_URL`;
+  if that is unset the email simply omits the link.
+- **Recipients and senders.** Staff go to the new optional Store settings field `notificationEmail`, else the
+  shop email. `EMAIL_FROM` (default: shop name and shop email) and `EMAIL_REPLY_TO` (default: the shop email).
+  Addresses with line breaks or that are not plausible are ignored.
+- **Adapter (`config.ts`, `adapter.ts`, wired in `payload.config.ts`).** `EMAIL_TRANSPORT` unset or `console` is
+  the default (prints the message outside the live store, only a hidden summary on it). `smtp` **refuses to
+  start** unless `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` are set, and on anything
+  that is not local/staging/test (the D41 rule, so unset or mistyped counts as live) also `EMAIL_SEND_LIVE=1`.
+  **The SMTP adapter is a stub**: `@payloadcms/email-nodemailer` is not installed and dependencies were off
+  limits, so a complete SMTP config currently stops the app with "adapter is not installed". The file comment
+  in `adapter.ts` has the few lines to put in once it is installed.
+- **`sendEmail` (`send.ts`).** Wraps `payload.sendEmail` with a 15 s timeout and never throws. It logs one line
+  (`[email] handed over customer_order SP-1001` or `FAILED ...`) with no addresses or names; error text has
+  anything that looks like an address removed.
+- **Retry:** `npx payload run scripts/send-pending-emails.ts` (cron, every 10 minutes) finds paid, unknown and
+  attention records with an empty marker, plus inquiries, and sends them under a `sync-jobs` lock
+  (`send-pending-emails`).
+- **Tests.** The transport is replaced by a capturing function on `payload.sendEmail`; the configured adapter
+  stays the console one, so no test can send.
+- **Not done / for Lody.** Choice of sending service and plan; the From address and domain, with SPF, DKIM and
+  DMARC records on it (PRD: confirm authenticated sending and Reply-To before launch); the staff address;
+  wording sign-off on the customer emails (no policy or delivery promises were added); whether staff-review
+  customers should be told earlier (see D42, review currently happens after payment); shipping and ready-for-pickup
+  emails are not built; the abandoned-bag and refund emails are not built.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

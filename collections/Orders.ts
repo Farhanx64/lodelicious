@@ -3,9 +3,10 @@ import type { CollectionConfig } from "payload";
 import { isOwner, isStaff, nobody } from "../src/access/roles";
 import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { advanceWhenPaid } from "../src/hooks/payment-status";
+import { sendRecordEmails } from "../src/hooks/send-emails";
 import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
-import { customerFields, frozen, identityFields, inventoryFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
+import { customerFields, frozen, identityFields, inventoryFields, orderEmailFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
 
 /**
  * Shop orders (D35). Created only by checkout through the Local API; the lines and totals are an
@@ -24,7 +25,7 @@ export const Orders: CollectionConfig = {
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   hooks: {
     beforeChange: [guardStockStatus, advanceWhenPaid("orders")],
-    afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus")],
+    afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus"), sendRecordEmails("orders")],
     afterDelete: [auditDelete(["number", "paymentStatus", "fulfillmentStatus", "stockStatus", "testMode"])],
   },
   fields: [
@@ -85,6 +86,7 @@ export const Orders: CollectionConfig = {
     paymentReference,
     paymentAttempts,
     ...inventoryFields,
+    orderEmailFields,
     { name: "staffNotes", type: "textarea" },
   ],
 };
