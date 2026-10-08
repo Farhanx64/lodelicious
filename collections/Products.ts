@@ -1,6 +1,7 @@
 import type { CollectionConfig, Field } from "payload";
 
 import { isCommerceManager, isStaff } from "../src/access/roles";
+import { centsComponents } from "../src/fields/money";
 import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { checkComponents, noteExplicitStock, pinLiveStock, showLiveStock } from "../src/hooks/product-stock";
 import { slugField } from "../src/fields/slug";
@@ -14,8 +15,8 @@ const cents = (name: string, label: string, description?: string): Field => ({
   min: 0,
   admin: {
     step: 1,
-    description: description ?? "In cents: 1295 = $12.95",
-    components: { Cell: "@/components/admin/CentsCell#CentsCell" },
+    description: description ?? "In cents (1295 = $12.95).",
+    components: centsComponents,
   },
   validate: (value: number | null | undefined) =>
     value === null || value === undefined || Number.isSafeInteger(value) ? true : "Enter whole cents (1295 for $12.95)",
@@ -38,6 +39,7 @@ const countedQuantity = (name: string, label: string): Field => ({ ...whole(name
 
 const stockState = (options: { label: string; value: string }[]): Field => ({
   name: "stockState",
+  label: "Stock status",
   type: "select",
   required: true,
   defaultValue: "unknown",
@@ -45,7 +47,7 @@ const stockState = (options: { label: string; value: string }[]): Field => ({
   admin: { readOnly: true, description: STOCK_NOTE },
 });
 
-const countedAt = (description: string): Field => ({ name: "stockCountedAt", type: "date", admin: { readOnly: true, description, date: { pickerAppearance: "dayAndTime" } } });
+const countedAt = (description: string): Field => ({ name: "stockCountedAt", label: "Last counted", type: "date", admin: { readOnly: true, description, date: { pickerAppearance: "dayAndTime" } } });
 
 /**
  * Everything sold or used in gifts. Lody and Faisal add, edit, publish, unpublish and delete
@@ -59,6 +61,7 @@ export const Products: CollectionConfig = {
     useAsTitle: "title",
     defaultColumns: ["title", "category", "priceCents", "stockState", "stockQuantity", "_status"],
     group: "Catalog",
+    description: "Everything sold in the shop or used in gifts. Drafts and products set to Hidden never appear on the website. Change stock under Inventory → Stock adjustments.",
     listSearchableFields: ["title", "brand", "sku"],
   },
   versions: { drafts: true, maxPerDoc: 25 },
@@ -116,7 +119,7 @@ export const Products: CollectionConfig = {
                 { name: "sizeLabel", label: "Size / pack", type: "text", admin: { description: "e.g. 7 oz, 9 pieces" } },
               ],
             },
-            { name: "shortDescription", type: "textarea", admin: { description: "One or two sentences for product cards." } },
+            { name: "shortDescription", label: "Short description", type: "textarea", admin: { description: "One or two sentences for product cards." } },
             { name: "description", type: "textarea" },
             {
               name: "images",
@@ -125,20 +128,27 @@ export const Products: CollectionConfig = {
               admin: { description: "The first image is the main photo." },
               fields: [{ name: "image", type: "upload", relationTo: "media", required: true }],
             },
-            { name: "featured", type: "checkbox", defaultValue: false, admin: { description: "Show on the home page." } },
           ],
         },
         {
-          label: "Price",
+          label: "Price & tax",
           fields: [
             cents("priceCents", "Price"),
             {
               name: "priceApproved",
+              label: "Price approved",
               type: "checkbox",
               defaultValue: false,
               admin: { description: "Only approved prices can be bought. Source-observed prices start unapproved." },
             },
-            { name: "priceSource", type: "text", admin: { description: "Where the price came from, e.g. owner product card 2026-09-26." } },
+            { name: "priceSource", label: "Price source", type: "text", admin: { description: "Where the price came from, e.g. owner product card 2026-09-26." } },
+            {
+              name: "taxClass",
+              label: "Tax class",
+              type: "relationship",
+              relationTo: "tax-classes",
+              admin: { description: "Leave empty to use the default tax class (Settings → Checkout & reservations)." },
+            },
           ],
         },
         {
@@ -173,7 +183,7 @@ export const Products: CollectionConfig = {
                 ),
               ],
             },
-            countedAt("When stock was last counted against the shelf or Clover. Stock older than the limit in Settings → Inventory is treated as unknown."),
+            countedAt("When stock was last counted against the shelf or Clover. Stock older than the limit in Settings → Inventory settings is treated as unknown."),
             {
               name: "variants",
               type: "array",
@@ -213,6 +223,7 @@ export const Products: CollectionConfig = {
             { name: "basketEligible", type: "checkbox", defaultValue: false, label: "Can be chosen inside a custom gift" },
             {
               name: "giftTypes",
+              label: "Gift types",
               type: "select",
               hasMany: true,
               options: [
@@ -238,22 +249,25 @@ export const Products: CollectionConfig = {
                 whole("fitUnits", "Fit units", 1, "Space it takes in a basket; 1 until measured."),
                 {
                   name: "exclusiveTo",
+                  label: "Exclusive to",
                   type: "select",
                   options: SPECIAL_CODES.map((value) => ({ label: value.replace(/_/g, " "), value })),
                   admin: { description: "Only included with this presentation (e.g. the baby blanket)." },
                 },
               ],
             },
-            { name: "assemblyNotes", type: "textarea", admin: { description: "Staff-only notes for packing." } },
+            { name: "assemblyNotes", label: "Assembly notes", type: "textarea", admin: { description: "Staff-only notes for packing." } },
           ],
         },
         {
           label: "Basket contents",
           // Only for curated baskets, or when contents are already filled in. The category's slug comes from the
           // hidden `categorySlug` field below, so the tab follows a category change once the product is saved.
-          admin: { condition: (data) => data?.categorySlug === GIFT_BASKET_CATEGORY || (Array.isArray(data?.components) && data.components.length > 0) },
-          description:
-            "Only for ready-made (curated) baskets. Leave empty for everything else. A basket with contents is sold from its components: each one is deducted once when the basket sells, and the basket's own stock is never used. Without contents, the basket's own stock is deducted.",
+          admin: {
+            condition: (data) => data?.categorySlug === GIFT_BASKET_CATEGORY || (Array.isArray(data?.components) && data.components.length > 0),
+            description:
+              "Only for ready-made (curated) baskets. Leave empty for everything else. A basket with contents is sold from its components: each one is deducted once when the basket sells, and the basket's own stock is never used. Without contents, the basket's own stock is deducted.",
+          },
           fields: [
             {
               name: "components",
@@ -285,6 +299,7 @@ export const Products: CollectionConfig = {
               fields: [
                 {
                   name: "nutFree",
+                  label: "Nut-free",
                   type: "select",
                   required: true,
                   defaultValue: "unknown",
@@ -308,9 +323,10 @@ export const Products: CollectionConfig = {
                 },
               ],
             },
-            { name: "allergenNotes", type: "textarea" },
+            { name: "allergenNotes", label: "Allergen notes", type: "textarea" },
             {
               name: "dietarySource",
+              label: "Dietary source",
               type: "text",
               admin: { description: "Where this information came from. Never infer allergens from a product name." },
             },
@@ -331,23 +347,18 @@ export const Products: CollectionConfig = {
           ],
         },
         {
-          label: "Records",
+          label: "Codes & sources",
           fields: [
             {
               type: "row",
               fields: [
-                { name: "sku", type: "text", unique: true, index: true },
-                { name: "cloverId", type: "text", index: true },
+                { name: "sku", label: "SKU", type: "text", unique: true, index: true },
+                { name: "cloverId", label: "Clover ID", type: "text", index: true },
               ],
             },
             {
-              name: "taxClass",
-              type: "relationship",
-              relationTo: "tax-classes",
-              admin: { description: "Leave empty to use the default tax class (Settings → Checkout & reservations)." },
-            },
-            {
               name: "sourceRecords",
+              label: "Source records",
               type: "relationship",
               relationTo: "source-records",
               hasMany: true,
@@ -357,7 +368,15 @@ export const Products: CollectionConfig = {
         },
       ],
     },
+    // Sidebar
     slugField("title"),
+    {
+      name: "featured",
+      label: "Featured",
+      type: "checkbox",
+      defaultValue: false,
+      admin: { position: "sidebar", description: "Show in Shop Favorites on the home page." },
+    },
     {
       // Not stored: the category's slug for staff, so the admin can show the "Basket contents" tab only where it belongs.
       name: "categorySlug",

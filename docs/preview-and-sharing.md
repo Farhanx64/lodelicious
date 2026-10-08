@@ -59,7 +59,7 @@ engines are told not to index staging. Without that setting, shop pages say "Cur
 unavailable" because no stock is counted yet. The live site (`APP_ENV=production`) keeps ordering
 closed until Clover payments are connected.
 
-To give Lody her own admin login: in /admin → Staff → Users → Create, role **Owner**, and share
+To give Lody her own admin login: in /admin → Staff → Staff accounts → Create, role **Owner**, and share
 the password with her privately (not over the tunnel page or email in plain text if avoidable).
 
 ## Option B — always-on staging, $0 extra: the Namecheap plan

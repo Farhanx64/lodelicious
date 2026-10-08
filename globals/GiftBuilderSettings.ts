@@ -1,6 +1,7 @@
 import { APIError, type Field, type GlobalBeforeChangeHook, type GlobalConfig } from "payload";
 
 import { anyone, isCommerceManager } from "../src/access/roles";
+import { centsComponents } from "../src/fields/money";
 import { DEFAULT_GIFT_SETTINGS, GiftSettingsError, parseSettings } from "../src/lib/gifts/defaults";
 import { GIFT_TYPES, SIZE_CODES, SPECIAL_CODES } from "../src/lib/gifts/types";
 import { auditGlobal } from "../src/hooks/audit";
@@ -33,7 +34,7 @@ const cents = (name: string, label: string, required = true): Field => ({
   type: "number",
   required,
   min: 0,
-  admin: { description: "In cents: 2995 = $29.95", step: 1 },
+  admin: { description: "In cents (2995 = $29.95).", step: 1, components: centsComponents },
 });
 
 const whole = (name: string, label: string, required = true, description?: string): Field => ({
@@ -60,7 +61,7 @@ export const GiftBuilderSettings: GlobalConfig = {
   slug: "gift-builder-settings",
   label: "Gift builder rules",
   admin: {
-    group: "Gift builder",
+    group: "Settings",
     description:
       "Rules for custom baskets. The customer's budget covers contents and packaging; tax and delivery are added at checkout.",
   },
@@ -74,159 +75,175 @@ export const GiftBuilderSettings: GlobalConfig = {
   },
   fields: [
     {
-      name: "budgetNotice",
-      type: "textarea",
-      required: true,
-      defaultValue:
-        "Your budget covers the gift's contents and its basket and packaging. Sales tax and delivery or shipping are added at checkout.",
-      admin: { description: "Shown to customers before they start choosing products." },
-    },
-    {
-      name: "sizes",
-      label: "Basket sizes (custom builder)",
-      type: "array",
-      minRows: 1,
-      defaultValue: DEFAULT_GIFT_SETTINGS.sizes,
-      fields: [
+      type: "tabs",
+      tabs: [
         {
-          type: "row",
+          label: "Sizes & item counts",
           fields: [
-            { name: "code", type: "select", required: true, options: SIZE_OPTIONS },
-            { name: "label", type: "text", required: true },
-            { name: "basketSizeIn", label: "Basket size (inches)", type: "text" },
             {
-              name: "enabled",
-              type: "checkbox",
-              label: "Offered to customers",
-              defaultValue: true,
-              admin: { description: "Untick to hide this size from Build a Basket and refuse it at checkout." },
-            },
-          ],
-        },
-        {
-          type: "row",
-          fields: [
-            whole("minItems", "Minimum items"),
-            whole("maxItems", "Maximum items"),
-            whole("premiumCap", "Premium maximum"),
-          ],
-        },
-        {
-          type: "row",
-          fields: [
-            cents("packagingCents", "Basket & packaging fee"),
-            whole("capacityUnits", "Fit capacity", false, "Leave empty until products are measured; counts still apply."),
-          ],
-        },
-      ],
-    },
-    {
-      name: "countOverrides",
-      label: "Item-count exceptions by gift type",
-      type: "array",
-      defaultValue: DEFAULT_GIFT_SETTINGS.countOverrides,
-      admin: { description: "From the basket chart: large sympathy baskets hold 13–16 items." },
-      fields: [
-        {
-          type: "row",
-          fields: [
-            { name: "giftType", type: "select", required: true, options: GIFT_TYPE_OPTIONS },
-            { name: "size", type: "select", required: true, options: SIZE_OPTIONS },
-            whole("minItems", "Minimum items"),
-            whole("maxItems", "Maximum items"),
-            { name: "basketSizeIn", label: "Basket size (inches)", type: "text", admin: { description: "Only if different from the standard size." } },
-          ],
-        },
-      ],
-    },
-    {
-      name: "specialPresentations",
-      label: "Special presentations",
-      type: "array",
-      defaultValue: DEFAULT_GIFT_SETTINGS.specialPresentations.map((p) => ({
-        ...p,
-        includedComponents: p.includedComponents.map((value) => ({ value })),
-        allowedCategories: p.allowedCategories.map((value) => ({ value })),
-        variants: p.variants.map((value) => ({ value })),
-      })),
-      admin: {
-        description:
-          "Cowboy, Baby White and the filled baby ceramics (bowl, shoes, block) have their own rules and never get the standard packaging fee. They stay inquiry-only or disabled until a price and premium maximum are set.",
-      },
-      fields: [
-        {
-          type: "row",
-          fields: [
-            { name: "code", type: "select", required: true, options: SPECIAL_OPTIONS },
-            { name: "name", type: "text", required: true },
-            {
-              name: "status",
-              type: "select",
+              name: "budgetNotice",
+              label: "Budget notice",
+              type: "textarea",
               required: true,
-              defaultValue: "inquiry",
-              options: [
-                { label: "Available to order", value: "available" },
-                { label: "Inquiry only", value: "inquiry" },
-                { label: "Disabled", value: "disabled" },
+              defaultValue:
+                "Your budget covers the gift's contents and its basket and packaging. Sales tax and delivery or shipping are added at checkout.",
+              admin: { description: "Shown to customers before they start choosing products." },
+            },
+            {
+              name: "sizes",
+              label: "Basket sizes (custom builder)",
+              type: "array",
+              minRows: 1,
+              defaultValue: DEFAULT_GIFT_SETTINGS.sizes,
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    { name: "code", type: "select", required: true, options: SIZE_OPTIONS },
+                    { name: "label", type: "text", required: true },
+                    { name: "basketSizeIn", label: "Basket size (inches)", type: "text" },
+                    {
+                      name: "enabled",
+                      type: "checkbox",
+                      label: "Offered to customers",
+                      defaultValue: true,
+                      admin: { description: "Untick to hide this size from Build a Basket and refuse it at checkout." },
+                    },
+                  ],
+                },
+                {
+                  type: "row",
+                  fields: [
+                    whole("minItems", "Minimum items"),
+                    whole("maxItems", "Maximum items"),
+                    whole("premiumCap", "Premium maximum"),
+                  ],
+                },
+                {
+                  type: "row",
+                  fields: [
+                    cents("packagingCents", "Basket & packaging fee"),
+                    whole("capacityUnits", "Fit capacity", false, "Leave empty until products are measured; counts still apply."),
+                  ],
+                },
+              ],
+            },
+            {
+              name: "countOverrides",
+              label: "Item-count exceptions by gift type",
+              type: "array",
+              defaultValue: DEFAULT_GIFT_SETTINGS.countOverrides,
+              admin: { description: "From the basket chart: large sympathy baskets hold 13–16 items." },
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    { name: "giftType", label: "Gift type", type: "select", required: true, options: GIFT_TYPE_OPTIONS },
+                    { name: "size", type: "select", required: true, options: SIZE_OPTIONS },
+                    whole("minItems", "Minimum items"),
+                    whole("maxItems", "Maximum items"),
+                    { name: "basketSizeIn", label: "Basket size (inches)", type: "text", admin: { description: "Only if different from the standard size." } },
+                  ],
+                },
               ],
             },
           ],
         },
         {
-          type: "row",
+          label: "Special presentations",
           fields: [
-            cents("basePriceCents", "Base price", false),
             {
-              name: "pricing",
-              type: "select",
-              required: true,
-              defaultValue: "base_plus_contents",
-              options: [
-                { label: "Base price + chosen items", value: "base_plus_contents" },
-                { label: "Fixed price (includes chosen items)", value: "fixed" },
+              name: "specialPresentations",
+              label: "Special presentations",
+              type: "array",
+              defaultValue: DEFAULT_GIFT_SETTINGS.specialPresentations.map((p) => ({
+                ...p,
+                includedComponents: p.includedComponents.map((value) => ({ value })),
+                allowedCategories: p.allowedCategories.map((value) => ({ value })),
+                variants: p.variants.map((value) => ({ value })),
+              })),
+              admin: {
+                description:
+                  "Cowboy, Baby White and the filled baby ceramics (bowl, shoes, block) have their own rules and never get the standard packaging fee. They stay inquiry-only or disabled until a price and premium maximum are set.",
+              },
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    { name: "code", type: "select", required: true, options: SPECIAL_OPTIONS },
+                    { name: "name", type: "text", required: true },
+                    {
+                      name: "status",
+                      type: "select",
+                      required: true,
+                      defaultValue: "inquiry",
+                      options: [
+                        { label: "Available to order", value: "available" },
+                        { label: "Inquiry only", value: "inquiry" },
+                        { label: "Disabled", value: "disabled" },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  type: "row",
+                  fields: [
+                    cents("basePriceCents", "Base price", false),
+                    {
+                      name: "pricing",
+                      type: "select",
+                      required: true,
+                      defaultValue: "base_plus_contents",
+                      options: [
+                        { label: "Base price + chosen items", value: "base_plus_contents" },
+                        { label: "Fixed price (includes chosen items)", value: "fixed" },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  type: "row",
+                  fields: [
+                    whole("minSelections", "Minimum selections"),
+                    whole("maxSelections", "Maximum selections"),
+                    whole("premiumCap", "Premium maximum", false),
+                    whole("capacityUnits", "Fit capacity", false),
+                  ],
+                },
+                {
+                  name: "container",
+                  type: "textarea",
+                  admin: { description: "Container description and dimensions shown to customers and staff." },
+                },
+                {
+                  name: "image",
+                  type: "upload",
+                  relationTo: "media",
+                },
+                {
+                  name: "variants",
+                  type: "array",
+                  labels: { singular: "Colour / option", plural: "Colour / options" },
+                  admin: { description: "If set, the customer must choose one (e.g. pink or blue)." },
+                  fields: [{ name: "value", label: "Option", type: "text", required: true }],
+                },
+                {
+                  name: "includedComponents",
+                  type: "array",
+                  labels: { singular: "Included component", plural: "Included components" },
+                  admin: { description: "Come with the presentation and don't count as selections." },
+                  fields: [{ name: "value", label: "Component", type: "text", required: true }],
+                },
+                {
+                  name: "allowedCategories",
+                  type: "array",
+                  labels: { singular: "Allowed category", plural: "Allowed categories" },
+                  admin: { description: "Leave empty to allow any basket item." },
+                  fields: [{ name: "value", label: "Category", type: "text", required: true }],
+                },
               ],
             },
           ],
-        },
-        {
-          type: "row",
-          fields: [
-            whole("minSelections", "Minimum selections"),
-            whole("maxSelections", "Maximum selections"),
-            whole("premiumCap", "Premium maximum", false),
-            whole("capacityUnits", "Fit capacity", false),
-          ],
-        },
-        {
-          name: "container",
-          type: "textarea",
-          admin: { description: "Container description and dimensions shown to customers and staff." },
-        },
-        {
-          name: "image",
-          type: "upload",
-          relationTo: "media",
-        },
-        {
-          name: "variants",
-          type: "array",
-          labels: { singular: "Colour / option", plural: "Colour / options" },
-          admin: { description: "If set, the customer must choose one (e.g. pink or blue)." },
-          fields: [{ name: "value", label: "Option", type: "text", required: true }],
-        },
-        {
-          name: "includedComponents",
-          type: "array",
-          labels: { singular: "Included component", plural: "Included components" },
-          admin: { description: "Come with the presentation and don't count as selections." },
-          fields: [{ name: "value", label: "Component", type: "text", required: true }],
-        },
-        {
-          name: "allowedCategories",
-          type: "array",
-          labels: { singular: "Allowed category", plural: "Allowed categories" },
-          admin: { description: "Leave empty to allow any basket item." },
-          fields: [{ name: "value", label: "Category", type: "text", required: true }],
         },
       ],
     },

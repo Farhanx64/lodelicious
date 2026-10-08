@@ -1,6 +1,7 @@
 import type { Field, GlobalConfig } from "payload";
 
 import { anyone, isCommerceManager } from "../src/access/roles";
+import { centsComponents, withCents } from "../src/fields/money";
 import { auditGlobal } from "../src/hooks/audit";
 import { DEFAULT_FOUNTAIN_TERMS, MAX_GUESTS } from "../src/lib/inquiries/estimate";
 
@@ -48,7 +49,7 @@ const d = DEFAULT_FOUNTAIN_TERMS;
 export const EventSettings: GlobalConfig = {
   slug: "event-settings",
   label: "Events (chocolate fountain)",
-  admin: { group: "Settings" },
+  admin: { group: "Settings", description: "Chocolate fountain prices and terms for the Events page. Rentals are inquiry-only: nothing is booked or charged online." },
   access: { read: anyone, update: isCommerceManager },
   hooks: {
     afterChange: [
@@ -78,13 +79,13 @@ export const EventSettings: GlobalConfig = {
     {
       type: "row",
       fields: [
-        whole("baseCents", "Base price (cents)", {
+        withCents(whole("baseCents", "Base price (cents)", {
           defaultValue: d.baseCents,
           min: 0,
           max: 1_000_000,
           required: true,
           description: "25000 = $250.00, for the included hours with setup and service.",
-        }),
+        })),
         whole("includedHours", "Included hours", { defaultValue: d.includedHours, min: 1, max: 24, required: true, description: "Hours of service in the base price." }),
       ],
     },
@@ -96,24 +97,24 @@ export const EventSettings: GlobalConfig = {
       min: 0,
       max: 50_000,
       defaultValue: d.perGuestCents,
-      admin: { step: 1, description: "850 = $8.50 per person. The estimate is base + per person x guests." },
+      admin: { step: 1, components: centsComponents, description: "850 = $8.50 per person. The estimate is base + per person x guests." },
       validate: perGuestMatchesBreakdown,
     },
     {
       type: "row",
       fields: [
-        whole("chocolatePerGuestCents", "Chocolate per person (cents)", {
+        withCents(whole("chocolatePerGuestCents", "Chocolate per person (cents)", {
           defaultValue: d.chocolatePerGuestCents ?? undefined,
           min: 0,
           max: 50_000,
           description: "Shown as a breakdown of the per-person price: 500 = $5.00.",
-        }),
-        whole("fruitPerGuestCents", "Fruit per person (cents)", {
+        })),
+        withCents(whole("fruitPerGuestCents", "Fruit per person (cents)", {
           defaultValue: d.fruitPerGuestCents ?? undefined,
           min: 0,
           max: 50_000,
           description: "350 = $3.50. Chocolate + fruit must equal the per-person price, or leave both empty.",
-        }),
+        })),
       ],
     },
     whole("depositPercentBasisPoints", "Deposit (basis points)", {

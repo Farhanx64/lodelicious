@@ -13,6 +13,7 @@ export const AuditLog: CollectionConfig = {
     useAsTitle: "target",
     defaultColumns: ["createdAt", "user", "action", "target", "targetId"],
     group: "Staff",
+    description: "Who changed what, and when: prices, stock, orders, settings and staff accounts. Read-only.",
   },
   access: {
     read: isCommerceManager,
@@ -23,7 +24,7 @@ export const AuditLog: CollectionConfig = {
   fields: [
     { name: "action", type: "select", required: true, options: ["create", "update", "delete"] },
     { name: "target", type: "text", required: true, index: true },
-    { name: "targetId", type: "text", required: true, index: true },
+    { name: "targetId", label: "Target ID", type: "text", required: true, index: true },
     { name: "user", type: "relationship", relationTo: "users" },
     { name: "changes", type: "json", required: true },
   ],

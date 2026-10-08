@@ -11,10 +11,10 @@ import { OUTBOX_EVENT_TYPES, OUTBOX_STATUSES } from "../src/lib/inventory/types"
  */
 export const Outbox: CollectionConfig = {
   slug: "outbox",
-  labels: { singular: "Outbox event", plural: "Outbox events" },
+  labels: { singular: "Outbox event", plural: "Clover outbox" },
   admin: {
     useAsTitle: "idempotencyKey",
-    group: "Inventory",
+    group: "System",
     defaultColumns: ["createdAt", "eventType", "status", "attempts", "nextAttemptAt", "lastError"],
     description: "Stock changes waiting to be sent to Clover, and the result of each attempt. Read-only.",
   },
@@ -30,10 +30,10 @@ export const Outbox: CollectionConfig = {
     },
     { name: "status", type: "select", required: true, defaultValue: "pending", index: true, options: OUTBOX_STATUSES.map((value) => ({ label: value, value })) },
     { name: "attempts", type: "number", defaultValue: 0, min: 0 },
-    { name: "nextAttemptAt", type: "date", index: true, admin: { description: "Not before this time. Empty once sent or dead." } },
-    { name: "lastAttemptAt", type: "date" },
-    { name: "sentAt", type: "date" },
-    { name: "lastError", type: "textarea" },
-    { name: "idempotencyKey", type: "text", required: true, unique: true, index: true, admin: { description: "One event per movement. Also the key to send to Clover." } },
+    { name: "nextAttemptAt", label: "Next attempt", type: "date", index: true, admin: { description: "Not before this time. Empty once sent or dead." } },
+    { name: "lastAttemptAt", label: "Last attempt", type: "date" },
+    { name: "sentAt", label: "Sent", type: "date" },
+    { name: "lastError", label: "Last error", type: "textarea" },
+    { name: "idempotencyKey", label: "Key", type: "text", required: true, unique: true, index: true, admin: { description: "One event per movement. Also the key to send to Clover." } },
   ],
 };

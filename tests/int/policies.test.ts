@@ -37,10 +37,11 @@ const stored = () => payload.findGlobal({ slug: "policies" });
 
 describe("policies global: access", () => {
   it("has one explicit group per fixed policy and nothing else", () => {
-    // Payload adds createdAt/updatedAt when it sanitizes the config; every other field is a group.
-    const groups = Policies.fields.filter((f) => f.type === "group").map((f) => ("name" in f ? f.name : null));
+    // Each policy's group sits on its own tab. Payload adds createdAt/updatedAt when it sanitizes the config.
+    const fields = Policies.fields.flatMap((f) => (f.type === "tabs" ? f.tabs.flatMap((t) => t.fields) : [f]));
+    const groups = fields.filter((f) => f.type === "group").map((f) => ("name" in f ? f.name : null));
     expect(groups).toEqual(POLICIES.map((p) => p.field));
-    expect(Policies.fields.filter((f) => f.type !== "group").map((f) => ("name" in f ? f.name : null))).toEqual(["updatedAt", "createdAt"]);
+    expect(fields.filter((f) => f.type !== "group").map((f) => ("name" in f ? f.name : null))).toEqual(["updatedAt", "createdAt"]);
   });
 
   it("starts empty and unapproved: no draft text is stored in the database", async () => {

@@ -1,4 +1,4 @@
-import { APIError, type Field, type GlobalBeforeChangeHook, type GlobalConfig } from "payload";
+import { APIError, type Field, type GlobalBeforeChangeHook, type GlobalConfig, type Tab } from "payload";
 
 import { hasRole, isCommerceManager, isStaff } from "../src/access/roles";
 import { auditGlobal } from "../src/hooks/audit";
@@ -37,15 +37,20 @@ const guardApproval: GlobalBeforeChangeHook = ({ data, originalDoc, req }) => {
   return data;
 };
 
-/** One fixed group per policy, so slugs can't change and nothing can be added by mistake. */
-const policyGroup = (def: PolicyDefinition): Field => ({
-  name: def.field,
+/**
+ * One fixed group per policy, so slugs can't change and nothing can be added by mistake. Each sits
+ * on its own tab; the tab carries the title, so the group's own heading is hidden.
+ */
+const policyTab = (def: PolicyDefinition): Tab => ({
   label: def.title,
-  type: "group",
   admin: {
     description: `Page: /policies/${def.slug}. Until text is saved here and approved, the staging site shows built-in draft wording (marked as a draft) and the live site shows “This policy is being finalised”.`,
   },
-  fields: [
+  fields: [{ name: def.field, label: false, type: "group", admin: { hideGutter: true }, fields: policyFields(def) }],
+});
+
+function policyFields(def: PolicyDefinition): Field[] {
+  return [
     {
       name: "title",
       type: "text",
@@ -79,8 +84,8 @@ const policyGroup = (def: PolicyDefinition): Field => ({
         description: "Optional. Shown to customers as “Last reviewed …” beneath approved text.",
       },
     },
-  ],
-});
+  ];
+}
 
 /**
  * Customer policy pages (D39). The text is Lody's to write and approve; nothing here is a default.
@@ -93,11 +98,11 @@ const policyGroup = (def: PolicyDefinition): Field => ({
 export const Policies: GlobalConfig = {
   slug: "policies",
   label: "Policies",
-  admin: { group: "Settings" },
+  admin: { group: "Website", description: "The customer policy pages, one per tab. The owner or a manager writes the text; only the owner approves it, and only approved text appears on the live site." },
   access: { read: isStaff, update: isCommerceManager },
   hooks: {
     beforeChange: [guardApproval],
     afterChange: [auditGlobal(POLICIES.map((p) => p.field))],
   },
-  fields: POLICIES.map(policyGroup),
+  fields: [{ type: "tabs", tabs: POLICIES.map(policyTab) }],
 };

@@ -911,6 +911,55 @@ email goes to the console log. One migration, `email_settings`.
   customers should be told earlier (see D42, review currently happens after payment); shipping and ready-for-pickup
   emails are not built; the abandoned-bag and refund emails are not built.
 
+## D45 — Admin panel reorganized by task (2026-10-08)
+
+The admin had grown one area at a time: Inventory sat below Staff and Operations, two groups held a single
+item each (Operations, Gift builder), "Settings" mixed website content with checkout rules, and the order and
+reservation pages opened on raw JSON with money in bare cents and the staff notes at the very bottom. **No
+schema change and no migration**: only `admin` options, labels, unnamed tabs and collapsibles (which don't
+change data paths), and two display components. The drift check reports no changes.
+
+- **Sidebar and dashboard groups**, in this order (`payload.config.ts` sets it; Payload lists groups in the
+  order their first collection appears, then the globals inside them, so every group starts with a
+  collection):
+
+  | Group | Contents |
+  | --- | --- |
+  | Orders | Orders, Basket reservations, Inquiries |
+  | Catalog | Products, Categories |
+  | Inventory | Stock adjustments, Stock history, Checkout holds |
+  | Website | Photos, Store details, Home page, Policies |
+  | Settings | Tax classes, Checkout & reservations, Gift builder rules, Events (chocolate fountain), Inventory settings |
+  | Staff | Staff accounts, Audit log |
+  | System | Clover outbox, Sync jobs, Source records |
+
+- **Renamed in the admin only** (slugs, API paths and database tables are unchanged): Reservations → Basket
+  reservations; Media → Photos; Users → Staff accounts; Stock movements → Stock history; Stock holds →
+  Checkout holds; Outbox events → Clover outbox; Store settings → Store details; the Inventory global →
+  Inventory settings. Gift builder rules moved from its own group to Settings; Sync jobs from Operations to
+  System; Source records from Catalog to System; the outbox from Inventory to System.
+- **Every list has a one-line description** of what it holds and, where it matters, what not to do (never
+  pack a TEST order; change stock only through Stock adjustments). Field labels are sentence case throughout.
+- **Orders and basket reservations:** fulfillment (or reservation) status and payment status at the top, then
+  three tabs. *Order* / *Reservation*: customer, pickup, a read-only summary table of what was bought in dollars
+  (`components/admin/RecordSummary.tsx`), customer notes or assembly instructions, the paid-so-far and balance
+  fields (reservations), and staff notes. *Stock*: the stock note and what was taken from stock. *Record data*:
+  the stored snapshot (`lines` or `basket` JSON and the totals) for anyone who needs every detail. The number,
+  test flag, stock status, payment reference and attempts, and emails sent are in the sidebar.
+- **Inquiries:** the product row shows only when the inquiry is about a product; the fountain estimate is shown
+  in dollars; the terms snapshot is folded away; staff notes come before it.
+- **Money:** every cents field shows its value in dollars under the input as staff type
+  (`components/admin/CentsDescription.tsx`, wired through `centsComponents` in `src/fields/money.ts`), as list
+  columns already did. Storage stays integer cents.
+- **Products:** the tax class moved to the *Price & tax* tab; *Records* became *Codes & sources*; Featured moved
+  to the sidebar next to the slug.
+- **Photos:** Approved for launch is in the sidebar.
+- **Store details:** tabs for *Shop & contact*, *Opening hours* and *Story & allergy notice*. The opening hours,
+  closed-day names and time zone now say they are display only (audit A07): pickup times and closed dates come
+  from Checkout & reservations, and the time zone field is read-only because pickup always uses
+  America/New_York.
+- **Policies:** one tab per policy. **Gift builder rules:** *Sizes & item counts* and *Special presentations* tabs.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

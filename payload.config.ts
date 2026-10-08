@@ -51,8 +51,37 @@ export default buildConfig({
       titleSuffix: " — Lodelicious admin",
     },
   },
-  collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs, StockMovements, StockHolds, StockAdjustments, Outbox],
-  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings, Policies, InventorySettings],
+  // The admin sidebar and dashboard list groups in the order their first collection appears here, then
+  // the globals inside them, so the order below is the order staff see:
+  //   Orders · Catalog · Inventory · Website · Settings · Staff · System.
+  // A group with only globals would sort after every collection group, so each group starts with a collection.
+  collections: [
+    // Orders: the day-to-day work
+    Orders,
+    Reservations,
+    Inquiries,
+    // Catalog
+    Products,
+    Categories,
+    // Inventory
+    StockAdjustments,
+    StockMovements,
+    StockHolds,
+    // Website (then the Store details, Home page and Policies globals)
+    Media,
+    // Settings (then the Checkout, Gift builder, Events and Inventory globals)
+    TaxClasses,
+    // Staff
+    Users,
+    AuditLog,
+    // System: written by code, kept for monitoring and reference
+    Outbox,
+    SyncJobs,
+    SourceRecords,
+    // Hidden from the admin
+    Carts,
+  ],
+  globals: [StoreSettings, HomePage, Policies, CheckoutSettings, GiftBuilderSettings, EventSettings, InventorySettings],
   // Transactional email (D44): the console by default; SMTP only with complete settings (and EMAIL_SEND_LIVE=1 on the live store).
   email: emailAdapterFromEnv(process.env),
   editor: lexicalEditor(),
