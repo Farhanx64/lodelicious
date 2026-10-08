@@ -12,6 +12,7 @@ export const Categories: CollectionConfig = {
     useAsTitle: "name",
     defaultColumns: ["name", "slug", "sortOrder", "showInShop"],
     group: "Catalog",
+    description: "Shop categories. Lower sort order numbers appear first.",
   },
   defaultSort: "sortOrder",
   access: {
@@ -33,7 +34,7 @@ export const Categories: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "sortOrder", type: "number", defaultValue: 100, admin: { description: "Lower numbers appear first." } },
+        { name: "sortOrder", label: "Sort order", type: "number", defaultValue: 100, admin: { description: "Lower numbers appear first." } },
         { name: "showInShop", type: "checkbox", defaultValue: true, label: "Show as a filter in the shop" },
       ],
     },

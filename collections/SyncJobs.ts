@@ -13,7 +13,8 @@ export const SyncJobs: CollectionConfig = {
   admin: {
     useAsTitle: "key",
     defaultColumns: ["key", "status", "lastSuccessAt", "attempts"],
-    group: "Operations",
+    group: "System",
+    description: "Background jobs such as the Clover stock sync: whether each is running, its last success and its last error. Read-only. /ops/system-check also shows the sync's health.",
   },
   access: {
     read: isCommerceManager,
@@ -30,11 +31,11 @@ export const SyncJobs: CollectionConfig = {
       defaultValue: "idle",
       options: ["idle", "running", "failed"],
     },
-    { name: "lockToken", type: "text", admin: { readOnly: true } },
-    { name: "lockedUntil", type: "date", admin: { readOnly: true } },
+    { name: "lockToken", label: "Lock token", type: "text", admin: { readOnly: true } },
+    { name: "lockedUntil", label: "Locked until", type: "date", admin: { readOnly: true } },
     { name: "checkpoint", type: "json" },
-    { name: "lastSuccessAt", type: "date" },
-    { name: "lastError", type: "textarea" },
+    { name: "lastSuccessAt", label: "Last success", type: "date" },
+    { name: "lastError", label: "Last error", type: "textarea" },
     { name: "attempts", type: "number", defaultValue: 0, min: 0 },
   ],
 };

@@ -3,7 +3,7 @@
  * December 25, January 1 and Labor Day. Checkout's `closedDates` list holds plain YYYY-MM-DD dates
  * (no recurring rules, which would need a schema change), so the catalog seed fills the list, only
  * while it is empty, with every occurrence in the next 18 months. Lody adds later years in
- * /admin → Checkout settings → Closed dates.
+ * /admin → Settings → Checkout & reservations → Pickup times → Closed dates.
  */
 import { SHOP_TZ } from "./pickup";
 

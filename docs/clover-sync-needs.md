@@ -17,7 +17,7 @@
   `stock_changed` event in the `outbox` in the same transaction. Staff counts and adjustments go through
   Inventory → Stock adjustments, and are audited.
 - **Holds, a bill of materials and an age limit (D40):** checkout holds stock while a customer pays, curated baskets
-  can list their components, and Settings → Inventory has a (switched-off) limit on how old a count may be.
+  can list their components, and Settings → Inventory settings has a (switched-off) limit on how old a count may be.
 - **Cron lock:** `sync-jobs` now holds a no-overlap lock for `scripts/release-expired-holds.ts`; the Clover jobs
   can use the same `acquireJobLock`. Its checkpoint column is still unused.
 
@@ -60,7 +60,7 @@ below is what a Clover worker (built against a fake adapter first) should rely o
   conditional on its current status so two runs can't both send it; take the cron lock with
   `acquireJobLock` (`src/lib/inventory/job-lock.ts`) like `scripts/release-expired-holds.ts` does.
 - A failure here never touches the paid order or the stock: the website's stock is already correct, and
-  the outbox row carries the retry. Staff see `failed` and `dead` rows under Inventory → Outbox events.
+  the outbox row carries the retry. Staff see `failed` and `dead` rows under System → Clover outbox.
 - Not queued: movements with reason `sync` (they came from Clover) and recounts that changed nothing.
 - **Open (verify in the Clover sandbox):** whether Clover's item stock endpoint sets an absolute quantity
   or adds a delta. The event carries both `delta` and `quantityAfter`. Pushing the absolute number would
@@ -78,7 +78,7 @@ below is what a Clover worker (built against a fake adapter first) should rely o
   the time Clover was read, and a unique `idempotencyKey` (for example `sync:<run id>:<item id>`). It sets
   the quantity, marks it known, stamps the count date and writes the ledger row, atomically; a `sync`
   movement queues no outbox event, so nothing is echoed back to Clover.
-- Freshness: once Lody sets "Longest age of a stock count" (Settings → Inventory), anything the sync has
+- Freshness: once Lody sets "Longest age of a stock count" (Settings → Inventory settings), anything the sync has
   not touched in that time stops being sellable. So the worker must stamp every item it reads, even when
   the number is unchanged (a `count` with no change writes a ledger row of 0 and still updates the date).
   Items missing from Clover's answer should not be touched, and they will go stale by themselves.
@@ -126,7 +126,7 @@ Planned design (decision D10, which replaces SKU IQ):
    - Whether packaging (baskets, ribbon) is tracked in Clover.
    - The per-product reserve numbers, if not 1.
 7. **The DoorDash page link** for local delivery (D28), and the **"Our story" text** for the
-   footer (D30); both go in /admin → Store settings.
+   footer (D30); both go in /admin → Website → Store details.
 8. **Later, for payments (milestone 6):**
    - Clover ecommerce API keys (public and private).
    - Lody's approval of Clover's online processing fees before anything goes live.

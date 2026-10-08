@@ -52,7 +52,7 @@ export type CheckoutContext = {
   provider: PaymentProvider | null;
   /** How long to wait for the payment provider before treating the result as unknown. */
   chargeTimeoutMs: number;
-  /** Holds and stock freshness (Settings → Inventory), plus the staging-only "assume stock" aid. */
+  /** Holds and stock freshness (Settings → Inventory settings), plus the staging-only "assume stock" aid. */
   inventory: InventoryConfig & { assumeUnknown: boolean };
 };
 

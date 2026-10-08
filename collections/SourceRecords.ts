@@ -1,6 +1,7 @@
 import type { CollectionBeforeChangeHook, CollectionConfig, FieldAccess } from "payload";
 
 import { isCommerceManager, isStaff, nobody } from "../src/access/roles";
+import { centsComponents } from "../src/fields/money";
 import { auditCollection } from "../src/hooks/audit";
 
 export const SOURCES = [
@@ -43,7 +44,7 @@ export const SourceRecords: CollectionConfig = {
   admin: {
     useAsTitle: "sourceName",
     defaultColumns: ["ref", "sourceName", "source", "sourcePriceCents", "disposition"],
-    group: "Catalog",
+    group: "System",
     description:
       "Observed products from Clover, the price list and DoorDash. Review each one; source prices are not website prices.",
   },
@@ -61,22 +62,23 @@ export const SourceRecords: CollectionConfig = {
     {
       type: "row",
       fields: [
-        { name: "ref", type: "text", required: true, unique: true, index: true, access: { update: immutable } },
+        { name: "ref", label: "Reference", type: "text", required: true, unique: true, index: true, access: { update: immutable } },
         { name: "source", type: "select", required: true, index: true, options: [...SOURCES], access: { update: immutable } },
       ],
     },
-    { name: "sourceName", type: "text", required: true, access: { update: immutable } },
-    { name: "sourceBrand", type: "text", access: { update: immutable } },
+    { name: "sourceName", label: "Name", type: "text", required: true, access: { update: immutable } },
+    { name: "sourceBrand", label: "Brand", type: "text", access: { update: immutable } },
     {
       name: "sourcePriceCents",
+      label: "Price",
       type: "number",
       min: 0,
       access: { update: immutable },
-      admin: { description: "Observed price in cents (e.g. 1295 = $12.95); empty when the source gave none. Evidence only." },
+      admin: { components: centsComponents, description: "Observed price in cents (e.g. 1295 = $12.95); empty when the source gave none. Evidence only." },
     },
-    { name: "cloverId", type: "text", index: true, access: { update: immutable } },
-    { name: "observedOn", type: "date", access: { update: immutable } },
-    { name: "sourceNotes", type: "textarea", access: { update: immutable } },
+    { name: "cloverId", label: "Clover ID", type: "text", index: true, access: { update: immutable } },
+    { name: "observedOn", label: "Observed on", type: "date", access: { update: immutable } },
+    { name: "sourceNotes", label: "Source notes", type: "textarea", access: { update: immutable } },
     {
       type: "collapsible",
       label: "Review",
@@ -84,13 +86,14 @@ export const SourceRecords: CollectionConfig = {
         { name: "disposition", type: "select", required: true, defaultValue: "unreviewed", index: true, options: [...DISPOSITIONS] },
         {
           name: "duplicateOf",
+          label: "Duplicate of",
           type: "relationship",
           relationTo: "source-records",
           admin: { condition: (_data, sibling) => sibling?.disposition === "duplicate" },
         },
-        { name: "reviewNotes", type: "textarea" },
-        { name: "reviewedBy", type: "relationship", relationTo: "users", admin: { readOnly: true } },
-        { name: "reviewedAt", type: "date", admin: { readOnly: true } },
+        { name: "reviewNotes", label: "Review notes", type: "textarea" },
+        { name: "reviewedBy", label: "Reviewed by", type: "relationship", relationTo: "users", admin: { readOnly: true } },
+        { name: "reviewedAt", label: "Reviewed at", type: "date", admin: { readOnly: true } },
       ],
     },
   ],

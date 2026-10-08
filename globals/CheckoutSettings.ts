@@ -1,6 +1,7 @@
 import type { Field, GlobalConfig } from "payload";
 
 import { isCommerceManager, isStaff } from "../src/access/roles";
+import { withCents } from "../src/fields/money";
 import { auditGlobal } from "../src/hooks/audit";
 
 const whole = (name: string, label: string, defaultValue: number, description: string): Field => ({
@@ -32,7 +33,7 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 export const CheckoutSettings: GlobalConfig = {
   slug: "checkout-settings",
   label: "Checkout & reservations",
-  admin: { group: "Settings" },
+  admin: { group: "Settings", description: "Default tax classes, pickup times and closed dates, and the deposit for basket reservations." },
   access: { read: isStaff, update: isCommerceManager },
   hooks: {
     afterChange: [
@@ -59,8 +60,8 @@ export const CheckoutSettings: GlobalConfig = {
         {
           label: "Tax",
           fields: [
-            { name: "defaultTaxClass", type: "relationship", relationTo: "tax-classes", admin: { description: "Used for products without their own tax class." } },
-            { name: "packagingTaxClass", type: "relationship", relationTo: "tax-classes", admin: { description: "Used for basket & packaging fees." } },
+            { name: "defaultTaxClass", label: "Default tax class", type: "relationship", relationTo: "tax-classes", admin: { description: "Used for products without their own tax class." } },
+            { name: "packagingTaxClass", label: "Basket & packaging tax class", type: "relationship", relationTo: "tax-classes", admin: { description: "Used for basket & packaging fees." } },
           ],
         },
         {
@@ -130,7 +131,7 @@ export const CheckoutSettings: GlobalConfig = {
               type: "row",
               fields: [
                 whole("depositPercentBasisPoints", "Deposit percentage (basis points)", 2500, "2500 = 25%. Used when the deposit is a percentage."),
-                whole("depositFlatCents", "Flat deposit (cents)", 2000, "2000 = $20.00. Used when the deposit is a flat amount; never more than the basket total."),
+                withCents(whole("depositFlatCents", "Flat deposit (cents)", 2000, "2000 = $20.00. Used when the deposit is a flat amount; never more than the basket total.")),
               ],
             },
             {

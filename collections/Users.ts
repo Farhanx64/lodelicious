@@ -61,10 +61,12 @@ const secureCookies = process.env.NODE_ENV === "production" || !isPreviewEnv();
 
 export const Users: CollectionConfig = {
   slug: "users",
+  labels: { singular: "Staff account", plural: "Staff accounts" },
   admin: {
     useAsTitle: "email",
     defaultColumns: ["name", "email", "roles"],
     group: "Staff",
+    description: "Who can sign in to this admin and what each person may do. Only the owner adds accounts or changes roles.",
   },
   auth: { cookies: { secure: secureCookies } },
   access: {

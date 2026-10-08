@@ -21,8 +21,8 @@ const whole = (name: string, label: string, description: string, extra: Record<s
  */
 export const InventorySettings: GlobalConfig = {
   slug: "inventory-settings",
-  label: "Inventory",
-  admin: { group: "Settings" },
+  label: "Inventory settings",
+  admin: { group: "Settings", description: "How long checkout holds stock, and how old a stock count may be before it stops sales." },
   access: { read: isStaff, update: isCommerceManager },
   hooks: { afterChange: [auditGlobal(["holdMinutes", "maxStockAgeHours"])] },
   fields: [

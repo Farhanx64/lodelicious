@@ -10,7 +10,12 @@ import { auditCollection, auditDelete } from "../src/hooks/audit";
 export const TaxClasses: CollectionConfig = {
   slug: "tax-classes",
   labels: { singular: "Tax class", plural: "Tax classes" },
-  admin: { useAsTitle: "name", group: "Settings", defaultColumns: ["name", "rateBasisPoints", "approved"] },
+  admin: {
+    useAsTitle: "name",
+    group: "Settings",
+    defaultColumns: ["name", "rateBasisPoints", "approved"],
+    description: "Sales tax rates. Until every rate in a sale is approved, checkout shows the tax as an estimate. Choose the defaults under Settings → Checkout & reservations.",
+  },
   access: { read: isStaff, create: isCommerceManager, update: isCommerceManager, delete: isCommerceManager },
   hooks: {
     afterChange: [auditCollection(["name", "rateBasisPoints", "approved"])],

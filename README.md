@@ -92,15 +92,20 @@ npm run doctor           # this shell's runtime vs host requirements + DB reacha
 The web process can have different env/NODE_OPTIONS from SSH: log in to `/admin`, then open
 `/ops/system-check`.
 
-Orders, basket reservations and inquiries are under /admin → Orders. Under /admin → Settings:
-- Checkout & reservations: tax classes, pickup hours, closed dates and basket deposits.
-- Events: the chocolate fountain price and terms.
-- Policies: customer policies. Only the owner can approve them, and only approved text shows live.
-- Inventory: the checkout hold time and the optional maximum age of a stock count.
+The admin is grouped by task (D45):
 
-Stock is changed only through /admin → Inventory → Stock adjustments (counts, adjustments,
-restocks). The product form's stock fields are read-only. Every change is a ledger row and queues a
-Clover update in the outbox.
+| Group | What's there |
+| --- | --- |
+| Orders | Orders, basket reservations and inquiries. Each order and reservation opens on a plain summary; the stored snapshot is on its Record data tab |
+| Catalog | Products and categories |
+| Inventory | Stock adjustments (the only way to change stock: counts, adjustments, restocks), stock history and checkout holds |
+| Website | Photos, store details (contact, opening hours, story, allergy notice), the home page and the customer policies |
+| Settings | Tax classes, checkout & reservations (pickup times, closed dates, deposits), gift builder rules, the chocolate fountain, inventory settings |
+| Staff | Staff accounts and the audit log |
+| System | The Clover outbox and sync jobs (read-only, for monitoring), and the imported source records the catalog was reconciled from |
+
+Only the owner can approve a policy, and only approved text shows live. The product form's stock fields are
+read-only; every stock change is a ledger row and queues a Clover update in the outbox.
 
 The security and accessibility review and what was fixed are in `docs/audit-2026-10-06.md`.
 

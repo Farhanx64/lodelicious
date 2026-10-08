@@ -34,12 +34,13 @@ export const pickupFields: Field = {
         { name: "end", type: "text", required: true },
       ],
     },
-    { name: "label", type: "text" },
+    { name: "label", label: "Time slot", type: "text" },
   ],
 };
 
 export const identityFields: Field[] = [
-  { name: "number", type: "text", required: true, unique: true, index: true, access: frozen },
+  // The page title already shows the number, so the field itself sits in the sidebar.
+  { name: "number", type: "text", required: true, unique: true, index: true, access: frozen, admin: { position: "sidebar" } },
   { name: "accessTokenHash", type: "text", required: true, access: { read: () => false, update: () => false }, admin: { hidden: true } },
   { name: "idempotencyKey", type: "text", required: true, unique: true, index: true, access: { update: () => false }, admin: { hidden: true } },
   {
@@ -90,28 +91,31 @@ export const paymentStatusAccess = { update: commerceField };
  * record that was paid but whose stock could not be taken is flagged `needs_attention` and kept:
  * staff fix the stock, then mark it resolved. Cancelling never restocks.
  */
-export const inventoryFields: Field[] = [
-  {
-    name: "stockStatus",
-    label: "Stock",
-    type: "select",
-    defaultValue: "none",
-    index: true,
-    access: { update: commerceField },
-    options: [
-      { label: "Not tracked (placed before stock tracking)", value: "none" },
-      { label: "Held while paying", value: "held" },
-      { label: "Taken from stock", value: "committed" },
-      { label: "Needs attention: paid, but stock could not be taken", value: "needs_attention" },
-      { label: "Released (payment did not complete)", value: "released" },
-      { label: "Resolved by staff", value: "resolved" },
-    ],
-    admin: {
-      position: "sidebar",
-      description: "Set by checkout. If this says Needs attention, the order is paid and kept: check the shelf and the stock count, then mark it Resolved. Cancelling an order never puts stock back.",
-    },
+export const stockStatusField: Field = {
+  name: "stockStatus",
+  label: "Stock",
+  type: "select",
+  defaultValue: "none",
+  index: true,
+  access: { update: commerceField },
+  options: [
+    { label: "Not tracked (placed before stock tracking)", value: "none" },
+    { label: "Held while paying", value: "held" },
+    { label: "Taken from stock", value: "committed" },
+    { label: "Needs attention: paid, but stock could not be taken", value: "needs_attention" },
+    { label: "Released (payment did not complete)", value: "released" },
+    { label: "Resolved by staff", value: "resolved" },
+  ],
+  admin: {
+    position: "sidebar",
+    description: "Set by checkout. If this says Needs attention, the order is paid and kept: check the shelf and the stock count, then mark it Resolved. Cancelling an order never puts stock back.",
   },
+};
+
+/** The detail behind the stock status, shown on the record's Stock tab. */
+export const stockDetailFields: Field[] = [
   { name: "stockOwner", type: "text", access: frozen, admin: { hidden: true } },
+  { name: "stockNote", label: "Stock note", type: "textarea", access: frozen, admin: { readOnly: true, description: "Why this needs attention. Empty when nothing went wrong." } },
   {
     name: "stockPlan",
     label: "Taken from stock",
@@ -119,8 +123,12 @@ export const inventoryFields: Field[] = [
     access: frozen,
     admin: { readOnly: true, description: "The components this takes from stock (a basket with contents takes its parts, not itself). Use it when putting cancelled stock back." },
   },
-  { name: "stockNote", label: "Stock note", type: "textarea", access: frozen, admin: { readOnly: true, description: "Why this needs attention." } },
 ];
+
+export const staffNotesField: Field = { name: "staffNotes", label: "Staff notes", type: "textarea", admin: { description: "Internal. Never shown to customers." } };
+
+/** Description of the tab that holds the raw snapshot an order or reservation was saved with. */
+export const RECORD_DATA_NOTE = "Exactly what was saved when the customer checked out. Read-only; the first tab shows the same information in plain form.";
 
 const sentAt = (name: string, label: string): Field => ({ name, label, type: "date", access: frozen, admin: { readOnly: true, date: { pickerAppearance: "dayAndTime" } } });
 

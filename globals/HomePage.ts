@@ -11,7 +11,7 @@ import { auditGlobal } from "../src/hooks/audit";
 export const HomePage: GlobalConfig = {
   slug: "home-page",
   label: "Home page",
-  admin: { group: "Settings" },
+  admin: { group: "Website", description: "Photos and the Shop Favorites layout on the home page." },
   access: { read: anyone, update: isCommerceManager },
   hooks: { afterChange: [auditGlobal(["heroImage", "stripImages", "favoritesLayout"])] },
   fields: [
@@ -45,7 +45,7 @@ export const HomePage: GlobalConfig = {
       defaultValue: "slider",
       options: FAVORITES_LAYOUTS.map(({ value, label }) => ({ value, label })),
       admin: {
-        description: "How the products marked \"Show on the home page\" are laid out. The slider moves on its own and has a pause button.",
+        description: "How the products ticked Featured (in each product's sidebar) are laid out. The slider moves on its own and has a pause button.",
       },
     },
   ],

@@ -242,7 +242,7 @@ describe("holds while paying (INV 04)", () => {
     expect(await changeBag(payload, newCartToken(), { unitId: String(p.id), quantity: 1, mode: "add" }, ctx, NOW)).toMatchObject({ ok: false });
   });
 
-  it("last for the hold time from Settings → Inventory (15 minutes to start with)", async () => {
+  it("last for the hold time from Settings → Inventory settings (15 minutes to start with)", async () => {
     const hold = async (c: CheckoutContext) => {
       const p = await makeProduct(w, { stock: 2, reserve: 1 });
       let release!: () => void;

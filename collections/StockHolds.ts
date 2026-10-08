@@ -11,7 +11,7 @@ import { HOLD_STATUSES } from "../src/lib/inventory/types";
  */
 export const StockHolds: CollectionConfig = {
   slug: "stock-holds",
-  labels: { singular: "Stock hold", plural: "Stock holds" },
+  labels: { singular: "Checkout hold", plural: "Checkout holds" },
   admin: {
     useAsTitle: "key",
     group: "Inventory",
@@ -28,6 +28,6 @@ export const StockHolds: CollectionConfig = {
     { name: "owner", type: "text", required: true, index: true, admin: { description: "The bag or basket checkout that holds it." } },
     { name: "reference", type: "text", admin: { description: "Order or reservation number, once there is one." } },
     { name: "status", type: "select", required: true, defaultValue: "active", index: true, options: HOLD_STATUSES.map((value) => ({ label: value, value })) },
-    { name: "expiresAt", type: "date", required: true, index: true, admin: { date: { pickerAppearance: "dayAndTime" } } },
+    { name: "expiresAt", label: "Expires", type: "date", required: true, index: true, admin: { date: { pickerAppearance: "dayAndTime" } } },
   ],
 };

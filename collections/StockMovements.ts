@@ -10,7 +10,7 @@ import { MOVEMENT_REASONS } from "../src/lib/inventory/types";
  */
 export const StockMovements: CollectionConfig = {
   slug: "stock-movements",
-  labels: { singular: "Stock movement", plural: "Stock movements" },
+  labels: { singular: "Stock movement", plural: "Stock history" },
   admin: {
     useAsTitle: "reference",
     group: "Inventory",
@@ -22,16 +22,17 @@ export const StockMovements: CollectionConfig = {
   access: { read: isStaff, create: nobody, update: nobody, delete: nobody },
   fields: [
     { name: "product", type: "relationship", relationTo: "products", index: true },
-    { name: "productTitle", type: "text", admin: { description: "The name when it moved, kept if the product is later deleted." } },
+    { name: "productTitle", label: "Product title", type: "text", admin: { description: "The name when it moved, kept if the product is later deleted." } },
     { name: "variantKey", label: "Option", type: "text", defaultValue: "", admin: { description: "Empty for the product itself." } },
     { name: "delta", type: "number", required: true, admin: { description: "Units added (+) or removed (−)." } },
     { name: "reason", type: "select", required: true, index: true, options: MOVEMENT_REASONS.map((value) => ({ label: value.replace(/_/g, " "), value })) },
-    { name: "quantityAfter", type: "number", required: true, admin: { description: "The counted quantity once this movement was applied." } },
+    { name: "quantityAfter", label: "Quantity after", type: "number", required: true, admin: { description: "The counted quantity once this movement was applied." } },
     { name: "reference", type: "text", index: true, admin: { description: "Order or reservation number, or the adjustment it came from." } },
     { name: "user", type: "relationship", relationTo: "users", admin: { description: "The staff member, when a person caused it." } },
     { name: "note", type: "textarea" },
     {
       name: "idempotencyKey",
+      label: "Key",
       type: "text",
       required: true,
       unique: true,

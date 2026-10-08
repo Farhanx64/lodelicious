@@ -1,7 +1,7 @@
 # Project status
 
-Last updated: 2026-10-08 · branch `integration/wave3` (checkout hardening, Clover sync worker
-against a fake, transactional emails to the console). `main` is at f41fa1e (PR #8).
+Last updated: 2026-10-08 · the admin reorganized by task (D45). `main` is at 51da35c (PR #10), which
+includes checkout hardening, the Clover sync worker against a fake and transactional emails to the console.
 
 **Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
 (confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first
@@ -16,6 +16,8 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
     inquiry is editable in /admin.
   - Staff roles: owner, manager and fulfillment. Only the owner approves policies (D39).
   - Changes are audited.
+  - Grouped by task (D45): Orders, Catalog, Inventory, Website, Settings, Staff, System. Orders and
+    reservations open on a plain summary in dollars; their stored snapshot is on a Record data tab.
 - **Catalog:**
   - 80 products (76 published, 4 Cape Cod drafts) in 7 categories, reconciled against Lody's cards
     and her Clover export. Clover's price wins (D25).
@@ -32,7 +34,7 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 - **Inquiries (D37):** /contact, product pages, Baby Gifts and Build a Basket send inquiries to
   /admin → Orders → Inquiries. /events shows a live fountain estimate ($250 + $8.50 × guests). Nothing
   is booked or charged, and no email is sent yet.
-- **Policies (D39):** five policies in /admin → Settings → Policies. The live site shows only text Lody
+- **Policies (D39):** five policies in /admin → Website → Policies. The live site shows only text Lody
   has approved; staging shows drafts (built only from confirmed facts) with a banner.
 - **Security and robustness (D41):** see `docs/audit-2026-10-06.md` for the full list.
   - `APP_ENV` must be exactly `production` live; anything else unset or unknown is treated as live.
@@ -43,7 +45,7 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
   - Password policy (12+ characters) and a 15 MB photo upload limit.
   - Forms keep the customer's entries after an error, and focus moves to the error.
 - **Inventory (D40):** stock ledger with one movement per component per sale, expiring checkout
-  holds (15 min), oversell-proof atomic sales, staff counts and adjustments in /admin → Inventory,
+  holds (15 min), oversell-proof atomic sales, staff counts and adjustments in /admin → Inventory → Stock adjustments,
   explicit restock (never automatic on cancel or refund), an optional stale-count limit, a component
   list for curated baskets (empty until Lody supplies contents) and a Clover outbox (nothing sends
   yet).
@@ -130,6 +132,21 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 | 4 | Cart, checkout, order snapshots, staff assembly views | **Done (test payments)**: bag, checkout, orders, basket reservations with deposits (D34–D36). Hardened from the audit (D41, D42) |
 | 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | **Website half done** (D40): ledger, holds, atomic sales, BOM, restock, stale stock, outbox. Clover push/pull worker built against a fake (D43); the live sync needs Lody's stock counts, an inventory-only token and sandbox verification |
 | 6 | Clover embedded payments, USPS rates, fixture-tested until credentials exist | **Emails built, console only** (D44). Payments and USPS not started: need Clover ecommerce keys, fee approval, USPS credentials and a sending service |
+
+## Admin reorganized — 2026-10-08 (D45)
+
+- **Sidebar:** seven groups in the order staff use them: Orders, Catalog, Inventory, Website,
+  Settings, Staff, System. Gift builder rules and the Inventory global joined Settings; Store details,
+  Home page, Policies and Photos form Website; the Clover outbox, sync jobs and source records moved
+  to System. Clearer names (Basket reservations, Photos, Staff accounts, Stock history, Checkout holds,
+  Clover outbox, Store details, Inventory settings); slugs and APIs are unchanged.
+- **Edit screens:** orders and reservations use tabs (summary, stock, record data) with a dollar
+  summary of what was bought; every cents field shows dollars as staff type; Store details, Policies
+  and Gift builder rules use tabs; the store's hours, closed-day names and time zone say they are
+  display only (audit A07). Every list has a one-line description.
+- **No schema change:** no migration, and the drift check reports nothing to do.
+- **Checks:** **720 tests pass** (65 files). Typecheck and lint clean; migrations apply to an empty
+  production database with no schema drift; the production build passes.
 
 ## Checkout hardening, Clover worker and emails — 2026-10-07/08 (D42–D44)
 

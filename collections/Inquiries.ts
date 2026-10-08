@@ -1,16 +1,17 @@
 import type { CollectionConfig, Field } from "payload";
 
 import { isOwner, isStaff, nobody } from "../src/access/roles";
+import { centsComponents } from "../src/fields/money";
 import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { INQUIRY_STATUSES, INQUIRY_TOPICS, MAX_LOCATION_LENGTH, MAX_MESSAGE_LENGTH, STATUS_LABELS, TOPIC_LABELS } from "../src/lib/inquiries/shared";
 import { MAX_GUESTS, MIN_GUESTS } from "../src/lib/inquiries/estimate";
 
 import { sendRecordEmails } from "../src/hooks/send-emails";
 
-import { customerFields, frozen, inquiryEmailFields } from "./order-fields";
+import { customerFields, frozen, inquiryEmailFields, staffNotesField } from "./order-fields";
 
-const cents = { components: { Cell: "@/components/admin/CentsCell#CentsCell" } };
 const isFountain = (data: Partial<{ topic: string }> | undefined) => data?.topic === "fountain";
+const aboutProduct = (data: Partial<{ product: unknown; itemTitle: string }> | undefined) => Boolean(data?.product || data?.itemTitle);
 
 /** Event details are collected for the chocolate fountain only; the parser enforces them, not the database. */
 const eventFields: Field = {
@@ -44,6 +45,7 @@ export const Inquiries: CollectionConfig = {
   admin: {
     useAsTitle: "number",
     group: "Orders",
+    description: "Questions, inquiry-only products and chocolate fountain requests from the website. Nothing is booked or charged here.",
     defaultColumns: ["number", "topic", "customer.name", "itemTitle", "status", "createdAt"],
     listSearchableFields: ["number", "customer.name", "customer.email", "itemTitle"],
   },
@@ -53,7 +55,8 @@ export const Inquiries: CollectionConfig = {
   // The audit log records who moved an inquiry along, never the customer's own words or contact details.
   hooks: { afterChange: [auditCollection(["status", "staffNotes"]), sendRecordEmails("inquiries")], afterDelete: [auditDelete(["number", "status"])] },
   fields: [
-    { name: "number", type: "text", required: true, unique: true, index: true, access: frozen },
+    // The page title already shows the number, so the field itself sits in the sidebar.
+    { name: "number", type: "text", required: true, unique: true, index: true, access: frozen, admin: { position: "sidebar" } },
     { name: "sequence", type: "number", required: true, unique: true, index: true, access: frozen, admin: { hidden: true } },
     { name: "idempotencyKey", type: "text", required: true, unique: true, index: true, access: { update: () => false }, admin: { hidden: true } },
     {
@@ -81,6 +84,7 @@ export const Inquiries: CollectionConfig = {
     { name: "message", type: "textarea", maxLength: MAX_MESSAGE_LENGTH, access: frozen },
     {
       type: "row",
+      admin: { condition: aboutProduct },
       fields: [
         { name: "product", type: "relationship", relationTo: "products", access: frozen, admin: { description: "The product the customer asked about." } },
         { name: "itemTitle", label: "Product title (at the time)", type: "text", access: frozen },
@@ -94,18 +98,26 @@ export const Inquiries: CollectionConfig = {
       access: frozen,
       admin: {
         condition: isFountain,
-        ...cents,
+        components: centsComponents,
         description: "Worked out by the server when the inquiry arrived: base + per-guest x guests. An estimate only; staff confirm the final price, tax and any other approved charges.",
       },
     },
+    staffNotesField,
     {
-      name: "estimateTerms",
+      type: "collapsible",
       label: "Terms used for the estimate",
-      type: "json",
-      access: frozen,
-      admin: { condition: isFountain, description: "The fountain prices and deposit percentage in force when the inquiry arrived." },
+      admin: { condition: isFountain, initCollapsed: true },
+      fields: [
+        {
+          name: "estimateTerms",
+          label: "Fountain terms",
+          type: "json",
+          access: frozen,
+          admin: { description: "The fountain prices and deposit percentage in force when the inquiry arrived." },
+        },
+      ],
     },
+    // Sidebar
     inquiryEmailFields,
-    { name: "staffNotes", type: "textarea", admin: { description: "Internal. Never shown to customers." } },
   ],
 };

@@ -48,8 +48,11 @@ const limitUploadSize: CollectionBeforeOperationHook = ({ args, req }) => {
 
 export const Media: CollectionConfig = {
   slug: "media",
+  labels: { singular: "Photo", plural: "Photos" },
   admin: {
-    group: "Catalog",
+    group: "Website",
+    description: "Every photo used on the website: products, categories, the home page and gift presentations. The live site shows only photos ticked Approved for launch.",
+    defaultColumns: ["filename", "alt", "approvedForLaunch", "credit", "updatedAt"],
   },
   access: {
     read: mediaRead,
@@ -76,6 +79,7 @@ export const Media: CollectionConfig = {
   fields: [
     {
       name: "alt",
+      label: "Alt text",
       type: "text",
       required: true,
       admin: {
@@ -84,6 +88,7 @@ export const Media: CollectionConfig = {
     },
     {
       name: "sourceFile",
+      label: "Source file",
       type: "text",
       index: true,
       admin: { readOnly: true, position: "sidebar", description: "Set by the catalog seed; prevents duplicate uploads." },
@@ -95,9 +100,11 @@ export const Media: CollectionConfig = {
     },
     {
       name: "approvedForLaunch",
+      label: "Approved for launch",
       type: "checkbox",
       defaultValue: false,
       admin: {
+        position: "sidebar",
         description:
           "Tick only for owner-approved photos of the actual product. Staging placeholders stay unticked.",
       },
