@@ -11,3 +11,13 @@ export function isImagePublishable(media: Pick<Media, "approvedForLaunch"> | nul
   if (!media) return false;
   return isPreviewEnv(env) || media.approvedForLaunch === true;
 }
+
+/** Pick the product photos customers can currently see, skipping unapproved staging images. */
+export function publishableProductImages(
+  images: readonly { image?: Media | number | null }[] | null | undefined,
+): Media[] {
+  return (images ?? []).flatMap((entry) => {
+    const media = entry.image;
+    return typeof media === "object" && media !== null && isImagePublishable(media) ? [media] : [];
+  });
+}

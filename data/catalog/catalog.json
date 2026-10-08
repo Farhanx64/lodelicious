@@ -218,6 +218,504 @@
       "alt": "Ivory gift boxes tied with pale blue ribbon",
       "credit": "Placeholder from Lody's mood board (AI-generated) — replace with your own photo",
       "approvedForLaunch": false
+    },
+    {
+      "file": "products/cape-cod-chocolate-sea-salt-caramel-fudge-ai.jpg",
+      "alt": "AI-generated staging image of Cape Cod Provisions Chocolate Sea Salt Caramel Fudge",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/cape-cod-penuche-fudge-ai.jpg",
+      "alt": "AI-generated staging image of Cape Cod Provisions Penuche Fudge (no nuts)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/cape-cod-chocolate-fudge-ai.jpg",
+      "alt": "AI-generated staging image of Cape Cod Provisions Chocolate Fudge",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/cape-cod-pistachio-fudge-ai.jpg",
+      "alt": "AI-generated staging image of Cape Cod Provisions Pistachio Fudge",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-turtles-bars-ai.jpg",
+      "alt": "AI-generated staging image of Turtles Bars",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-hash-bar-ai.jpg",
+      "alt": "AI-generated staging image of Hash Bar",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-chocolate-pretzels-2pc-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Pretzels (2 pc)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-chocolate-pretzels-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Pretzels",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-sugar-free-theatre-box-ai.jpg",
+      "alt": "AI-generated staging image of Sugar-Free Theatre Box",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-vegan-bark-ai.jpg",
+      "alt": "AI-generated staging image of Vegan Bark",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-chocolate-covered-cherries-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Covered Cherries",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/dark-chocolate-sea-salt-ai.jpg",
+      "alt": "AI-generated staging image of Dark Chocolate Sea Salt",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/chocolate-covered-almonds-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Covered Almonds",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/dark-chocolate-covered-almonds-ai.jpg",
+      "alt": "AI-generated staging image of Dark Chocolate Covered Almonds",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/chocolate-covered-cashews-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Covered Cashews",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/chocolate-covered-blueberries-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Covered Blueberries",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/dark-chocolate-covered-coffee-beans-ai.jpg",
+      "alt": "AI-generated staging image of Dark Chocolate Covered Coffee Beans",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/chocolate-almond-clusters-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Almond Clusters",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/dark-chocolate-sea-salt-caramel-ai.jpg",
+      "alt": "AI-generated staging image of Dark Chocolate Sea Salt Caramel",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/milk-chocolate-sea-salt-caramel-ai.jpg",
+      "alt": "AI-generated staging image of Milk Chocolate Sea Salt Caramel",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/molasses-chips-ai.jpg",
+      "alt": "AI-generated staging image of Molasses Chips",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/chocolate-rose-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Rose",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/mini-dubai-chocolate-bar-ai.jpg",
+      "alt": "AI-generated staging image of Mini Dubai Chocolate Bar",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/swiss-chocolate-bar-ai.jpg",
+      "alt": "AI-generated staging image of Swiss Chocolate Bar",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/toblerone-ai.jpg",
+      "alt": "AI-generated staging image of Toblerone",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/cranberry-chocolate-bar-ai.jpg",
+      "alt": "AI-generated staging image of Cranberry Chocolate Bar",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/sea-salt-caramel-fudge-ai.jpg",
+      "alt": "AI-generated staging image of Sea Salt Caramel Fudge",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/cranberry-bog-frogs-ai.jpg",
+      "alt": "AI-generated staging image of Cranberry Bog Frogs",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/salt-water-taffy-ai.jpg",
+      "alt": "AI-generated staging image of Salt Water Taffy",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/sugar-free-salt-water-taffy-ai.jpg",
+      "alt": "AI-generated staging image of Sugar-Free Salt Water Taffy",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/sugar-free-mix-ai.jpg",
+      "alt": "AI-generated staging image of Sugar-Free Mix",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/small-sugar-free-bag-ai.jpg",
+      "alt": "AI-generated staging image of Small Sugar-Free Bag",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/jordan-almonds-small-ai.jpg",
+      "alt": "AI-generated staging image of Jordan Almonds — Small",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/jordan-almonds-medium-ai.jpg",
+      "alt": "AI-generated staging image of Jordan Almonds — Medium",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/jordan-almonds-large-ai.jpg",
+      "alt": "AI-generated staging image of Jordan Almonds — Large",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/peelerz-ai.jpg",
+      "alt": "AI-generated staging image of Peelerz",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/swedish-fish-ai.jpg",
+      "alt": "AI-generated staging image of Swedish Fish",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/gummy-bears-ai.jpg",
+      "alt": "AI-generated staging image of Gummy Bears",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/black-licorice-ai.jpg",
+      "alt": "AI-generated staging image of Black Licorice",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/sour-flush-candy-ai.jpg",
+      "alt": "AI-generated staging image of Sour Flush Candy",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/flush-candy-ai.jpg",
+      "alt": "AI-generated staging image of Flush Candy",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/charleston-chew-ai.jpg",
+      "alt": "AI-generated staging image of Charleston Chew",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/skybar-ai.jpg",
+      "alt": "AI-generated staging image of Skybar",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/golden-coin-ai.jpg",
+      "alt": "AI-generated staging image of Golden Coin",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/tic-tac-ai.jpg",
+      "alt": "AI-generated staging image of Tic Tac",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/lollipops-ai.jpg",
+      "alt": "AI-generated staging image of Lollipops",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/mini-pop-ai.jpg",
+      "alt": "AI-generated staging image of Mini Pop",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/flower-pop-ai.jpg",
+      "alt": "AI-generated staging image of Flower Pop",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/baklava-ai.jpg",
+      "alt": "AI-generated staging image of Baklava",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/biscoff-cookie-ai.jpg",
+      "alt": "AI-generated staging image of Biscoff Cookie",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/pug-teddy-ai.jpg",
+      "alt": "AI-generated staging image of Pug Teddy",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/blessed-teddy-bear-ai.jpg",
+      "alt": "AI-generated staging image of Blessed Teddy Bear",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/little-brown-teddy-ai.jpg",
+      "alt": "AI-generated staging image of Little Brown Teddy",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/small-gift-basket-ai.jpg",
+      "alt": "AI-generated staging image of Small Gift Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/medium-gift-basket-ai.jpg",
+      "alt": "AI-generated staging image of Medium Gift Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/large-gift-basket-ai.jpg",
+      "alt": "AI-generated staging image of Large Gift Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/extra-large-gift-basket-ai.jpg",
+      "alt": "AI-generated staging image of Extra Large Gift Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/large-birthday-basket-ai.jpg",
+      "alt": "AI-generated staging image of Large Birthday Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/large-savory-basket-ai.jpg",
+      "alt": "AI-generated staging image of Large Savory Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/small-sympathy-basket-ai.jpg",
+      "alt": "AI-generated staging image of Small Sympathy Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/medium-sympathy-basket-ai.jpg",
+      "alt": "AI-generated staging image of Medium Sympathy Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/large-sympathy-basket-ai.jpg",
+      "alt": "AI-generated staging image of Large Sympathy Basket",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-dark-chocolate-bar-ai.jpg",
+      "alt": "AI-generated staging image of Phillips Chocolate Dark Chocolate Bar",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-milk-chocolate-bar-ai.jpg",
+      "alt": "AI-generated staging image of Phillips Chocolate Milk Chocolate Bar",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-smores-bar-ai.jpg",
+      "alt": "AI-generated staging image of Phillips Chocolate S'mores Bar",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-princess-assortment-box-ai.jpg",
+      "alt": "AI-generated staging image of Phillips Chocolate Princess Assortment Box",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/milk-chocolate-covered-raisins-ai.jpg",
+      "alt": "AI-generated staging image of Milk Chocolate Covered Raisins",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/chocolate-covered-gummy-bears-ai.jpg",
+      "alt": "AI-generated staging image of Chocolate Covered Gummy Bears",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-turtle-fudge-ai.jpg",
+      "alt": "AI-generated staging image of Phillips Chocolate Covered Turtle Fudge",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-turtles-9pc-assortment-box-ai.jpg",
+      "alt": "AI-generated staging image of Turtles 9pc Assortment Box",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-peanut-butter-bark-ai.jpg",
+      "alt": "AI-generated staging image of Peanut Butter Bark",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/phillips-sea-salt-caramels-9pc-ai.jpg",
+      "alt": "AI-generated staging image of Sea Salt Chocolate Caramels (9 pc)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/swedish-candy-bag-ai.jpg",
+      "alt": "AI-generated staging image of Swedish Candy Bag",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/mini-pancakes-10pc-ai.jpg",
+      "alt": "AI-generated staging image of 10 Pieces Mini Pancakes",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/teddy-bear-ai.jpg",
+      "alt": "AI-generated staging image of Teddy Bear",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/dr-seuss-book-ai.jpg",
+      "alt": "AI-generated staging image of Dr. Seuss Book",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/greeting-cards-ai.jpg",
+      "alt": "AI-generated staging image of Greeting Cards",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/baby-ceramic-bowl-blue-ai.jpg",
+      "alt": "AI-generated staging image of Baby Ceramic Bowl (blue)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/baby-ceramic-shoes-pink-ai.jpg",
+      "alt": "AI-generated staging image of Baby Ceramic Shoes (pink)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/baby-ceramic-shoes-blue-ai.jpg",
+      "alt": "AI-generated staging image of Baby Ceramic Shoes (blue)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/baby-ceramic-block-pink-ai.jpg",
+      "alt": "AI-generated staging image of Baby Ceramic \"BABY\" Block (pink)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/baby-ceramic-block-blue-ai.jpg",
+      "alt": "AI-generated staging image of Baby Ceramic \"BABY\" Block (blue)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
+    },
+    {
+      "file": "products/baby-ceramic-bowl-pink-ai.jpg",
+      "alt": "AI-generated staging image of Baby Ceramic Bowl (pink)",
+      "credit": "AI-generated with GPT Image 2 — staging only; verify against actual item before launch",
+      "approvedForLaunch": false
     }
   ],
   "products": [
@@ -230,6 +728,7 @@
       "priceSource": "Owner product card 2026-09-26 (K01)",
       "shortDescription": "Rich, smooth dark chocolate bar made with high-quality cocoa.",
       "images": [
+        "products/phillips-dark-chocolate-bar-ai.jpg",
         "products/phillips-dark-chocolate-bar.jpg"
       ],
       "premium": true,
@@ -259,6 +758,7 @@
       "priceSource": "Owner product card 2026-09-26 (K02)",
       "shortDescription": "Creamy milk chocolate bar with a smooth and rich texture.",
       "images": [
+        "products/phillips-milk-chocolate-bar-ai.jpg",
         "products/phillips-milk-chocolate-bar.jpg"
       ],
       "premium": true,
@@ -287,6 +787,7 @@
       "priceSource": "Owner product card 2026-09-26 (K03)",
       "shortDescription": "A rich chocolate bar layered with gooey marshmallow cream and crunchy graham cracker pieces.",
       "images": [
+        "products/phillips-smores-bar-ai.jpg",
         "products/phillips-smores-bar.jpg"
       ],
       "premium": true,
@@ -318,6 +819,7 @@
       "shortDescription": "A beautiful assortment of handmade Phillips chocolates.",
       "description": "A beautiful assortment of handmade Phillips chocolates featuring a delicious variety of creamy milk chocolate, rich dark chocolate, caramel-filled favorites, nutty turtles, and assorted chocolate-covered confections. Each piece offers its own irresistible combination of smooth, rich, and crunchy flavors perfect for gifting or enjoying yourself.",
       "images": [
+        "products/phillips-princess-assortment-box-ai.jpg",
         "products/phillips-princess-assortment-box.jpg"
       ],
       "premium": true,
@@ -356,6 +858,7 @@
       "priceSource": "Owner product card 2026-09-26 (K05)",
       "shortDescription": "Raisins generously coated in smooth, creamy milk chocolate for the perfect balance of rich sweetness and fruity goodness.",
       "images": [
+        "products/milk-chocolate-covered-raisins-ai.jpg",
         "products/milk-chocolate-covered-raisins.jpg"
       ],
       "basketEligible": true,
@@ -381,6 +884,7 @@
       "priceSource": "Owner product card 2026-09-26 (K06)",
       "shortDescription": "A bold twist on a classic favorite—these Chocolate Covered Gummy Bears take soft, fruity gummies and wrap them in a smooth, velvety layer of rich chocolate for the ultimate indulgence.",
       "images": [
+        "products/chocolate-covered-gummy-bears-ai.jpg",
         "products/chocolate-covered-gummy-bears.jpg"
       ],
       "basketEligible": true,
@@ -406,6 +910,7 @@
       "shortDescription": "Rich, creamy fudge packed with the irresistible flavors of a classic turtle.",
       "description": "Rich, creamy fudge packed with the irresistible flavors of a classic turtle—smooth chocolate, buttery caramel, and crunchy pecans, all finished with a decadent chocolate coating. A rich and indulgent treat in every bite.",
       "images": [
+        "products/phillips-turtle-fudge-ai.jpg",
         "products/phillips-turtle-fudge.jpg"
       ],
       "premium": true,
@@ -434,6 +939,7 @@
       "shortDescription": "A decadent assortment of 9 classic chocolate turtles.",
       "description": "A decadent assortment of 9 classic chocolate turtles, featuring three irresistible varieties: 3 milk chocolate cashew turtles, 3 dark chocolate almond turtles, and 3 milk chocolate pecan turtles. Each one combines buttery caramel, crunchy roasted nuts, and smooth, luxurious chocolate for the perfect balance of rich, nutty, and melt-in-your-mouth goodness. Beautifully packaged and ready to gift—or enjoy all to yourself.",
       "images": [
+        "products/phillips-turtles-9pc-assortment-box-ai.jpg",
         "products/phillips-turtles-9pc-assortment-box.jpg"
       ],
       "premium": true,
@@ -464,6 +970,7 @@
       "shortDescription": "Indulge in the perfect balance of sweet, salty, and crunchy with Phillips Peanut Butter Bark.",
       "description": "Indulge in the perfect balance of sweet, salty, and crunchy with Phillips Peanut Butter Bark. Each pack includes two generous pieces of milk chocolate bark layered with a rich, crunchy chocolate peanut butter filling.",
       "images": [
+        "products/phillips-peanut-butter-bark-ai.jpg",
         "products/phillips-peanut-butter-bark.jpg"
       ],
       "premium": true,
@@ -491,6 +998,7 @@
       "shortDescription": "A delicious assortment of 9 handcrafted sea salt caramels.",
       "description": "A delicious assortment of 9 handcrafted sea salt caramels—featuring 5 pieces of smooth milk chocolate and 4 pieces of rich dark chocolate. Each buttery, melt-in-your-mouth caramel is coated in luxurious chocolate and finished with a delicate sprinkle of sea salt. Beautifully presented in a classic window box, it's an irresistible treat for gifting or indulging yourself.",
       "images": [
+        "products/phillips-sea-salt-caramels-9pc-ai.jpg",
         "products/phillips-sea-salt-caramels-9pc.jpg"
       ],
       "premium": true,
@@ -519,6 +1027,7 @@
       "shortDescription": "Swedish Candy Mix with Bubs (8 oz).",
       "description": "This mix is packed with soft, pillowy gummies and foamy, melt-in-your mouth bites, delivering the perfect balance of sweet, tangy, and fruity flavors in every handful.",
       "images": [
+        "products/swedish-candy-bag-ai.jpg",
         "products/swedish-candy-bag.jpg"
       ],
       "basketEligible": true,
@@ -545,6 +1054,7 @@
       "shortDescription": "Fluffy, golden-bite mini pancakes stacked to perfection—10 pieces of pure comfort in every order.",
       "description": "Fluffy, golden-bite mini pancakes stacked to perfection—10 pieces of pure comfort in every order. Each mini pancake is light, soft, and freshly made, then generously topped with a cloud of airy whipped cream. To finish, we drizzle our rich, homemade warm chocolate fudge over the top, melting slightly into every layer for that perfect sweet bite.",
       "images": [
+        "products/mini-pancakes-10pc-ai.jpg",
         "products/mini-pancakes-10pc.jpg"
       ],
       "basketEligible": false,
@@ -565,6 +1075,7 @@
       "priceSource": "Owner product card 2026-09-26 (K13)",
       "shortDescription": "A cute teddy bear gift item that makes a sweet addition to children's gift baskets and themed gifts.",
       "images": [
+        "products/teddy-bear-ai.jpg",
         "products/teddy-bear.jpg"
       ],
       "basketEligible": true,
@@ -586,6 +1097,7 @@
       "priceSource": "Clover inventory export 2026-09-30 (X035); was Owner product card 2026-09-26 (K14)",
       "shortDescription": "A fun Dr. Seuss children's book, perfect for adding a thoughtful and playful touch to a child's gift basket. Selection may vary based on the theme.",
       "images": [
+        "products/dr-seuss-book-ai.jpg",
         "products/dr-seuss-book.jpg"
       ],
       "basketEligible": true,
@@ -609,6 +1121,7 @@
       "priceSource": "Clover inventory export 2026-09-30 (X063); was Owner product card 2026-09-26 (K15)",
       "shortDescription": "A selection of cards available for different occasions and celebrations, perfect for adding a personal message to any gift.",
       "images": [
+        "products/greeting-cards-ai.jpg",
         "products/greeting-cards.jpg"
       ],
       "basketEligible": false,
@@ -630,6 +1143,8 @@
       "shortDescription": "A ceramic baby keepsake bowl with a bow, in pink or blue.",
       "description": "Pink: pink and white gingham bowl with a pink bow. Blue: blue and white gingham bowl with a blue bow. 3.5\"H × 3\" opening. Available empty; filled versions by inquiry.",
       "images": [
+        "products/baby-ceramic-bowl-pink-ai.jpg",
+        "products/baby-ceramic-bowl-blue-ai.jpg",
         "supplied/baby-ceramic-bowl-pink.jpg",
         "supplied/baby-ceramic-bowl-blue.jpg"
       ],
@@ -637,12 +1152,12 @@
         {
           "key": "pink",
           "label": "Pink",
-          "image": "supplied/baby-ceramic-bowl-pink.jpg"
+          "image": "products/baby-ceramic-bowl-pink-ai.jpg"
         },
         {
           "key": "blue",
           "label": "Blue",
-          "image": "supplied/baby-ceramic-bowl-blue.jpg"
+          "image": "products/baby-ceramic-bowl-blue-ai.jpg"
         }
       ],
       "sources": [
@@ -661,6 +1176,8 @@
       "shortDescription": "A ceramic pair of baby shoes with a bow and ruffle rim, in pink or blue.",
       "description": "3\"H × 5.75\"W × 5\"D; opening 2.5\"H × 5\"W × 3.25\"D. Pink: white shoes with a pink bow and ruffle rim. Available empty; filled versions by inquiry.",
       "images": [
+        "products/baby-ceramic-shoes-blue-ai.jpg",
+        "products/baby-ceramic-shoes-pink-ai.jpg",
         "supplied/baby-ceramic-shoes-pink.jpg",
         "supplied/baby-ceramic-shoes-blue.jpg"
       ],
@@ -668,12 +1185,12 @@
         {
           "key": "pink",
           "label": "Pink",
-          "image": "supplied/baby-ceramic-shoes-pink.jpg"
+          "image": "products/baby-ceramic-shoes-pink-ai.jpg"
         },
         {
           "key": "blue",
           "label": "Blue",
-          "image": "supplied/baby-ceramic-shoes-blue.jpg"
+          "image": "products/baby-ceramic-shoes-blue-ai.jpg"
         }
       ],
       "sources": [
@@ -692,6 +1209,8 @@
       "shortDescription": "A ceramic gingham block that spells \"BABY\", in pink or blue.",
       "description": "4\"H × 3.5\"W × 3\" opening. Available empty; filled versions by inquiry.",
       "images": [
+        "products/baby-ceramic-block-blue-ai.jpg",
+        "products/baby-ceramic-block-pink-ai.jpg",
         "supplied/baby-ceramic-block-pink.jpg",
         "supplied/baby-ceramic-block-blue.jpg"
       ],
@@ -699,12 +1218,12 @@
         {
           "key": "pink",
           "label": "Pink",
-          "image": "supplied/baby-ceramic-block-pink.jpg"
+          "image": "products/baby-ceramic-block-pink-ai.jpg"
         },
         {
           "key": "blue",
           "label": "Blue",
-          "image": "supplied/baby-ceramic-block-blue.jpg"
+          "image": "products/baby-ceramic-block-blue-ai.jpg"
         }
       ],
       "sources": [
@@ -726,7 +1245,10 @@
         "sweet_savory",
         "sympathy"
       ],
-      "allergen": "Chocolate Sea Salt caramel"
+      "allergen": "Chocolate Sea Salt caramel",
+      "images": [
+        "products/cape-cod-chocolate-sea-salt-caramel-fudge-ai.jpg"
+      ]
     },
     {
       "slug": "cape-cod-penuche-fudge",
@@ -742,7 +1264,10 @@
         "sweet_savory",
         "sympathy"
       ],
-      "allergen": "Penuche not nuts"
+      "allergen": "Penuche not nuts",
+      "images": [
+        "products/cape-cod-penuche-fudge-ai.jpg"
+      ]
     },
     {
       "slug": "cape-cod-chocolate-fudge",
@@ -758,7 +1283,10 @@
         "sweet_savory",
         "sympathy"
       ],
-      "allergen": "Chocolate"
+      "allergen": "Chocolate",
+      "images": [
+        "products/cape-cod-chocolate-fudge-ai.jpg"
+      ]
     },
     {
       "slug": "cape-cod-pistachio-fudge",
@@ -774,7 +1302,10 @@
         "sweet_savory",
         "sympathy"
       ],
-      "allergen": "Pistachio"
+      "allergen": "Pistachio",
+      "images": [
+        "products/cape-cod-pistachio-fudge-ai.jpg"
+      ]
     },
     {
       "slug": "phillips-turtles-bars",
@@ -788,6 +1319,9 @@
       "sources": [
         "X013",
         "P09"
+      ],
+      "images": [
+        "products/phillips-turtles-bars-ai.jpg"
       ]
     },
     {
@@ -801,6 +1335,9 @@
       "premium": true,
       "sources": [
         "X016"
+      ],
+      "images": [
+        "products/phillips-hash-bar-ai.jpg"
       ]
     },
     {
@@ -815,6 +1352,9 @@
       "sources": [
         "X054",
         "P18"
+      ],
+      "images": [
+        "products/phillips-chocolate-pretzels-2pc-ai.jpg"
       ]
     },
     {
@@ -829,6 +1369,9 @@
       "sources": [
         "X076",
         "P17"
+      ],
+      "images": [
+        "products/phillips-chocolate-pretzels-ai.jpg"
       ]
     },
     {
@@ -842,6 +1385,9 @@
       "premium": true,
       "sources": [
         "X057"
+      ],
+      "images": [
+        "products/phillips-sugar-free-theatre-box-ai.jpg"
       ]
     },
     {
@@ -856,6 +1402,9 @@
       "sources": [
         "X064",
         "P11"
+      ],
+      "images": [
+        "products/phillips-vegan-bark-ai.jpg"
       ]
     },
     {
@@ -870,6 +1419,9 @@
       "sources": [
         "X096",
         "P16"
+      ],
+      "images": [
+        "products/phillips-chocolate-covered-cherries-ai.jpg"
       ]
     },
     {
@@ -881,6 +1433,9 @@
       "cloverId": "2HMMNG5C3VN2T",
       "sources": [
         "X059"
+      ],
+      "images": [
+        "products/dark-chocolate-sea-salt-ai.jpg"
       ]
     },
     {
@@ -892,6 +1447,9 @@
       "cloverId": "C4VT6J0MSJ690",
       "sources": [
         "X045"
+      ],
+      "images": [
+        "products/chocolate-covered-almonds-ai.jpg"
       ]
     },
     {
@@ -905,6 +1463,9 @@
         "X103",
         "P05",
         "D11"
+      ],
+      "images": [
+        "products/dark-chocolate-covered-almonds-ai.jpg"
       ]
     },
     {
@@ -916,6 +1477,9 @@
       "cloverId": "A3BGAG1JX88AC",
       "sources": [
         "X101"
+      ],
+      "images": [
+        "products/chocolate-covered-cashews-ai.jpg"
       ]
     },
     {
@@ -927,6 +1491,9 @@
       "cloverId": "5VZ80A52CC7GR",
       "sources": [
         "X102"
+      ],
+      "images": [
+        "products/chocolate-covered-blueberries-ai.jpg"
       ]
     },
     {
@@ -938,6 +1505,9 @@
       "cloverId": "VA9RCM3RS3K26",
       "sources": [
         "X104"
+      ],
+      "images": [
+        "products/dark-chocolate-covered-coffee-beans-ai.jpg"
       ]
     },
     {
@@ -949,6 +1519,9 @@
       "cloverId": "J8H3RS9GHFCAA",
       "sources": [
         "X075"
+      ],
+      "images": [
+        "products/chocolate-almond-clusters-ai.jpg"
       ]
     },
     {
@@ -960,6 +1533,9 @@
       "cloverId": "66B5GTPZ2X51J",
       "sources": [
         "X098"
+      ],
+      "images": [
+        "products/dark-chocolate-sea-salt-caramel-ai.jpg"
       ]
     },
     {
@@ -971,6 +1547,9 @@
       "cloverId": "YFWW0R3AQ188W",
       "sources": [
         "X099"
+      ],
+      "images": [
+        "products/milk-chocolate-sea-salt-caramel-ai.jpg"
       ]
     },
     {
@@ -982,6 +1561,9 @@
       "cloverId": "MNCMK522CQ0KM",
       "sources": [
         "X105"
+      ],
+      "images": [
+        "products/molasses-chips-ai.jpg"
       ]
     },
     {
@@ -993,6 +1575,9 @@
       "cloverId": "QA56DF281RC5E",
       "sources": [
         "X079"
+      ],
+      "images": [
+        "products/chocolate-rose-ai.jpg"
       ]
     },
     {
@@ -1004,6 +1589,9 @@
       "cloverId": "XV5JH5JRTQZQJ",
       "sources": [
         "X086"
+      ],
+      "images": [
+        "products/mini-dubai-chocolate-bar-ai.jpg"
       ]
     },
     {
@@ -1015,6 +1603,9 @@
       "cloverId": "9RR55VQ1G5QX0",
       "sources": [
         "X080"
+      ],
+      "images": [
+        "products/swiss-chocolate-bar-ai.jpg"
       ]
     },
     {
@@ -1027,6 +1618,9 @@
       "cloverId": "597721W12N1GJ",
       "sources": [
         "X097"
+      ],
+      "images": [
+        "products/toblerone-ai.jpg"
       ]
     },
     {
@@ -1038,6 +1632,9 @@
       "cloverId": "8C3707GMTVYEY",
       "sources": [
         "X052"
+      ],
+      "images": [
+        "products/cranberry-chocolate-bar-ai.jpg"
       ]
     },
     {
@@ -1049,6 +1646,9 @@
       "cloverId": "WMDPKYW91TAQP",
       "sources": [
         "X074"
+      ],
+      "images": [
+        "products/sea-salt-caramel-fudge-ai.jpg"
       ]
     },
     {
@@ -1060,6 +1660,9 @@
       "cloverId": "YX99FBS491EKW",
       "sources": [
         "X051"
+      ],
+      "images": [
+        "products/cranberry-bog-frogs-ai.jpg"
       ]
     },
     {
@@ -1071,6 +1674,9 @@
       "cloverId": "KWB91FQK67RT4",
       "sources": [
         "X050"
+      ],
+      "images": [
+        "products/salt-water-taffy-ai.jpg"
       ]
     },
     {
@@ -1082,6 +1688,9 @@
       "cloverId": "NWDNF0WE46FFR",
       "sources": [
         "X081"
+      ],
+      "images": [
+        "products/sugar-free-salt-water-taffy-ai.jpg"
       ]
     },
     {
@@ -1093,6 +1702,9 @@
       "cloverId": "80CV69WNZ4NQE",
       "sources": [
         "X084"
+      ],
+      "images": [
+        "products/sugar-free-mix-ai.jpg"
       ]
     },
     {
@@ -1104,6 +1716,9 @@
       "cloverId": "V4MG3R2H5VEW4",
       "sources": [
         "X085"
+      ],
+      "images": [
+        "products/small-sugar-free-bag-ai.jpg"
       ]
     },
     {
@@ -1115,6 +1730,9 @@
       "cloverId": "QVVC4416K76M6",
       "sources": [
         "X047"
+      ],
+      "images": [
+        "products/jordan-almonds-small-ai.jpg"
       ]
     },
     {
@@ -1126,6 +1744,9 @@
       "cloverId": "NC5S0S1VV4QJA",
       "sources": [
         "X048"
+      ],
+      "images": [
+        "products/jordan-almonds-medium-ai.jpg"
       ]
     },
     {
@@ -1137,6 +1758,9 @@
       "cloverId": "4DV6K702AC51Y",
       "sources": [
         "X049"
+      ],
+      "images": [
+        "products/jordan-almonds-large-ai.jpg"
       ]
     },
     {
@@ -1148,6 +1772,9 @@
       "cloverId": "05X6YE7NNK3QM",
       "sources": [
         "X056"
+      ],
+      "images": [
+        "products/peelerz-ai.jpg"
       ]
     },
     {
@@ -1159,6 +1786,9 @@
       "cloverId": "GSGZ348QSGQZE",
       "sources": [
         "X031"
+      ],
+      "images": [
+        "products/swedish-fish-ai.jpg"
       ]
     },
     {
@@ -1170,6 +1800,9 @@
       "cloverId": "HPYFV4SRKFJ4M",
       "sources": [
         "X032"
+      ],
+      "images": [
+        "products/gummy-bears-ai.jpg"
       ]
     },
     {
@@ -1181,6 +1814,9 @@
       "cloverId": "MKRYPXPP1WH4W",
       "sources": [
         "X100"
+      ],
+      "images": [
+        "products/black-licorice-ai.jpg"
       ]
     },
     {
@@ -1192,6 +1828,9 @@
       "cloverId": "58Z5RDSPWWTXM",
       "sources": [
         "X078"
+      ],
+      "images": [
+        "products/sour-flush-candy-ai.jpg"
       ]
     },
     {
@@ -1203,6 +1842,9 @@
       "cloverId": "VHS9QS45YQJZT",
       "sources": [
         "X082"
+      ],
+      "images": [
+        "products/flush-candy-ai.jpg"
       ]
     },
     {
@@ -1215,6 +1857,9 @@
       "cloverId": "FH0EPTXVE9CRG",
       "sources": [
         "X036"
+      ],
+      "images": [
+        "products/charleston-chew-ai.jpg"
       ]
     },
     {
@@ -1227,6 +1872,9 @@
       "cloverId": "ZS3QG9E9GMPPR",
       "sources": [
         "X037"
+      ],
+      "images": [
+        "products/skybar-ai.jpg"
       ]
     },
     {
@@ -1238,6 +1886,9 @@
       "cloverId": "MR4R4CR845W4W",
       "sources": [
         "X010"
+      ],
+      "images": [
+        "products/golden-coin-ai.jpg"
       ]
     },
     {
@@ -1250,6 +1901,9 @@
       "cloverId": "X1SFEMWXWX3AJ",
       "sources": [
         "X029"
+      ],
+      "images": [
+        "products/tic-tac-ai.jpg"
       ]
     },
     {
@@ -1261,6 +1915,9 @@
       "cloverId": "DTH7MVVAH5P0A",
       "sources": [
         "X038"
+      ],
+      "images": [
+        "products/lollipops-ai.jpg"
       ]
     },
     {
@@ -1272,6 +1929,9 @@
       "cloverId": "RZH4SR4QFA44R",
       "sources": [
         "X055"
+      ],
+      "images": [
+        "products/mini-pop-ai.jpg"
       ]
     },
     {
@@ -1283,6 +1943,9 @@
       "cloverId": "QM9A3Y90543FT",
       "sources": [
         "X087"
+      ],
+      "images": [
+        "products/flower-pop-ai.jpg"
       ]
     },
     {
@@ -1295,6 +1958,9 @@
       "perishable": true,
       "sources": [
         "X009"
+      ],
+      "images": [
+        "products/baklava-ai.jpg"
       ]
     },
     {
@@ -1307,6 +1973,9 @@
       "perishable": true,
       "sources": [
         "X068"
+      ],
+      "images": [
+        "products/biscoff-cookie-ai.jpg"
       ]
     },
     {
@@ -1318,6 +1987,9 @@
       "cloverId": "4YS18CCZ8FACM",
       "sources": [
         "X065"
+      ],
+      "images": [
+        "products/pug-teddy-ai.jpg"
       ]
     },
     {
@@ -1329,6 +2001,9 @@
       "cloverId": "VAB88VFQNCMJT",
       "sources": [
         "X066"
+      ],
+      "images": [
+        "products/blessed-teddy-bear-ai.jpg"
       ]
     },
     {
@@ -1340,6 +2015,9 @@
       "cloverId": "FG1K4PP017F44",
       "sources": [
         "X067"
+      ],
+      "images": [
+        "products/little-brown-teddy-ai.jpg"
       ]
     },
     {
@@ -1355,6 +2033,9 @@
       "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
       "sources": [
         "C17"
+      ],
+      "images": [
+        "products/small-gift-basket-ai.jpg"
       ]
     },
     {
@@ -1370,6 +2051,9 @@
       "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
       "sources": [
         "C13"
+      ],
+      "images": [
+        "products/medium-gift-basket-ai.jpg"
       ]
     },
     {
@@ -1385,6 +2069,9 @@
       "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
       "sources": [
         "C09"
+      ],
+      "images": [
+        "products/large-gift-basket-ai.jpg"
       ]
     },
     {
@@ -1400,6 +2087,9 @@
       "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
       "sources": [
         "C07"
+      ],
+      "images": [
+        "products/extra-large-gift-basket-ai.jpg"
       ]
     },
     {
@@ -1415,6 +2105,9 @@
       "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
       "sources": [
         "C08"
+      ],
+      "images": [
+        "products/large-birthday-basket-ai.jpg"
       ]
     },
     {
@@ -1430,6 +2123,9 @@
       "description": "Contents vary with availability, so ask us what is in the baskets right now. Assembled by hand in our Plymouth shop; the price includes the basket and presentation.",
       "sources": [
         "C10"
+      ],
+      "images": [
+        "products/large-savory-basket-ai.jpg"
       ]
     },
     {
@@ -1446,6 +2142,9 @@
       "perishable": true,
       "sources": [
         "C19"
+      ],
+      "images": [
+        "products/small-sympathy-basket-ai.jpg"
       ]
     },
     {
@@ -1462,6 +2161,9 @@
       "perishable": true,
       "sources": [
         "C15"
+      ],
+      "images": [
+        "products/medium-sympathy-basket-ai.jpg"
       ]
     },
     {
@@ -1478,6 +2180,9 @@
       "perishable": true,
       "sources": [
         "C12"
+      ],
+      "images": [
+        "products/large-sympathy-basket-ai.jpg"
       ]
     }
   ],

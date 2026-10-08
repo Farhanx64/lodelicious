@@ -1,11 +1,11 @@
 import type { Payload } from "payload";
 
-import type { Category, Media, Product } from "@/payload-types";
+import type { Category, Product } from "@/payload-types";
 
 import { getGiftSettings } from "../gifts/load";
 import type { BuilderProduct, GiftSettings } from "../gifts/types";
 import { applyInventoryView, type InventoryConfig } from "../inventory/view";
-import { isImagePublishable } from "../media";
+import { publishableProductImages } from "../media";
 import { previewStockEnabled } from "./preview";
 import { toBuilderProducts } from "./product";
 
@@ -69,8 +69,7 @@ export async function loadBuilderCatalogFrom(payload: Payload, opts: BuilderStoc
 
   for (const doc of seen.products) {
     const category = typeof doc.category === "object" ? (doc.category as Category) : null;
-    const media = doc.images?.[0]?.image;
-    const image = typeof media === "object" && isImagePublishable(media as Media) ? (media as Media) : null;
+    const image = publishableProductImages(doc.images)[0] ?? null;
     for (const built of toBuilderProducts(doc)) {
       const unit = seen.staleUnits.has(built.id) ? { ...built, stock: { state: "stale" as const } } : built;
       const shown = previewStock && unit.stock.state !== "known" ? { ...unit, stock: { state: "known" as const, quantity: 99 } } : unit;

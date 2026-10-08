@@ -1,7 +1,8 @@
 import Link from "next/link";
 
-import type { Media, Product } from "@/payload-types";
+import type { Product } from "@/payload-types";
 import { PRICE_ON_REQUEST, priceLabel, productAvailability } from "@/src/lib/catalog/product";
+import { publishableProductImages } from "@/src/lib/media";
 
 import { ProductImage } from "./ProductImage";
 
@@ -18,7 +19,7 @@ export function AvailabilityNote({ product }: { product: Product }) {
  * names the product (A18).
  */
 export function ProductCard({ product }: { product: Product }) {
-  const image = product.images?.[0]?.image as Media | number | undefined;
+  const image = publishableProductImages(product.images)[0];
   const price = priceLabel(product);
   const isPrice = product.priceApproved && price !== PRICE_ON_REQUEST;
   return (
