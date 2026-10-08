@@ -67,6 +67,7 @@ describe("catalog seed against the source evidence", () => {
   const sourceRows = new Map(readSourceRows().map((r) => [r.ref, r]));
   const chart = new Map(read("basket-chart.csv").map((r) => [r.code, r]));
   const baskets = seed.products.filter((p) => p.category === GIFT_BASKET_CATEGORY);
+  const media = new Map(seed.media.map((m) => [m.file, m]));
 
   it("links every product only to source records that exist (a typo would silently link nothing)", () => {
     for (const p of seed.products) {
@@ -100,7 +101,10 @@ describe("catalog seed against the source evidence", () => {
       expect(p.channel, p.slug).toBe("inquiry_only");
       expect(p.priceSource, p.slug).toContain(`2026-09-22 (${ref})`);
       expect(p.basketEligible ?? false, p.slug).toBe(false);
-      expect(p.images ?? [], p.slug).toEqual([]);
+      // Only AI-generated stand-in photos (D46), never approved for launch, so the live site shows none.
+      for (const file of p.images ?? []) {
+        expect(media.get(file), `${p.slug}: ${file}`).toMatchObject({ approvedForLaunch: false, credit: expect.stringMatching(/^AI-generated/) });
+      }
       expect(p.allergen, p.slug).toBeUndefined();
     }
   });

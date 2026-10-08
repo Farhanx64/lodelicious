@@ -960,6 +960,20 @@ change data paths), and two display components. The drift check reports no chang
   America/New_York.
 - **Policies:** one tab per policy. **Gift builder rules:** *Sizes & item counts* and *Special presentations* tabs.
 
+## D46 — AI-generated stand-in product photos, agreed by Lody (2026-10-08)
+
+PR #12 added AI-generated photos (GPT Image 2) for the catalog products, including the curated gift
+baskets. **Lody agreed to these temporary photos.** They are seeded as media with
+`approvedForLaunch: false` and a credit that starts with "AI-generated … staging only", so staging shows
+them and production falls back to approved photos ("Photo coming soon" where there is none).
+
+- **Tests changed to match:** the seed tests used to require no photos on the curated baskets and the new
+  Clover products (D38). They now require that any photo there is one of these stand-ins and is not
+  approved for launch (`tests/source-data.test.ts`, `tests/int/catalog.test.ts`, `tests/int/gift-baskets.test.ts`).
+- **Showing them on the live site** needs each photo ticked Approved for launch (Website → Photos). Ask Lody
+  whether she wants that, or wants them on staging only until her own photos arrive. Never present one as a
+  photo of the actual product without her saying so.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,
