@@ -69,7 +69,7 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 - **Staging:** with `APP_ENV=staging` and `PREVIEW_ASSUME_STOCK=true`, checkout and basket
   reservations run end to end with a **test payment**, and no money moves.
 
-**Waiting on Lody** (details in "Unresolved inputs" below and `docs/clover-sync-needs.md`):
+**Waiting on Lody** (details in "Unresolved inputs" below and `docs/clover-sync-needs.md`; the same questions as a Word checklist to send her: `docs/questions-for-lody.docx`):
 1. **Clover stock:** stock counts; split the Dark/Milk bars and the two Princess box styles; add the
    ceramics, bassinet and fudges to Clover; say which teddy the card shows.
 2. **Clover access:** an inventory-only API token for the sync (milestone 5). Later, the ecommerce
