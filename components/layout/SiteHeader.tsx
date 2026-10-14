@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Bow } from "@/components/brand/Bow";
 import { Lockup } from "@/components/brand/Lockup";
 
+import { MenuDisclosure } from "./MenuDisclosure";
+
 // Order and wording from Lody's mood board: four links, the bow, two links, then the icons.
 export const NAV_LEFT = [
   { href: "/shop", label: "Shop" },
@@ -143,7 +145,7 @@ export function SiteHeader({
 
           {/* Phones and tablets: the same links behind a Menu disclosure; icons stay visible. */}
           <div className="mx-auto flex w-[min(100%-2rem,72rem)] flex-wrap items-center justify-between gap-x-3 lg:hidden">
-            <details className="group">
+            <MenuDisclosure className="group">
               <summary className="caps flex min-h-11 cursor-pointer list-none items-center gap-2 text-[0.8rem] text-nav [&::-webkit-details-marker]:hidden">
                 <svg {...ICON_PROPS}>
                   <path d="M4 7h16M4 12h16M4 17h16" />
@@ -161,7 +163,7 @@ export function SiteHeader({
                   ))}
                 </ul>
               </nav>
-            </details>
+            </MenuDisclosure>
             {icons}
           </div>
         </div>

@@ -89,7 +89,8 @@ describe("bag and order (D35)", () => {
     const order = await findByToken(payload, "orders", first.number, first.token);
     expect(order).toMatchObject({
       paymentStatus: "paid",
-      fulfillmentStatus: "preparing",
+      // Notes from the customer put a paid order in staff review before packing (A12).
+      fulfillmentStatus: "staff_review",
       testMode: true,
       customer: CONTACT,
       pickup: { date: "2026-10-06", start: "11:00", end: "12:00", label: "Tuesday, October 6, 11:00 AM–12:00 PM" },

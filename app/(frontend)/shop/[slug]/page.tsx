@@ -2,15 +2,16 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AvailabilityNote, formatPrice } from "@/components/catalog/ProductCard";
+import { AvailabilityNote } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { AddToBag, type BagOption } from "@/components/checkout/AddToBag";
+import { primaryButton } from "@/components/checkout/styles";
 import type { Category, Media } from "@/payload-types";
 import { getProduct } from "@/src/lib/catalog/queries";
 import { previewStockEnabled } from "@/src/lib/catalog/preview";
-import { sellableUnits } from "@/src/lib/catalog/product";
+import { PRICE_ON_REQUEST, priceLabel, sellableUnits, unitPriceLabel } from "@/src/lib/catalog/product";
 import { priceCart } from "@/src/lib/checkout/cart";
-import { formatCents } from "@/src/lib/money";
+import { contactHref, topicForProduct } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
 
@@ -40,7 +41,7 @@ export default async function ProductPage({ params }: Props) {
     [product],
     { previewStock: previewStockEnabled(), taxClasses: [], defaultTaxClassId: null },
   ).payable.map((l) => ({ unitId: l.unitId, label: l.optionLabel, priceCents: l.unitPriceCents }));
-  const price = formatPrice(product);
+  const price = priceLabel(product);
   const dietary = [
     product.nutFree !== "unknown" ? NUT_FREE[product.nutFree] : null,
     product.vegan === "yes" ? "Vegan" : product.vegan === "no" ? "Not vegan" : null,
@@ -81,7 +82,7 @@ export default async function ProductPage({ params }: Props) {
           <h1 className="mb-2 text-[clamp(2rem,4vw,3rem)]">{product.title}</h1>
           {product.sizeLabel && <p className="mb-3 text-ink-soft">{product.sizeLabel}</p>}
           <div className="mb-4 flex flex-wrap items-baseline gap-4">
-            {price ? <p className="text-2xl font-semibold">{price}</p> : <p>Price on request</p>}
+            {product.priceApproved && price !== PRICE_ON_REQUEST ? <p className="text-2xl font-semibold">{price}</p> : <p>{price}</p>}
             <AvailabilityNote product={product} />
           </div>
 
@@ -100,7 +101,7 @@ export default async function ProductPage({ params }: Props) {
                   <li key={u.id} className="flex flex-wrap justify-between gap-2 px-4 py-3">
                     <span>{u.variantKey ? u.name.replace(`${product.title} — `, "") : u.name}</span>
                     <span className="text-ink-soft">
-                      {u.priceCents !== null ? formatCents(u.priceCents) : ""}
+                      {unitPriceLabel(product, u)}
                       {u.availability.label ? ` · ${u.availability.label}` : ""}
                     </span>
                   </li>
@@ -112,10 +113,20 @@ export default async function ProductPage({ params }: Props) {
           {bagOptions.length > 0 ? (
             <AddToBag options={bagOptions} />
           ) : (
-            <p className="mb-8 border-l-4 border-gold bg-paper p-4">
-              Not available to order online right now. To order, call <a href={telHref(store.phone)}>{store.phone}</a> or visit us at {store.street},{" "}
-              {store.locality}.
-            </p>
+            <div className="mb-8 border-l-4 border-gold bg-paper p-4">
+              <p>
+                {product.channel === "inquiry_only" ? "Available by inquiry." : "Not available to order online right now."} To order, call{" "}
+                <a href={telHref(store.phone)}>{store.phone}</a> or visit us at {store.street}, {store.locality}.
+              </p>
+              {product.channel === "inquiry_only" && product.slug && (
+                // Inquiry-only products (D37): ask the shop instead of buying online.
+                <p className="mt-3">
+                  <Link href={contactHref({ topic: topicForProduct(category?.slug), item: product.slug })} className={primaryButton}>
+                    Ask about this
+                  </Link>
+                </p>
+              )}
+            </div>
           )}
 
           <section aria-labelledby="allergens" className="border-t border-line pt-6">

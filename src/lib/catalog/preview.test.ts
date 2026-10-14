@@ -12,4 +12,12 @@ describe("previewStockEnabled", () => {
   it("can never apply in production", () => {
     expect(previewStockEnabled({ APP_ENV: "production", PREVIEW_ASSUME_STOCK: "true" })).toBe(false);
   });
+
+  it("applies in local and test too, but never when APP_ENV is unset or mistyped (A09)", () => {
+    expect(previewStockEnabled({ APP_ENV: "local", PREVIEW_ASSUME_STOCK: "true" })).toBe(true);
+    expect(previewStockEnabled({ APP_ENV: "test", PREVIEW_ASSUME_STOCK: "true" })).toBe(true);
+    expect(previewStockEnabled({ PREVIEW_ASSUME_STOCK: "true" })).toBe(false);
+    expect(previewStockEnabled({ APP_ENV: "prod", PREVIEW_ASSUME_STOCK: "true" })).toBe(false);
+    expect(previewStockEnabled({ APP_ENV: "", PREVIEW_ASSUME_STOCK: "true" })).toBe(false);
+  });
 });

@@ -1,8 +1,20 @@
 /**
- * Checkout services (D35, D36): bag storage, order placement and basket reservations. Framework
+ * Checkout services (D35, D36, D40): bag storage, order placement and basket reservations. Framework
  * free (takes the Payload instance, the cart token and "now"), so integration tests drive the
  * exact code the server actions run. Every price, tax, slot and rule is re-read here; nothing
  * from the browser is trusted beyond ids, quantities and contact details.
+ *
+ * Payment and status (D42): a record starts as "awaiting payment" and moves on only when the charge
+ * is paid. Each charge attempt has its own provider idempotency key (record key + attempt number);
+ * a provider error or timeout leaves the payment "unknown" for staff to reconcile and is never
+ * retried automatically, so nobody is charged twice. A shop order with notes, or a reservation with
+ * requests, goes to staff review once paid (A12).
+ *
+ * Stock (D40): placing an order or reserving a basket first holds every component for the customer
+ * (all or nothing, expiring), then creates the record and charges. A paid result turns the holds
+ * into sale movements, each component exactly once; a failed charge or an error releases them. If
+ * the stock can't be taken after a successful payment, the paid record is kept and flagged for
+ * staff, and nobody is charged again.
  */
 import crypto from "node:crypto";
 
@@ -13,11 +25,22 @@ import type { CheckoutSetting, Order, Product, Reservation } from "@/payload-typ
 import { loadBuilderCatalogFrom } from "../catalog/builder-catalog";
 import { previewStockEnabled } from "../catalog/preview";
 import { catalogOf, resolveBasketSize, validateGift } from "../gifts";
-import type { GiftRequest } from "../gifts/types";
-import { getPaymentProvider, orderingState, type OrderingState, type PaymentProvider } from "../payments";
+import type { GiftRequest, Selection } from "../gifts/types";
+import { query } from "../inventory/db";
+import { holdStock, readUnit, releaseHolds } from "../inventory/ledger";
+import { bagOwner, basketOwner, serializePlan } from "../inventory/records";
+import { settleStock } from "../inventory/settle";
+import type { PlanLine } from "../inventory/types";
+import { bomOf, planFor } from "../inventory/units";
+import { applyInventoryView, loadInventoryConfig, type InventoryConfig } from "../inventory/view";
+import { getPaymentProvider, orderingState, type ChargeInput, type ChargeResult, type PaymentProvider } from "../payments";
+import { balanceOf, entryKey, NotEnoughPoints, postEntry, postedPoints } from "../rewards/ledger";
+import { loadRewardsConfig } from "../rewards/members";
+import { pointsFor, rewardsState, totalsWithDiscount, type RewardOption, type RewardsConfig } from "../rewards/program";
 import { priceCart, MAX_LINE_QUANTITY, type CartLine, type PricedCart } from "./cart";
 import { paymentPlan, type DepositRule } from "./deposit";
-import { assemblyInstructions, formatNumber, hashToken, idempotencyKey, type BasketComponent } from "./order";
+import { nextSequence } from "./numbering";
+import { accessUrlToken, assemblyInstructions, formatNumber, hashToken, idempotencyKey, type BasketComponent } from "./order";
 import { formatSlot, isAvailableSlot, type PickupSettings, type Slot } from "./pickup";
 import { computeTax, resolveTaxClass, type TaxClass } from "./tax";
 
@@ -30,14 +53,24 @@ export type CheckoutContext = {
   deposit: DepositRule;
   allowPayInFull: boolean;
   provider: PaymentProvider | null;
+  /** How long to wait for the payment provider before treating the result as unknown. */
+  chargeTimeoutMs: number;
+  /** Holds and stock freshness (Settings → Inventory), plus the staging-only "assume stock" aid. */
+  inventory: InventoryConfig & { assumeUnknown: boolean };
+  /** The rewards program (D45): members earn and spend points only while it is active. */
+  rewards: { config: RewardsConfig; active: boolean };
 };
 
 const relId = (v: unknown): string | null => (v === null || v === undefined ? null : typeof v === "object" ? String((v as { id: unknown }).id) : String(v));
 
+const SOLD_OUT = "Some items in your bag aren't available any more. Please review your bag.";
+
 export async function loadCheckoutContext(payload: Payload, env: Record<string, string | undefined> = process.env): Promise<CheckoutContext> {
-  const [settings, classes] = await Promise.all([
+  const [settings, classes, inventory, rewards] = await Promise.all([
     payload.findGlobal({ slug: "checkout-settings", depth: 0, overrideAccess: true }) as Promise<CheckoutSetting>,
     payload.find({ collection: "tax-classes", limit: 100, depth: 0, overrideAccess: true }),
+    loadInventoryConfig(payload),
+    loadRewardsConfig(payload),
   ]);
   return {
     taxClasses: classes.docs.map((c) => ({ id: String(c.id), name: c.name, rateBasisPoints: c.rateBasisPoints, approved: Boolean(c.approved) })),
@@ -58,6 +91,9 @@ export async function loadCheckoutContext(payload: Payload, env: Record<string, 
     },
     allowPayInFull: settings.allowPayInFull !== false,
     provider: getPaymentProvider(env),
+    chargeTimeoutMs: Number(env.PAYMENT_TIMEOUT_MS) > 0 ? Number(env.PAYMENT_TIMEOUT_MS) : 30_000,
+    inventory: { ...inventory, assumeUnknown: previewStockEnabled(env) },
+    rewards: { config: rewards, active: rewardsState(rewards, env).active },
   };
 }
 
@@ -85,22 +121,33 @@ async function writeCartLines(payload: Payload, token: string, lines: CartLine[]
   else await payload.create({ collection: "carts", data: { tokenHash: hashToken(token), ...data }, overrideAccess: true });
 }
 
-async function loadProducts(payload: Payload, ids: string[]): Promise<Product[]> {
+/** How stock is seen: other customers' holds subtracted, stale counts unknown, baskets from their parts. */
+type StockView = { config: InventoryConfig; now: Date; exceptOwner: string | null };
+
+async function loadProducts(payload: Payload, ids: string[], view: StockView): Promise<Product[]> {
   if (!ids.length) return [];
   const { docs } = await payload.find({
     collection: "products",
-    where: { and: [{ id: { in: ids } }, { _status: { equals: "published" } }] },
+    // Products are staff-only over REST (A04, D42): the rules are stated here and the read overrides access.
+    where: { and: [{ id: { in: ids } }, { _status: { equals: "published" } }, { channel: { not_equals: "hidden" } }] },
     limit: ids.length,
     depth: 0,
-    overrideAccess: false,
+    overrideAccess: true,
   });
-  return docs as Product[];
+  const seen = await applyInventoryView(payload, docs as Product[], { now: view.now, exceptOwner: view.exceptOwner, config: view.config });
+  return seen.products;
 }
 
-export async function priceBag(payload: Payload, token: string | undefined, ctx: CheckoutContext): Promise<PricedCart> {
+async function priceBagWith(payload: Payload, token: string | undefined, ctx: CheckoutContext, now: Date): Promise<{ bag: PricedCart; products: Product[] }> {
   const lines = await readCartLines(payload, token);
-  const products = await loadProducts(payload, [...new Set(lines.map((l) => l.unitId.split(":")[0]))]);
-  return priceCart(lines, products, { previewStock: previewStockEnabled(), taxClasses: ctx.taxClasses, defaultTaxClassId: ctx.defaultTaxClassId });
+  const view: StockView = { config: ctx.inventory, now, exceptOwner: token ? bagOwner(hashToken(token)) : null };
+  const products = await loadProducts(payload, [...new Set(lines.map((l) => l.unitId.split(":")[0]))], view);
+  const bag = priceCart(lines, products, { previewStock: previewStockEnabled(), taxClasses: ctx.taxClasses, defaultTaxClassId: ctx.defaultTaxClassId });
+  return { bag, products };
+}
+
+export async function priceBag(payload: Payload, token: string | undefined, ctx: CheckoutContext, now: Date = new Date()): Promise<PricedCart> {
+  return (await priceBagWith(payload, token, ctx, now)).bag;
 }
 
 /** Add, set or remove a bag line. Only purchasable units are accepted; quantities are clamped. */
@@ -109,6 +156,7 @@ export async function changeBag(
   token: string,
   change: { unitId: string; quantity: number; mode: "add" | "set" },
   ctx: CheckoutContext,
+  now: Date = new Date(),
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const unitId = String(change.unitId).slice(0, 80);
   if (!/^\d+(:[\w-]{1,40})?$/.test(unitId)) return { ok: false, error: "That item couldn't be found." };
@@ -121,7 +169,8 @@ export async function changeBag(
     await writeCartLines(payload, token, lines.filter((l) => l.unitId !== unitId));
     return { ok: true };
   }
-  const priced = priceCart([{ unitId, quantity: next }], await loadProducts(payload, [unitId.split(":")[0]]), {
+  const products = await loadProducts(payload, [unitId.split(":")[0]], { config: ctx.inventory, now, exceptOwner: bagOwner(hashToken(token)) });
+  const priced = priceCart([{ unitId, quantity: next }], products, {
     previewStock: previewStockEnabled(),
     taxClasses: ctx.taxClasses,
     defaultTaxClassId: ctx.defaultTaxClassId,
@@ -154,53 +203,193 @@ function pickSlot(ctx: CheckoutContext, now: Date, raw: unknown, leadHours: numb
 }
 
 /** The URL token for a record is derived from its idempotency key, so a retried submit lands on the same page. */
-function urlToken(kind: string, key: string): string {
-  const secret = process.env.PAYLOAD_SECRET;
-  if (!secret) throw new Error("PAYLOAD_SECRET is required");
-  return crypto.createHmac("sha256", secret).update(`${kind}:${key}`).digest("base64url");
+function urlToken(kind: "order" | "reservation", key: string): string {
+  return accessUrlToken(kind, key);
 }
 
-async function nextNumber(payload: Payload, collection: "orders" | "reservations"): Promise<string> {
-  const { totalDocs } = await payload.count({ collection, overrideAccess: true });
-  return formatNumber(collection === "orders" ? "SP" : "SPR", totalDocs + 1);
+const PREFIX = { orders: "SP", reservations: "SPR" } as const;
+
+/**
+ * One above the highest number ever used (A02). Counting rows reused a number the moment the
+ * owner deleted an early order, so every later checkout collided until it gave up. `bump` skips
+ * ahead after a collision.
+ */
+async function nextNumber(payload: Payload, collection: "orders" | "reservations", bump = 0): Promise<string> {
+  const prefix = PREFIX[collection];
+  const [row] = await query(payload, `SELECT MAX(CAST(substr(number, :from) AS INTEGER)) AS highest FROM ${collection} WHERE number LIKE :like`, {
+    from: prefix.length + 2,
+    like: `${prefix}-%`,
+  });
+  const highest = row?.highest === null || row?.highest === undefined ? null : Number(row.highest);
+  return formatNumber(prefix, nextSequence(highest, bump));
 }
 
 async function findByKey(payload: Payload, collection: "orders" | "reservations", key: string) {
   return (await payload.find({ collection, where: { idempotencyKey: { equals: key } }, limit: 1, depth: 0, overrideAccess: true })).docs[0] ?? null;
 }
 
+/** True when creating a record failed only because its number is already taken. */
+export function isNumberCollision(e: unknown): boolean {
+  const text = `${(e as Error)?.message ?? ""} ${JSON.stringify((e as { data?: unknown })?.data ?? "")}`.toLowerCase();
+  return text.includes("number") && /unique|already|invalid/.test(text);
+}
+
 /**
  * Creates the record once per idempotency key with the next free number. If a simultaneous
  * duplicate submission won the race, its record is returned instead; if two different submissions
- * raced for the same number, the loser retries with the next one.
+ * raced for the same number, the loser retries with a higher one. Any other error is raised.
  */
 async function createOnce<T>(payload: Payload, collection: "orders" | "reservations", key: string, data: Record<string, unknown>): Promise<T> {
   for (let attempt = 0; ; attempt++) {
     const existing = await findByKey(payload, collection, key);
     if (existing) return existing as T;
-    const number = await nextNumber(payload, collection);
+    const number = await nextNumber(payload, collection, attempt);
     try {
       return (await payload.create({ collection, data: { ...data, idempotencyKey: key, number } as never, overrideAccess: true })) as T;
     } catch (e) {
-      if (attempt >= 4) throw e;
+      const winner = await findByKey(payload, collection, key);
+      if (winner) return winner as T;
+      if (!isNumberCollision(e) || attempt >= 4) throw e;
     }
   }
 }
 
 export type PlaceResult = { ok: true; number: string; token: string } | { ok: false; error: string };
 
+// ---------------------------------------------------------------- stock plan
+
+/** What a bag takes from stock: a curated basket with contents takes its parts, never itself (INV 01). */
+function planOfBag(payable: readonly { unitId: string; quantity: number }[], products: readonly Product[]): PlanLine[] {
+  const byId = new Map(products.map((p) => [String(p.id), p]));
+  return planFor(payable, (id) => bomOf(byId.get(id)));
+}
+
+/** Staging only: stock that was never counted is assumed to exist, so it has nothing to hold or deduct. */
+async function trackedOnly(payload: Payload, plan: PlanLine[], ctx: CheckoutContext, now: Date): Promise<PlanLine[]> {
+  if (!ctx.inventory.assumeUnknown) return plan;
+  const kept: PlanLine[] = [];
+  for (const line of plan) if ((await readUnit(payload, line, { now, maxAgeMs: null }))?.known) kept.push(line);
+  return kept;
+}
+
+const holdFor = (ctx: CheckoutContext, now: Date) => ({ now, ttlMs: ctx.inventory.holdMinutes * 60_000, maxAgeMs: ctx.inventory.maxAgeMs });
+
+// ---------------------------------------------------------------- charging (A05, D42)
+
+type Chargeable = "orders" | "reservations";
+const PENDING = { orders: "pending", reservations: "deposit_pending" } as const;
+
+const ORDER_SOON = "Online payment is coming soon. Please call us to order.";
+const RESERVE_SOON = "Online reservations are coming soon. Please call us to reserve a basket.";
+
+/** What the customer is told when the provider didn't say whether the charge went through. */
+const unknownPayment = (number: string) =>
+  `We couldn't confirm your payment yet (reference ${number}). Please don't pay again: we'll check it and get in touch.`;
+
+const UNKNOWN_NOTE = "Payment result unknown: check the payment provider before marking this paid or canceling it.";
+
+/**
+ * Asks the provider to charge, never throwing. A provider that throws, hangs past `timeoutMs` or
+ * answers with something unexpected is "unknown": the customer may have been charged.
+ */
+export async function chargeSafely(provider: PaymentProvider, input: ChargeInput, timeoutMs: number): Promise<ChargeResult> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const result = await Promise.race([
+      provider.charge(input),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`no answer from the payment provider after ${timeoutMs} ms`)), timeoutMs);
+      }),
+    ]);
+    if (result && (result.status === "paid" || result.status === "failed" || result.status === "unknown")) return result;
+    return { status: "unknown", reference: "", message: "Unexpected answer from the payment provider" };
+  } catch (e) {
+    console.error(`[payment] ${input.reference}: ${(e as Error)?.message ?? "charge failed"}; payment left unknown for staff to reconcile`);
+    return { status: "unknown", reference: "", message: (e as Error)?.message ?? "Charge failed" };
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
+/**
+ * Records that an attempt is about to be made and returns its number. A declined record gets a
+ * new number (so a gateway can't replay the cached decline); a record still pending keeps its
+ * number, so asking again after a crash is deduplicated by the gateway instead of charging twice.
+ */
+async function beginAttempt(
+  payload: Payload,
+  collection: Chargeable,
+  record: { id: number | string; paymentStatus?: string | null; paymentAttempts?: number | null },
+): Promise<number> {
+  const before = record.paymentAttempts ?? 0;
+  const attempt = record.paymentStatus === "failed" ? before + 1 : Math.max(before, 1);
+  if (attempt !== before || record.paymentStatus !== PENDING[collection]) {
+    await payload.update({ collection, id: record.id, data: { paymentAttempts: attempt, paymentStatus: PENDING[collection] } as never, overrideAccess: true });
+  }
+  return attempt;
+}
+
+/** A record from the same bag or basket whose payment result is still unknown blocks any new charge until staff reconcile it. */
+async function findUnreconciled(payload: Payload, collection: Chargeable, owner: string): Promise<{ number: string } | null> {
+  const { docs } = await payload.find({
+    collection,
+    where: { and: [{ stockOwner: { equals: owner } }, { paymentStatus: { equals: "unknown" } }] },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  });
+  return docs[0] ? { number: docs[0].number } : null;
+}
+
+// ---------------------------------------------------------------- rewards (D45)
+
+/** The member placing this, and the reward they chose, checked against today's program and their live balance. */
+async function chooseReward(
+  payload: Payload,
+  ctx: CheckoutContext,
+  memberId: number | null | undefined,
+  raw: unknown,
+  subtotalCents: number,
+): Promise<{ ok: true; memberId: number | null; option: RewardOption | null } | { ok: false; error: string }> {
+  const wanted = String(raw ?? "").trim();
+  const member = ctx.rewards.active && typeof memberId === "number" && Number.isSafeInteger(memberId) ? memberId : null;
+  if (!wanted || wanted === "none") return { ok: true, memberId: member, option: null };
+  if (member === null) return { ok: false, error: "Please sign in again to use your points." };
+  const option = ctx.rewards.config.options.find((o) => o.id === wanted);
+  if (!option) return { ok: false, error: "That reward isn't available any more. Please choose again." };
+  if (option.discountCents > subtotalCents) return { ok: false, error: "That reward is worth more than your order. Please choose a smaller one." };
+  if ((await balanceOf(payload, member)) < option.pointsRequired) return { ok: false, error: "You don't have enough points for that reward any more." };
+  return { ok: true, memberId: member, option };
+}
+
+const NOT_ENOUGH_POINTS = "You don't have enough points for that reward any more. Nothing was charged.";
+
 // ---------------------------------------------------------------- shop orders
 
 export async function placeOrder(
   payload: Payload,
-  input: { cartToken: string | undefined; form: Record<string, unknown>; now?: Date },
+  input: {
+    cartToken: string | undefined;
+    form: Record<string, unknown>;
+    /**
+     * The verified nonce of the form that was submitted (A11, D42). The server action always
+     * passes it. It makes the idempotency key identify one submission: a double submit of the same
+     * form is one order, the same bag submitted from a fresh form later is a new one.
+     */
+    submission?: string;
+    /** The signed-in rewards member, from the verified session cookie (D45). Never from the form. */
+    memberId?: number | null;
+    now?: Date;
+  },
   ctx: CheckoutContext,
 ): Promise<PlaceResult> {
   const now = input.now ?? new Date();
-  const state = orderingState(ctx.provider, false);
-  if (!state.open) return { ok: false, error: "Online payment is coming soon. Please call us to order." };
+  const provider = ctx.provider;
+  if (!provider) return { ok: false, error: ORDER_SOON };
 
-  const bag = await priceBag(payload, input.cartToken, ctx);
+  const { bag, products } = await priceBagWith(payload, input.cartToken, ctx, now);
+  // The real tax answer, after pricing: a live provider only opens once the tax rates are approved (A05a).
+  if (!orderingState(provider, bag.taxApproved).open) return { ok: false, error: ORDER_SOON };
   if (!bag.payable.length) return { ok: false, error: "Your bag is empty." };
   if (bag.blocking) return { ok: false, error: "Some items in your bag aren't available. Please review your bag." };
 
@@ -210,43 +399,159 @@ export async function placeOrder(
   if (!slot) return { ok: false, error: "That pickup time is no longer available. Please choose another." };
   const notes = String(input.form.notes ?? "").trim().slice(0, 500);
 
-  const key = idempotencyKey("order", hashToken(input.cartToken ?? ""), bag.payable.map((l) => [l.unitId, l.quantity, l.unitPriceCents]), contact.contact, slot, notes);
-  const token = urlToken("order", key);
-  let order = await createOnce<Order>(payload, "orders", key, {
-    accessTokenHash: hashToken(token),
-    testMode: ctx.provider!.test,
-    paymentStatus: "pending",
-    fulfillmentStatus: "preparing",
-    customer: contact.contact,
-    pickup: { ...slot, label: formatSlot(slot) },
+  const reward = await chooseReward(payload, ctx, input.memberId, input.form.reward, bag.subtotalCents);
+  if (!reward.ok) return reward;
+  // A reward comes off before tax, shared over the lines; tax is then worked out on what is left (D45).
+  const priced = totalsWithDiscount(
+    bag.payable.map((l) => ({ amountCents: l.lineTotalCents, taxClass: l.taxClass })),
+    reward.option?.discountCents ?? 0,
+  );
+  const redeemedPoints = reward.option?.pointsRequired ?? 0;
+  const earnPoints = reward.memberId === null ? 0 : pointsFor(priced.subtotalCents - priced.discountCents, ctx.rewards.config.pointsPerDollar);
+
+  const cartHash = hashToken(input.cartToken ?? "");
+  const owner = bagOwner(cartHash);
+  const key = idempotencyKey(
+    "order",
+    cartHash,
+    bag.payable.map((l) => [l.unitId, l.quantity, l.unitPriceCents]),
+    contact.contact,
+    slot,
     notes,
-    lines: bag.payable.map((l) => ({
-      unitId: l.unitId,
-      title: l.title,
-      option: l.optionLabel,
-      sku: l.sku,
-      cloverId: l.cloverId,
-      quantity: l.quantity,
-      unitPriceCents: l.unitPriceCents,
-      lineTotalCents: l.lineTotalCents,
-      taxClass: l.taxClass ? { name: l.taxClass.name, rateBasisPoints: l.taxClass.rateBasisPoints, approved: l.taxClass.approved } : null,
-      taxCents: l.taxCents,
-    })),
-    totals: { subtotalCents: bag.subtotalCents, taxCents: bag.taxCents, totalCents: bag.totalCents, taxApproved: bag.taxApproved },
-  });
-  if (order.paymentStatus !== "paid") {
-    const charge = await ctx.provider!.charge({ reference: order.number, amountCents: order.totals.totalCents, idempotencyKey: key });
-    order = await payload.update({
-      collection: "orders",
-      id: order.id,
-      data: { paymentStatus: charge.status, payment: { provider: ctx.provider!.id, reference: charge.reference } },
-      overrideAccess: true,
-    });
-    if (charge.status !== "paid") return { ok: false, error: "The payment didn't go through. Your bag is saved — please try again." };
-    console.info(`[order] ${order.number} placed${order.testMode ? " (test)" : ""}; confirmation email not configured yet`);
+    ...(input.submission ? [input.submission] : []),
+    ...(reward.memberId === null ? [] : [["member", reward.memberId, reward.option?.id ?? "", redeemedPoints, priced.discountCents]]),
+  );
+  const token = urlToken("order", key);
+
+  // A payment from this bag whose result is unknown must be reconciled before anything is charged again.
+  const unreconciled = await findUnreconciled(payload, "orders", owner);
+  if (unreconciled) return { ok: false, error: unknownPayment(unreconciled.number) };
+
+  // The same submission arriving again after it was paid: nothing to charge, and stock is only
+  // touched if the first attempt stopped before taking it.
+  const finished = (await findByKey(payload, "orders", key)) as Order | null;
+  if (finished?.paymentStatus === "paid") {
+    if (finished.stockStatus === "held") await settleStock(payload, "orders", finished, now);
+    if (input.cartToken) await writeCartLines(payload, input.cartToken, []);
+    return { ok: true, number: finished.number, token };
   }
+
+  const plan = await trackedOnly(payload, planOfBag(bag.payable, products), ctx, now);
+  const held = await holdStock(payload, { owner, plan, ...holdFor(ctx, now) });
+  if (!held.ok) return { ok: false, error: SOLD_OUT };
+
+  let order: Order | null = null;
+  // For giving points back if something breaks before the provider is asked to charge.
+  let redeemedAttempt: number | null = null;
+  let charging = false;
+  try {
+    order = await createOnce<Order>(payload, "orders", key, {
+      accessTokenHash: hashToken(token),
+      testMode: provider.test,
+      paymentStatus: "pending",
+      paymentAttempts: 0,
+      // Nothing is packed until the payment is paid (A14).
+      fulfillmentStatus: "awaiting_payment",
+      customer: contact.contact,
+      pickup: { ...slot, label: formatSlot(slot) },
+      notes,
+      lines: bag.payable.map((l, i) => ({
+        unitId: l.unitId,
+        title: l.title,
+        option: l.optionLabel,
+        sku: l.sku,
+        cloverId: l.cloverId,
+        quantity: l.quantity,
+        unitPriceCents: l.unitPriceCents,
+        lineTotalCents: l.lineTotalCents,
+        taxClass: l.taxClass ? { name: l.taxClass.name, rateBasisPoints: l.taxClass.rateBasisPoints, approved: l.taxClass.approved } : null,
+        ...(priced.discountCents ? { discountCents: priced.perLineDiscount[i] } : {}),
+        taxCents: priced.perLineTax[i],
+      })),
+      totals: { subtotalCents: priced.subtotalCents, discountCents: priced.discountCents, taxCents: priced.taxCents, totalCents: priced.totalCents, taxApproved: priced.taxApproved },
+      rewards: { member: reward.memberId, redeemedPoints, earnPoints },
+      stockOwner: owner,
+      stockPlan: serializePlan(plan),
+      stockStatus: plan.length ? "held" : "none",
+    });
+    if (order.paymentStatus === "unknown") return { ok: false, error: unknownPayment(order.number) };
+    if (order.paymentStatus !== "paid") {
+      if (plan.length && (order.stockStatus !== "held" || order.stockOwner !== owner)) {
+        // A retry of an order whose earlier payment failed: its stock was released, so hold it again.
+        order = await payload.update({ collection: "orders", id: order.id, data: { stockStatus: "held", stockOwner: owner, stockPlan: serializePlan(plan) }, overrideAccess: true });
+      }
+      const attempt = await beginAttempt(payload, "orders", order);
+      // Points are spent before the charge, so two orders can't spend the same points. A declined
+      // charge gives them back (see ../rewards/settle.ts); an unknown one keeps them until staff decide.
+      const spend = order.rewards?.redeemedPoints ?? 0;
+      const spender = relId(order.rewards?.member);
+      if (spend > 0 && spender) {
+        try {
+          await postEntry(payload, { memberId: Number(spender), kind: "redeem", points: -spend, key: entryKey.redeem(order, attempt), orderId: order.id, reference: order.number }, now);
+        } catch (e) {
+          if (!(e instanceof NotEnoughPoints)) throw e;
+          await payload.update({
+            collection: "orders",
+            id: order.id,
+            data: { paymentStatus: "failed", ...(order.stockStatus === "held" ? { stockStatus: "released" as const } : {}) },
+            overrideAccess: true,
+          });
+          await releaseHolds(payload, owner, now);
+          return { ok: false, error: NOT_ENOUGH_POINTS };
+        }
+        redeemedAttempt = attempt;
+      }
+      charging = true;
+      const charge = await chargeSafely(provider, { reference: order.number, amountCents: order.totals.totalCents, idempotencyKey: `${key}:${attempt}` }, ctx.chargeTimeoutMs);
+      if (charge.status === "unknown") {
+        // Keep the record, the hold and the bag. Staff reconcile it in the admin; no second charge until they do.
+        await payload.update({
+          collection: "orders",
+          id: order.id,
+          data: { paymentStatus: "unknown", payment: { provider: provider.id, reference: charge.reference }, stockNote: UNKNOWN_NOTE },
+          overrideAccess: true,
+        });
+        return { ok: false, error: unknownPayment(order.number) };
+      }
+      order = await payload.update({
+        collection: "orders",
+        id: order.id,
+        data: {
+          paymentStatus: charge.status,
+          payment: { provider: provider.id, reference: charge.reference },
+          // On "paid" the `advanceWhenPaid` hook moves an order that is still awaiting payment to
+          // preparing, or to staff review when the customer left notes (A12, A14). It reads the
+          // record as saved, so an order staff cancelled while the charge was in flight stays cancelled.
+          ...(charge.status !== "paid" && order.stockStatus === "held" ? { stockStatus: "released" as const } : {}),
+        },
+        overrideAccess: true,
+      });
+      if (charge.status !== "paid") {
+        await releaseHolds(payload, owner, now);
+        return { ok: false, error: "The payment didn't go through. Your bag is saved — please try again." };
+      }
+      console.info(`[order] ${order.number} placed${order.testMode ? " (test)" : ""}`);
+    }
+  } catch (e) {
+    // Any error: the customer's stock goes back on the shelf for others.
+    await releaseHolds(payload, owner, now).catch(() => undefined);
+    if (order && redeemedAttempt !== null && !charging) await returnPoints(payload, order, redeemedAttempt, now).catch(() => undefined);
+    throw e;
+  }
+
+  // Paid. Take the stock; whatever happens now the paid order stays and nobody is charged again.
+  await settleStock(payload, "orders", order, now);
+  await releaseHolds(payload, owner, now);
   if (input.cartToken) await writeCartLines(payload, input.cartToken, []);
   return { ok: true, number: order.number, token };
+}
+
+/** Gives back the points an attempt spent when it never reached the payment provider. */
+async function returnPoints(payload: Payload, order: Order, attempt: number, now: Date) {
+  const spent = await postedPoints(payload, entryKey.redeem(order, attempt));
+  const member = relId(order.rewards?.member);
+  if (!spent || spent >= 0 || !member) return;
+  await postEntry(payload, { memberId: Number(member), kind: "restore", points: -spent, key: entryKey.restore(order, attempt), orderId: order.id, reference: order.number, note: "Checkout stopped before payment" }, now);
 }
 
 export async function findByToken<T extends "orders" | "reservations">(payload: Payload, collection: T, number: string, token: string | undefined) {
@@ -270,6 +575,8 @@ export type PricedBasket = {
   title: string;
   basketSizeIn: string;
   components: BasketComponent[];
+  /** What the basket takes from stock, after any bill of materials. */
+  plan: PlanLine[];
   packagingCents: number;
   contentsCents: number;
   subtotalCents: number;
@@ -278,20 +585,38 @@ export type PricedBasket = {
   taxApproved: boolean;
 };
 
+/** One line per product with quantities added up, exactly as `validateGift` counts them. */
+function mergeSelections(selections: readonly Selection[]): Selection[] {
+  const merged = new Map<string, number>();
+  for (const s of selections) merged.set(s.productId, (merged.get(s.productId) ?? 0) + s.quantity);
+  return [...merged].filter(([, quantity]) => quantity > 0).map(([productId, quantity]) => ({ productId, quantity }));
+}
+
 /** Re-validates a basket with fresh prices and stock, and works out its tax (D36). */
-export async function priceBasket(payload: Payload, draft: BasketDraft, ctx: CheckoutContext): Promise<PricedBasket | { ok: false; error: string }> {
-  const { settings, products, display } = await loadBuilderCatalogFrom(payload);
+export async function priceBasket(
+  payload: Payload,
+  draft: BasketDraft,
+  ctx: CheckoutContext,
+  opts: { now?: Date; exceptOwner?: string | null } = {},
+): Promise<PricedBasket | { ok: false; error: string }> {
+  const now = opts.now ?? new Date();
+  const { settings, products, display } = await loadBuilderCatalogFrom(payload, { now, exceptOwner: opts.exceptOwner, config: ctx.inventory });
   const validation = validateGift(draft.request, settings, catalogOf(products));
   if (!validation.complete) {
     return { ok: false, error: validation.violations[0]?.message ?? "This basket isn't complete yet. Please go back and finish it." };
   }
   const priceOf = new Map(products.map((p) => [p.id, p.priceCents ?? 0]));
   const nameOf = new Map(display.map((d) => [d.id, d.title]));
-  const components: BasketComponent[] = draft.request.selections
-    .filter((s) => s.quantity > 0)
-    .map((s) => ({ productId: s.productId, name: nameOf.get(s.productId) ?? s.productId, quantity: s.quantity, unitPriceCents: priceOf.get(s.productId) ?? 0 }));
+  // Built from the merged selections the validation actually checked (A01), never from the raw
+  // request: a crafted request can't make staff pack more than was validated and paid for.
+  const components: BasketComponent[] = mergeSelections(draft.request.selections).map((s) => ({
+    productId: s.productId,
+    name: nameOf.get(s.productId) ?? s.productId,
+    quantity: s.quantity,
+    unitPriceCents: priceOf.get(s.productId) ?? 0,
+  }));
 
-  const productDocs = await loadProducts(payload, [...new Set(components.map((c) => c.productId.split(":")[0]))]);
+  const productDocs = await loadProducts(payload, [...new Set(components.map((c) => c.productId.split(":")[0]))], { config: ctx.inventory, now, exceptOwner: opts.exceptOwner ?? null });
   const classOf = new Map(productDocs.map((p) => [String(p.id), resolveTaxClass(relId(p.taxClass), ctx.taxClasses, ctx.defaultTaxClassId)]));
   const packagingClass = resolveTaxClass(ctx.packagingTaxClassId, ctx.taxClasses, ctx.defaultTaxClassId);
   const tax = computeTax([
@@ -305,6 +630,7 @@ export async function priceBasket(payload: Payload, draft: BasketDraft, ctx: Che
     title: `${giftLabel} basket — ${size?.label ?? draft.request.size}`,
     basketSizeIn: resolveBasketSize(settings, draft.request.size, draft.request.giftType),
     components,
+    plan: planOfBag(components.map((c) => ({ unitId: c.productId, quantity: c.quantity })), productDocs),
     packagingCents: validation.totals.packagingCents,
     contentsCents: validation.totals.contentsCents,
     subtotalCents: validation.totals.totalCents,
@@ -316,15 +642,21 @@ export async function priceBasket(payload: Payload, draft: BasketDraft, ctx: Che
 
 export async function reserveBasket(
   payload: Payload,
-  input: { draft: BasketDraft; form: Record<string, unknown>; now?: Date },
+  input: {
+    draft: BasketDraft;
+    form: Record<string, unknown>;
+    /** The verified nonce of the submitted form (A11, D42); see {@link placeOrder}. */
+    submission?: string;
+    /** The signed-in rewards member (D45): a basket earns points once paid in full. */
+    memberId?: number | null;
+    now?: Date;
+  },
   ctx: CheckoutContext,
 ): Promise<PlaceResult> {
   const now = input.now ?? new Date();
-  const state: OrderingState = orderingState(ctx.provider, false);
-  if (!state.open) return { ok: false, error: "Online reservations are coming soon. Please call us to reserve a basket." };
+  const provider = ctx.provider;
+  if (!provider) return { ok: false, error: RESERVE_SOON };
 
-  const basket = await priceBasket(payload, input.draft, ctx);
-  if (!basket.ok) return basket;
   const contact = parseContact(input.form);
   if (!contact.ok) return contact;
   const slot = pickSlot(ctx, now, input.form.pickup, ctx.reservationLeadHours);
@@ -332,44 +664,115 @@ export async function reserveBasket(
   const payInFull = input.form.payment === "full";
   if (payInFull && !ctx.allowPayInFull) return { ok: false, error: "Please choose the deposit option." };
 
-  const plan = paymentPlan(basket.totalCents, ctx.deposit, payInFull);
-  const key = idempotencyKey("reservation", input.draft, contact.contact, slot, payInFull, basket.totalCents);
+  // The owner is known before pricing so this customer's own earlier hold never blocks their retry.
+  const owner = basketOwner(input.draft.request, contact.contact.email, slot);
+  const basket = await priceBasket(payload, input.draft, ctx, { now, exceptOwner: owner });
+  if (!basket.ok) return basket;
+  // The real tax answer, after pricing (A05a).
+  if (!orderingState(provider, basket.taxApproved).open) return { ok: false, error: RESERVE_SOON };
+
+  const pay = paymentPlan(basket.totalCents, ctx.deposit, payInFull);
+  const memberId = ctx.rewards.active && typeof input.memberId === "number" && Number.isSafeInteger(input.memberId) ? input.memberId : null;
+  const earnPoints = memberId === null ? 0 : pointsFor(basket.subtotalCents, ctx.rewards.config.pointsPerDollar);
+  const key = idempotencyKey(
+    "reservation",
+    input.draft,
+    contact.contact,
+    slot,
+    payInFull,
+    basket.totalCents,
+    ...(input.submission ? [input.submission] : []),
+    ...(memberId === null ? [] : [["member", memberId]]),
+  );
   const token = urlToken("reservation", key);
-  let reservation = await createOnce<Reservation>(payload, "reservations", key, {
-    accessTokenHash: hashToken(token),
-    testMode: ctx.provider!.test,
-    // Requests are not guarantees: staff confirm them before the basket is finalised (GFT 06).
-    reservationStatus: input.draft.requests.trim() ? "staff_review" : "confirmed",
-    paymentStatus: "deposit_pending",
-    customer: contact.contact,
-    pickup: { ...slot, label: formatSlot(slot) },
-    assembly: assemblyInstructions({ title: basket.title, basketSizeIn: basket.basketSizeIn, components: basket.components, message: input.draft.message, requests: input.draft.requests }),
-    basket: { request: input.draft.request, title: basket.title, components: basket.components, packagingCents: basket.packagingCents, message: input.draft.message, requests: input.draft.requests },
-    totalCents: basket.totalCents,
-    taxCents: basket.taxCents,
-    taxApproved: basket.taxApproved,
-    depositCents: plan.paidInFull ? basket.totalCents : plan.chargeNowCents,
-    amountPaidCents: 0,
-    balanceDueCents: basket.totalCents,
-  });
-  if (reservation.paymentStatus === "deposit_pending" || reservation.paymentStatus === "failed") {
-    const charge = await ctx.provider!.charge({ reference: reservation.number, amountCents: plan.chargeNowCents, idempotencyKey: key });
-    reservation = await payload.update({
-      collection: "reservations",
-      id: reservation.id,
-      data:
-        charge.status === "paid"
-          ? {
-              paymentStatus: plan.paidInFull ? "paid_in_full" : "deposit_paid",
-              amountPaidCents: plan.chargeNowCents,
-              balanceDueCents: plan.balanceDueCents,
-              payment: { provider: ctx.provider!.id, reference: charge.reference },
-            }
-          : { paymentStatus: "failed", payment: { provider: ctx.provider!.id, reference: charge.reference } },
-      overrideAccess: true,
-    });
-    if (charge.status !== "paid") return { ok: false, error: "The payment didn't go through. Please try again." };
-    console.info(`[reservation] ${reservation.number} reserved${reservation.testMode ? " (test)" : ""}; confirmation email not configured yet`);
+
+  const unreconciled = await findUnreconciled(payload, "reservations", owner);
+  if (unreconciled) return { ok: false, error: unknownPayment(unreconciled.number) };
+
+  const finished = (await findByKey(payload, "reservations", key)) as Reservation | null;
+  if (finished && finished.paymentStatus !== "deposit_pending" && finished.paymentStatus !== "failed") {
+    if (finished.stockStatus === "held") await settleStock(payload, "reservations", finished, now);
+    return { ok: true, number: finished.number, token };
   }
+
+  const plan = await trackedOnly(payload, basket.plan, ctx, now);
+  const held = await holdStock(payload, { owner, plan, ...holdFor(ctx, now) });
+  if (!held.ok) return { ok: false, error: "Some items in this basket have just sold out. Please go back and choose again." };
+
+  let reservation: Reservation;
+  try {
+    reservation = await createOnce<Reservation>(payload, "reservations", key, {
+      accessTokenHash: hashToken(token),
+      testMode: provider.test,
+      // Nothing is made until the deposit is paid; then requests are checked by staff first (GFT 06, A12, A14).
+      reservationStatus: "awaiting_payment",
+      paymentStatus: "deposit_pending",
+      paymentAttempts: 0,
+      customer: contact.contact,
+      pickup: { ...slot, label: formatSlot(slot) },
+      assembly: assemblyInstructions({ title: basket.title, basketSizeIn: basket.basketSizeIn, components: basket.components, message: input.draft.message, requests: input.draft.requests }),
+      basket: { request: input.draft.request, title: basket.title, components: basket.components, packagingCents: basket.packagingCents, message: input.draft.message, requests: input.draft.requests },
+      totalCents: basket.totalCents,
+      taxCents: basket.taxCents,
+      taxApproved: basket.taxApproved,
+      depositCents: pay.paidInFull ? basket.totalCents : pay.chargeNowCents,
+      amountPaidCents: 0,
+      balanceDueCents: basket.totalCents,
+      rewards: { member: memberId, earnPoints },
+      stockOwner: owner,
+      stockPlan: serializePlan(plan),
+      stockStatus: plan.length ? "held" : "none",
+    });
+    if (reservation.paymentStatus === "unknown") return { ok: false, error: unknownPayment(reservation.number) };
+    if (reservation.paymentStatus === "deposit_pending" || reservation.paymentStatus === "failed") {
+      if (plan.length && (reservation.stockStatus !== "held" || reservation.stockOwner !== owner)) {
+        reservation = await payload.update({ collection: "reservations", id: reservation.id, data: { stockStatus: "held", stockOwner: owner, stockPlan: serializePlan(plan) }, overrideAccess: true });
+      }
+      // A retry charges the amount stored on the record, never one recomputed from today's settings (A05c).
+      const chargeCents = reservation.depositCents;
+      const paidInFull = chargeCents >= reservation.totalCents;
+      const attempt = await beginAttempt(payload, "reservations", reservation);
+      const charge = await chargeSafely(provider, { reference: reservation.number, amountCents: chargeCents, idempotencyKey: `${key}:${attempt}` }, ctx.chargeTimeoutMs);
+      if (charge.status === "unknown") {
+        await payload.update({
+          collection: "reservations",
+          id: reservation.id,
+          data: { paymentStatus: "unknown", payment: { provider: provider.id, reference: charge.reference }, stockNote: UNKNOWN_NOTE },
+          overrideAccess: true,
+        });
+        return { ok: false, error: unknownPayment(reservation.number) };
+      }
+      reservation = await payload.update({
+        collection: "reservations",
+        id: reservation.id,
+        data:
+          charge.status === "paid"
+            ? {
+                paymentStatus: paidInFull ? "paid_in_full" : "deposit_paid",
+                amountPaidCents: chargeCents,
+                balanceDueCents: reservation.totalCents - chargeCents,
+                payment: { provider: provider.id, reference: charge.reference },
+                // `advanceWhenPaid` then confirms it, or sends it to staff review when there are requests (A12, A14).
+              }
+            : {
+                paymentStatus: "failed",
+                payment: { provider: provider.id, reference: charge.reference },
+                ...(reservation.stockStatus === "held" ? { stockStatus: "released" as const } : {}),
+              },
+        overrideAccess: true,
+      });
+      if (charge.status !== "paid") {
+        await releaseHolds(payload, owner, now);
+        return { ok: false, error: "The payment didn't go through. Please try again." };
+      }
+      console.info(`[reservation] ${reservation.number} reserved${reservation.testMode ? " (test)" : ""}`);
+    }
+  } catch (e) {
+    await releaseHolds(payload, owner, now).catch(() => undefined);
+    throw e;
+  }
+
+  await settleStock(payload, "reservations", reservation, now);
+  await releaseHolds(payload, owner, now);
   return { ok: true, number: reservation.number, token };
 }

@@ -106,8 +106,10 @@ describe("catalog seed", () => {
   it("keeps unpriced Cape Cod fudge as drafts, invisible to customers", async () => {
     const fudge = await bySlug("cape-cod-pistachio-fudge");
     expect(fudge._status).toBe("draft");
-    const publicView = await payload.find({ collection: "products", where: { slug: { equals: "cape-cod-pistachio-fudge" } }, overrideAccess: false });
-    expect(publicView.docs).toEqual([]);
+    // Anonymous REST can't read products at all (A04, D42); the storefront asks for published ones explicitly.
+    await expect(payload.find({ collection: "products", where: { slug: { equals: "cape-cod-pistachio-fudge" } }, overrideAccess: false })).rejects.toThrow(/not allowed/i);
+    const storefront = await payload.find({ collection: "products", where: { and: [{ slug: { equals: "cape-cod-pistachio-fudge" } }, { _status: { equals: "published" } }] }, overrideAccess: true });
+    expect(storefront.docs).toEqual([]);
   });
 });
 

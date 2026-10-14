@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
 
-import { evaluate, type RuntimeEnv } from "./system-check";
+import { appEnvCheck, evaluate, type RuntimeEnv } from "./system-check";
 
 const production: RuntimeEnv = {
   nodeVersion: "22.11.0",
   heapLimitMb: 768,
   production: true,
+  appEnv: "production",
   payloadSecretLength: 64,
   dataDir: "/home/lody/lodelicious-data",
   dataDirWritable: true,
@@ -46,5 +47,32 @@ describe("evaluate", () => {
 
   it("fails an unwritable data dir", () => {
     expect(failed({ ...production, dataDirWritable: false })).toEqual(["DATA_DIR writable"]);
+  });
+});
+
+describe("APP_ENV check (D41)", () => {
+  it("passes for production and for the explicit preview values", () => {
+    for (const appEnv of ["production", "staging", "local", "test"]) {
+      expect(failed({ ...production, appEnv })).toEqual([]);
+    }
+  });
+
+  it("fails when APP_ENV is unset, and says it is treated as production", () => {
+    expect(failed({ ...production, appEnv: undefined })).toEqual(["APP_ENV"]);
+    expect(appEnvCheck(undefined).actual).toMatch(/unset.*production/);
+    expect(appEnvCheck("   ").ok).toBe(false);
+  });
+
+  it("fails a mistyped value", () => {
+    for (const appEnv of ["prod", "live", "stage", "Productoin"]) {
+      const result = appEnvCheck(appEnv);
+      expect(result.ok).toBe(false);
+      expect(result.actual).toContain(appEnv);
+    }
+  });
+
+  it("ignores case and surrounding spaces, like the rest of the allowlist", () => {
+    expect(appEnvCheck(" Production ").ok).toBe(true);
+    expect(appEnvCheck("STAGING").ok).toBe(true);
   });
 });

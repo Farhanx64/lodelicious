@@ -8,7 +8,19 @@ const SHOP_LINKS = [
   { href: "/shop?category=fudge", label: "Fudge" },
   { href: "/shop?category=fresh-treats", label: "Fresh treats" },
   { href: "/baby-gifts", label: "Baby gifts" },
+  { href: "/gift-baskets", label: "Gift baskets" },
+  { href: "/events", label: "Chocolate fountain" },
 ];
+
+const POLICY_LINKS = [
+  { href: "/policies/pickup-and-delivery", label: "Pickup & delivery" },
+  { href: "/policies/cancellations-and-refunds", label: "Cancellations & refunds" },
+  { href: "/policies/privacy", label: "Privacy" },
+  { href: "/policies", label: "All policies" },
+];
+
+// At least 24 px tall so stacked links meet WCAG 2.2 target size (2.5.8).
+const footerLink = "inline-flex min-h-6 items-center text-nav";
 
 export function SiteFooter({ store }: { store: StoreSetting }) {
   const closed = (store.closedDays ?? []).map((d) => d.label);
@@ -28,7 +40,7 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
           <ul className="caps flex flex-col gap-1 text-[0.72rem]">
             {SHOP_LINKS.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="text-nav">
+                <Link href={l.href} className={footerLink}>
                   {l.label}
                 </Link>
               </li>
@@ -90,6 +102,9 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
               {store.email}
             </a>
           </p>
+          <p className="mt-3">
+            <Link href="/contact">Send us a message</Link>
+          </p>
           {store.doordashUrl && (
             <p className="mt-3">
               Local delivery:{" "}
@@ -99,6 +114,21 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
             </p>
           )}
         </section>
+
+        <nav aria-labelledby="footer-policies">
+          <h2 id="footer-policies" className="mb-3 text-base">
+            Policies
+          </h2>
+          <ul className="flex flex-col gap-1">
+            {POLICY_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className={footerLink}>
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </div>
     </footer>
   );

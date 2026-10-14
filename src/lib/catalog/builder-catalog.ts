@@ -4,6 +4,7 @@ import type { Category, Media, Product } from "@/payload-types";
 
 import { getGiftSettings } from "../gifts/load";
 import type { BuilderProduct, GiftSettings } from "../gifts/types";
+import { applyInventoryView, type InventoryConfig } from "../inventory/view";
 import { isImagePublishable } from "../media";
 import { previewStockEnabled } from "./preview";
 import { toBuilderProducts } from "./product";
@@ -27,8 +28,19 @@ export type BuilderCatalog = {
   previewStock: boolean;
 };
 
-/** Core loader, usable from tests and services that already hold a Payload instance. */
-export async function loadBuilderCatalogFrom(payload: Payload): Promise<BuilderCatalog> {
+export type BuilderStockOptions = {
+  now?: Date;
+  /** A checkout's own holds don't count against it. */
+  exceptOwner?: string | null;
+  config?: InventoryConfig;
+};
+
+/**
+ * Core loader, usable from tests and services that already hold a Payload instance. Stock is what
+ * the shop can sell now: other customers' holds are subtracted, counts older than the allowed age
+ * are "stale" (unavailable), and a curated basket with contents is as many as its parts allow.
+ */
+export async function loadBuilderCatalogFrom(payload: Payload, opts: BuilderStockOptions = {}): Promise<BuilderCatalog> {
   const [settings, { docs }] = await Promise.all([
     getGiftSettings(payload),
     payload.find({
@@ -36,6 +48,7 @@ export async function loadBuilderCatalogFrom(payload: Payload): Promise<BuilderC
       where: {
         and: [
           { _status: { equals: "published" } },
+          { channel: { not_equals: "hidden" } },
           { channel: { equals: "online" } },
           { basketEligible: { equals: true } },
         ],
@@ -43,20 +56,26 @@ export async function loadBuilderCatalogFrom(payload: Payload): Promise<BuilderC
       sort: "title",
       limit: 500,
       depth: 2,
-      overrideAccess: false,
+      // Products are staff-only over REST (A04, D42), so the storefront states its own rules
+      // above (published, online, basket-eligible) and reads with override.
+      overrideAccess: true,
     }),
   ]);
 
   const previewStock = previewStockEnabled();
   const products: BuilderProduct[] = [];
   const display: BuilderDisplay[] = [];
+  const seen = await applyInventoryView(payload, docs as Product[], opts);
 
-  for (const doc of docs as Product[]) {
+  for (const doc of seen.products) {
     const category = typeof doc.category === "object" ? (doc.category as Category) : null;
     const media = doc.images?.[0]?.image;
     const image = typeof media === "object" && isImagePublishable(media as Media) ? (media as Media) : null;
-    for (const unit of toBuilderProducts(doc)) {
-      products.push(previewStock && unit.stock.state !== "known" ? { ...unit, stock: { state: "known", quantity: 99 } } : unit);
+    for (const built of toBuilderProducts(doc)) {
+      const unit = seen.staleUnits.has(built.id) ? { ...built, stock: { state: "stale" as const } } : built;
+      const shown = previewStock && unit.stock.state !== "known" ? { ...unit, stock: { state: "known" as const, quantity: 99 } } : unit;
+      // The builder never needs more than the most one gift can hold, and the exact shelf count is not the customer's business (A04, D42).
+      products.push(shown.stock.state === "known" ? { ...shown, stock: { state: "known", quantity: Math.min(shown.stock.quantity, shown.maxPerGift) } } : shown);
       display.push({
         id: unit.id,
         title: unit.name,

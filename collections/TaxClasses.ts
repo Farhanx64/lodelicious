@@ -1,7 +1,7 @@
 import type { CollectionConfig } from "payload";
 
 import { isCommerceManager, isStaff } from "../src/access/roles";
-import { auditCollection } from "../src/hooks/audit";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
 
 /**
  * Sales tax classes (D34). Lody approves each rate; until every class in a sale is approved,
@@ -12,7 +12,10 @@ export const TaxClasses: CollectionConfig = {
   labels: { singular: "Tax class", plural: "Tax classes" },
   admin: { useAsTitle: "name", group: "Settings", defaultColumns: ["name", "rateBasisPoints", "approved"] },
   access: { read: isStaff, create: isCommerceManager, update: isCommerceManager, delete: isCommerceManager },
-  hooks: { afterChange: [auditCollection(["name", "rateBasisPoints", "approved"])] },
+  hooks: {
+    afterChange: [auditCollection(["name", "rateBasisPoints", "approved"])],
+    afterDelete: [auditDelete(["name", "rateBasisPoints", "approved"])],
+  },
   fields: [
     { name: "name", type: "text", required: true },
     {
