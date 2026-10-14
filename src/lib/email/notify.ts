@@ -62,6 +62,8 @@ function orderData(o: Order, forStaff: boolean, env: EnvLike, store: StoreSettin
     customerName: str(o.customer?.name),
     lines: lines.map((l) => ({ title: str(l.title), option: str(l.option) || null, quantity: num(l.quantity), unitPriceCents: num(l.unitPriceCents), lineTotalCents: num(l.lineTotalCents) })),
     subtotalCents: num(o.totals?.subtotalCents),
+    discountCents: num(o.totals?.discountCents),
+    earnPoints: o.rewards?.member ? num(o.rewards?.earnPoints) : 0,
     taxCents: num(o.totals?.taxCents),
     totalCents: num(o.totals?.totalCents),
     taxApproved: Boolean(o.totals?.taxApproved),

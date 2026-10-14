@@ -11,7 +11,7 @@ export type FormState = {
 };
 
 /** Fields the checkout, reservation and add-to-bag forms send. */
-export const CHECKOUT_FIELDS = ["name", "email", "phone", "pickup", "notes", "payment", "unitId", "quantity"] as const;
+export const CHECKOUT_FIELDS = ["name", "email", "phone", "pickup", "notes", "payment", "reward", "unitId", "quantity"] as const;
 
 const MAX_ECHOED_LENGTH = 600;
 

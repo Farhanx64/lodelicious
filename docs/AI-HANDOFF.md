@@ -35,6 +35,7 @@ credentials (see section 7).
 | `src/lib/inventory/` | Stock ledger, atomic write batches, holds, sellable stock, BOM, restock, outbox rules, cron lock |
 | `src/lib/clover/` | Clover adapter interface, fake adapter, refusing HTTP stub, push and pull workers, health |
 | `src/lib/email/` | Templates, adapter selection (console; SMTP stub), exactly-once sending |
+| `src/lib/rewards/` | Member rewards (D45): members (not Payload auth), points ledger, earning, redeeming, refunds |
 | `src/lib/inquiries/`, `policies.ts` | Inquiry and fountain logic; policy drafts and approval resolver |
 | `src/lib/app-env.ts` | **The** live-vs-preview switch (allowlist) |
 | `src/hooks/` | Audit, payment-status advance, product stock pinning, stock adjustments, email sending |
@@ -69,6 +70,10 @@ credentials (see section 7).
   use an explicit `where` (`_status: published`, `channel != hidden`) with `overrideAccess: true`.
 - **No secrets in the repo.** Only `.env.example` is tracked; real values live in the cPanel Node
   app's environment. The only browser-exposed variable is `NEXT_PUBLIC_SITE_URL`.
+- **Points move only through `src/lib/rewards/ledger.ts` (`postEntry`)**, never with `payload.update` on a
+  member's balance. Ledger keys must never be built from a bare row id: SQLite reuses deleted ids (D45).
+- **Customers are never Payload auth users (D45).** Members sign in with their own signed cookie; keep it that
+  way, or staff access rules that say "your own record" would apply to customers too.
 - **Nothing activates live payments, live Clover sync, real email, DNS changes or purchases**
   without Lody's approval. The Clover HTTP adapter and the SMTP adapter deliberately refuse to start.
 - **Shared customer-facing copy:** plain, warm and honest. Accessibility target is WCAG 2.2 AA: labelled
@@ -135,7 +140,7 @@ and run `npm run build`.
   the schema and `service.ts`. The integrator merged branches one at a time into an integration
   branch, ran the full CI chain, edited the shared files (`SiteHeader`, `SiteFooter`, `STATUS.md`,
   `README.md`), and opened the PR.
-- Each change gets a decision entry in `docs/decisions.md` (next free number: **D45**), placed
+- Each change gets a decision entry in `docs/decisions.md` (next free number: **D46**), placed
   before `## Superseded`.
 - `docs/audit-2026-10-06.md` holds the security and accessibility audit. All 23 findings are fixed
   or partly fixed; the partial ones are listed there (no CSP yet, no 2FA, the decorative

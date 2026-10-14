@@ -106,6 +106,10 @@ export type OrderEmail = {
   customerName: string;
   lines: EmailLine[];
   subtotalCents: number;
+  /** A rewards discount taken off before tax (D45); 0 for none. */
+  discountCents?: number;
+  /** Points the member earns once paid (D45); 0 or missing for none. */
+  earnPoints?: number;
   taxCents: number;
   totalCents: number;
   taxApproved: boolean;
@@ -184,8 +188,10 @@ export function customerOrderConfirmation(d: OrderEmail): Rendered {
       kind: "rows",
       rows: [
         ["Subtotal", money(d.subtotalCents)],
+        ...(d.discountCents ? ([["Reward", `-${money(d.discountCents)}`]] as [string, string][]) : []),
         ["Tax", money(d.taxCents)],
         ["Total paid", money(d.totalCents)],
+        ...(d.earnPoints ? ([["Points earned", d.earnPoints.toLocaleString("en-US")]] as [string, string][]) : []),
       ],
     },
   ];
@@ -291,4 +297,18 @@ export function staffAttention(d: { kind: "order" | "reservation"; number: strin
       : `${what[0].toUpperCase()}${what.slice(1)} ${d.number} is paid, but its stock could not be taken. Check the shelf and the stock counts, fix them, then mark the stock as resolved in the admin.`;
   const blocks: Block[] = [{ kind: "p", text }, ...testNote(d.testMode), ...adminBlock(d.adminLink)];
   return build(`${testPrefix(d.testMode)}Needs attention: ${what} ${d.number} (${d.reason === "unknown_payment" ? "payment unknown" : "stock"})`, blocks, [oneLine(d.store.name)]);
+}
+
+// ---------------------------------------------------------------- rewards members (D45)
+
+export type MemberResetEmail = { name: string; programName: string; link: string; minutes: number; store: StoreInfo };
+
+export function memberPasswordReset(d: MemberResetEmail): Rendered {
+  const blocks: Block[] = [
+    { kind: "p", text: `Hi ${firstName(d.name)},` },
+    { kind: "p", text: `Someone asked to reset the password for your ${oneLine(d.programName)} account. If it was you, choose a new password here. The link works for ${d.minutes} minutes and only once.` },
+    { kind: "link", label: "Choose a new password", url: d.link },
+    { kind: "p", text: "If you didn't ask for this, you can ignore this email: your password stays the same." },
+  ];
+  return build(`Reset your ${oneLine(d.programName)} password`, blocks, storeFooter(d.store));
 }

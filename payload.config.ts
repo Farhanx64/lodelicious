@@ -11,10 +11,13 @@ import { Carts } from "./collections/Carts";
 import { Categories } from "./collections/Categories";
 import { Inquiries } from "./collections/Inquiries";
 import { Media } from "./collections/Media";
+import { Members } from "./collections/Members";
 import { Orders } from "./collections/Orders";
 import { Outbox } from "./collections/Outbox";
 import { Products } from "./collections/Products";
 import { Reservations } from "./collections/Reservations";
+import { RewardAdjustments } from "./collections/RewardAdjustments";
+import { RewardEntries } from "./collections/RewardEntries";
 import { SourceRecords } from "./collections/SourceRecords";
 import { StockAdjustments } from "./collections/StockAdjustments";
 import { StockHolds } from "./collections/StockHolds";
@@ -28,6 +31,7 @@ import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { HomePage } from "./globals/HomePage";
 import { InventorySettings } from "./globals/InventorySettings";
 import { Policies } from "./globals/Policies";
+import { RewardsSettings } from "./globals/RewardsSettings";
 import { StoreSettings } from "./globals/StoreSettings";
 import { emailAdapterFromEnv } from "./src/lib/email/adapter";
 import { csrfOrigins } from "./src/lib/security";
@@ -51,8 +55,8 @@ export default buildConfig({
       titleSuffix: " — Lodelicious admin",
     },
   },
-  collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs, StockMovements, StockHolds, StockAdjustments, Outbox],
-  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings, Policies, InventorySettings],
+  collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs, StockMovements, StockHolds, StockAdjustments, Outbox, Members, RewardEntries, RewardAdjustments],
+  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings, Policies, InventorySettings, RewardsSettings],
   // Transactional email (D44): the console by default; SMTP only with complete settings (and EMAIL_SEND_LIVE=1 on the live store).
   email: emailAdapterFromEnv(process.env),
   editor: lexicalEditor(),

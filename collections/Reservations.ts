@@ -3,10 +3,11 @@ import type { CollectionConfig } from "payload";
 import { isOwner, isStaff, nobody } from "../src/access/roles";
 import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { advanceWhenPaid } from "../src/hooks/payment-status";
+import { settleRewardsAfterChange } from "../src/hooks/rewards";
 import { sendRecordEmails } from "../src/hooks/send-emails";
 import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
-import { customerFields, frozen, identityFields, inventoryFields, orderEmailFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
+import { customerFields, frozen, identityFields, inventoryFields, orderEmailFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields, rewardsFields } from "./order-fields";
 
 const cents = { components: { Cell: "@/components/admin/CentsCell#CentsCell" } };
 
@@ -26,7 +27,7 @@ export const Reservations: CollectionConfig = {
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   hooks: {
     beforeChange: [guardStockStatus, advanceWhenPaid("reservations")],
-    afterChange: [auditCollection(["paymentStatus", "reservationStatus", "stockStatus", "amountPaidCents", "balanceDueCents", "staffNotes"]), releaseHoldOnCancel("reservationStatus"), sendRecordEmails("reservations")],
+    afterChange: [auditCollection(["paymentStatus", "reservationStatus", "stockStatus", "amountPaidCents", "balanceDueCents", "staffNotes"]), releaseHoldOnCancel("reservationStatus"), settleRewardsAfterChange("reservations"), sendRecordEmails("reservations")],
     afterDelete: [auditDelete(["number", "paymentStatus", "reservationStatus", "stockStatus", "testMode"])],
   },
   fields: [
@@ -93,6 +94,7 @@ export const Reservations: CollectionConfig = {
     },
     { name: "taxApproved", type: "checkbox", access: frozen },
     paymentReference,
+    rewardsFields("reservations"),
     paymentAttempts,
     ...inventoryFields,
     orderEmailFields,

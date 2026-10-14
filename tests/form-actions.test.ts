@@ -27,11 +27,12 @@ vi.mock("@/src/lib/checkout/service", () => ({ changeBag: mocks.changeBag, place
 vi.mock("@/src/lib/checkout/session", () => ({
   bagToken: async () => "bag-token-0123456789abcdef",
   ensureBagToken: async () => "bag-token-0123456789abcdef",
-  checkoutPayload: async () => ({ payload: {}, ctx: {} }),
+  checkoutPayload: async () => ({ payload: {}, ctx: { rewards: { active: false } } }),
   readBasketDraft: mocks.readBasketDraft,
   clearBasketDraft: vi.fn(),
   saveBasketDraft: vi.fn(),
 }));
+vi.mock("@/src/lib/rewards/session", () => ({ currentMember: async () => null }));
 vi.mock("@/src/lib/catalog/builder-data", () => ({ loadBuilderCatalog: mocks.loadBuilderCatalog }));
 vi.mock("@/src/lib/inquiries/service", () => ({ inquiryFormState: mocks.inquiryFormState }));
 vi.mock("@payload-config", () => ({ default: {} }));
@@ -89,7 +90,7 @@ describe("one submission, one order (A11)", () => {
     mocks.placeOrder.mockResolvedValue({ ok: false, error: "Nope" });
     const f = order();
     await submitOrder({ error: null }, f);
-    expect(mocks.placeOrder).toHaveBeenCalledWith({}, expect.objectContaining({ submission: f.get("submission") }), {});
+    expect(mocks.placeOrder).toHaveBeenCalledWith({}, expect.objectContaining({ submission: f.get("submission"), memberId: null }), { rewards: { active: false } });
 
     mocks.placeOrder.mockClear();
     expect(await submitOrder({ error: null }, form(customer))).toEqual({ error: EXPIRED_FORM, values: customer });
@@ -103,7 +104,7 @@ describe("one submission, one order (A11)", () => {
     expect((await submitReservation({ error: null }, order())).error).toBe(EXPIRED_FORM);
     expect(mocks.reserveBasket).not.toHaveBeenCalled();
     await submitReservation({ error: null }, reservation());
-    expect(mocks.reserveBasket).toHaveBeenCalledWith({}, expect.objectContaining({ submission: expect.any(String) }), {});
+    expect(mocks.reserveBasket).toHaveBeenCalledWith({}, expect.objectContaining({ submission: expect.any(String), memberId: null }), { rewards: { active: false } });
   });
 });
 

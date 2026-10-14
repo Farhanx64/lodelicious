@@ -3,10 +3,11 @@ import type { CollectionConfig } from "payload";
 import { isOwner, isStaff, nobody } from "../src/access/roles";
 import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { advanceWhenPaid } from "../src/hooks/payment-status";
+import { settleRewardsAfterChange } from "../src/hooks/rewards";
 import { sendRecordEmails } from "../src/hooks/send-emails";
 import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
-import { customerFields, frozen, identityFields, inventoryFields, orderEmailFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
+import { customerFields, frozen, identityFields, inventoryFields, orderEmailFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields, rewardsFields } from "./order-fields";
 
 /**
  * Shop orders (D35). Created only by checkout through the Local API; the lines and totals are an
@@ -25,7 +26,7 @@ export const Orders: CollectionConfig = {
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   hooks: {
     beforeChange: [guardStockStatus, advanceWhenPaid("orders")],
-    afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus"), sendRecordEmails("orders")],
+    afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus"), settleRewardsAfterChange("orders"), sendRecordEmails("orders")],
     afterDelete: [auditDelete(["number", "paymentStatus", "fulfillmentStatus", "stockStatus", "testMode"])],
   },
   fields: [
@@ -76,6 +77,7 @@ export const Orders: CollectionConfig = {
           type: "row",
           fields: [
             { name: "subtotalCents", type: "number", required: true, admin: { components: { Cell: "@/components/admin/CentsCell#CentsCell" } } },
+            { name: "discountCents", label: "Reward discount", type: "number", defaultValue: 0, admin: { description: "Taken off before tax (D45)." } },
             { name: "taxCents", type: "number", required: true },
             { name: "totalCents", type: "number", required: true, admin: { components: { Cell: "@/components/admin/CentsCell#CentsCell" } } },
           ],
@@ -85,6 +87,7 @@ export const Orders: CollectionConfig = {
     },
     paymentReference,
     paymentAttempts,
+    rewardsFields("orders"),
     ...inventoryFields,
     orderEmailFields,
     { name: "staffNotes", type: "textarea" },

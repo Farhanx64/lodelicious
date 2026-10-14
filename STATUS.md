@@ -131,6 +131,21 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 | 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | **Website half done** (D40): ledger, holds, atomic sales, BOM, restock, stale stock, outbox. Clover push/pull worker built against a fake (D43); the live sync needs Lody's stock counts, an inventory-only token and sandbox verification |
 | 6 | Clover embedded payments, USPS rates, fixture-tested until credentials exist | **Emails built, console only** (D44). Payments and USPS not started: need Clover ecommerce keys, fee approval, USPS credentials and a sending service |
 
+## Member rewards — 2026-10-14 (D45)
+
+- **Built, switched off.** Rewards members (separate from staff accounts), a points ledger, points earned
+  on paid orders and fully paid reservations, a fixed amount off a shop order (before tax) paid for with
+  points, and staff points adjustments. Pages: `/rewards`, `/account` (sign in / dashboard),
+  `/account/join`, `/account/forgot`, `/account/reset`; checkout offers a signed-in member's rewards.
+- **Nothing shows on the live site** until Lody fills in Settings → Rewards (earn rate, rewards, terms),
+  switches it on and approves it. Staging shows it as a draft once switched on.
+- Migration `member_rewards`. Password reset emails go through D44, so they're console-only for now.
+- **Checks:** **758 tests pass** (68 files). Typecheck and lint clean; all 16 migrations apply to an empty
+  production database with no schema drift; the production build passes. Checked in headless Chrome at
+  390 px and 1280 px: no horizontal scroll on the new pages or checkout.
+- **Open for Lody (D45):** run a program or not; earn rate, rewards and welcome points; terms; in-store
+  earning; deposits; her accountant on discounts and tax.
+
 ## Checkout hardening, Clover worker and emails — 2026-10-07/08 (D42–D44)
 
 - **Checkout hardening (D42):** the six remaining audit findings (A04, A05, A11, A12, A14, A20)
@@ -369,6 +384,7 @@ Screenshots (home shell since replaced by `m3-*`):
 - **Stock counts in Clover**: the export has none. Also: split the shared Phillips bar and Princess items, add the ceramics, bassinet and fudges to Clover, and say which teddy the card shows (`docs/clover-sync-needs.md`).
 - Clover API access for the in-house sync (inventory-only token Lody creates) — needed by milestone 5.
 - DoorDash page link for local delivery.
+- **Rewards program (D45):** whether to run one, the earn rate, rewards, welcome points and terms (built, off).
 - Pickup hours, notice periods, closed dates after Jan 2028; basket deposit amount (D36).
 - Policy terms for all five policies (D39): each staging draft lists what is still open.
 - Curated gift baskets: prices, contents (component list), photos; the nut-free basket (D38).
