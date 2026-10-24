@@ -74,6 +74,10 @@ export const ACTION_LIMITS = {
   submitReservation: { limit: 6, windowMs: MINUTE },
   contact: { limit: 5, windowMs: MINUTE },
   fountain: { limit: 5, windowMs: MINUTE },
+  // Rewards members (D47). Sign-in also locks an account after repeated failures, whatever the address.
+  memberSignIn: { limit: 10, windowMs: MINUTE },
+  memberJoin: { limit: 5, windowMs: MINUTE },
+  memberReset: { limit: 5, windowMs: MINUTE },
 } as const satisfies Record<string, Rule>;
 
 export type LimitedAction = keyof typeof ACTION_LIMITS;

@@ -13,6 +13,7 @@ import * as migration_20261007_023832_policies from './20261007_023832_policies'
 import * as migration_20261007_032358_inventory from './20261007_032358_inventory';
 import * as migration_20261008_002231_checkout_hardening from './20261008_002231_checkout_hardening';
 import * as migration_20261008_010254_email_settings from './20261008_010254_email_settings';
+import * as migration_20261014_185249_member_rewards from './20261014_185249_member_rewards';
 
 export const migrations = [
   {
@@ -88,6 +89,11 @@ export const migrations = [
   {
     up: migration_20261008_010254_email_settings.up,
     down: migration_20261008_010254_email_settings.down,
-    name: '20261008_010254_email_settings'
+    name: '20261008_010254_email_settings',
+  },
+  {
+    up: migration_20261014_185249_member_rewards.up,
+    down: migration_20261014_185249_member_rewards.down,
+    name: '20261014_185249_member_rewards'
   },
 ];

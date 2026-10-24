@@ -11,6 +11,7 @@ import { catalogOf, validateGift, type GiftValidation } from "@/src/lib/gifts";
 import { parseCustomRequest } from "@/src/lib/gifts/request";
 import { TOO_MANY_ATTEMPTS } from "@/src/lib/rate-limit";
 import { isRateLimited } from "@/src/lib/rate-limit-server";
+import { currentMember } from "@/src/lib/rewards/session";
 
 /**
  * Server-authoritative re-check with fresh prices, stock and rules — the browser's live preview
@@ -48,7 +49,9 @@ export async function submitReservation(_prev: ReserveState, form: FormData): Pr
   const draft = await readBasketDraft();
   if (!draft) return failedWith("Your basket has expired. Please build it again.", form);
   const { payload, ctx } = await checkoutPayload();
-  const result = await reserveBasket(payload, { draft, form: Object.fromEntries(form), submission }, ctx);
+  // The member comes from the signed session cookie only, never from the form (D47).
+  const member = ctx.rewards.active ? await currentMember() : null;
+  const result = await reserveBasket(payload, { draft, form: Object.fromEntries(form), submission, memberId: member?.id ?? null }, ctx);
   if (!result.ok) return failedWith(result.error, form);
   await clearBasketDraft();
   redirect(`/reservation/${result.number}?t=${encodeURIComponent(result.token)}`);

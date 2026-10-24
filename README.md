@@ -23,9 +23,11 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 | `src/lib/inventory/` | Stock ledger, atomic write batches, holds, sellable stock, curated-basket components, restock, outbox retry rules and the cron lock (D40) |
 | `src/lib/clover/` | Clover inventory sync: adapter interface, fake adapter, refusing HTTP stub, push and pull workers, sync health (D43) |
 | `src/lib/email/` | Transactional email templates, adapter selection (console; SMTP stub), exactly-once sending and retry (D44) |
+| `src/lib/rewards/` | Member rewards (D47): program rules, member passwords and sessions, the points ledger, settling points when payments change, account service. Off until Lody approves |
 | `src/lib/inquiries/` | Inquiry topics, form parsing, the fountain estimate and the inquiry service (D37) |
 | `src/lib/catalog/` | Catalog queries, availability, price display (unapproved prices show as "Price to be confirmed"), the create-only seed and its guard, gift-basket grouping |
 | `src/lib/payments/` | Payment provider interface. Only a test provider exists, never in production, until Clover (milestone 6) |
+| `components/rewards/` | Member sign-in, join and reset forms; reward choice at checkout; program blocks |
 | `components/brand/`, `components/checkout/` | SOUSET-PINK lockup, bow and awning; bag, checkout and reservation UI (forms keep entries after an error) |
 | `components/inquiries/`, `components/policies/` | Inquiry and fountain forms; policy pages |
 | `src/access/roles.ts` | Staff roles: owner (Lody), manager (Faisal), fulfillment |

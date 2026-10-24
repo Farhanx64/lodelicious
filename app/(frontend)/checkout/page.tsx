@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { submitOrder } from "@/app/(frontend)/cart/actions";
@@ -7,6 +8,7 @@ import { ContactFields } from "@/components/checkout/ContactFields";
 import { NotesField } from "@/components/checkout/FormFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
 import { SubmissionField } from "@/components/checkout/SubmissionField";
+import { RewardChoice } from "@/components/rewards/RewardChoice";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
 import { PolicyLinks } from "@/components/policies/PolicyLinks";
 import { availableSlots } from "@/src/lib/checkout/pickup";
@@ -14,6 +16,9 @@ import { priceBag } from "@/src/lib/checkout/service";
 import { bagToken, checkoutPayload } from "@/src/lib/checkout/session";
 import { orderingState } from "@/src/lib/payments";
 import { telHref } from "@/src/lib/phone";
+import { formatCents } from "@/src/lib/money";
+import { affordableOptions, formatPoints, pointsFor, totalsWithDiscount } from "@/src/lib/rewards/program";
+import { currentMember } from "@/src/lib/rewards/session";
 import { getStoreSettings } from "@/src/lib/store";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
@@ -24,6 +29,16 @@ export default async function CheckoutPage() {
   if (bag.payable.length === 0 || bag.blocking) redirect("/cart");
   const state = orderingState(ctx.provider, bag.taxApproved);
   const slots = availableSlots(ctx.pickup, new Date());
+  const member = ctx.rewards.active ? await currentMember() : null;
+  // Each reward the member can afford, labelled with the total it would leave, worked out the way checkout will (D47).
+  const lines = bag.payable.map((l) => ({ amountCents: l.lineTotalCents, taxClass: l.taxClass }));
+  const rewardOptions = member
+    ? affordableOptions(ctx.rewards.config.options, member.pointsBalance, bag.subtotalCents).map((o) => ({
+        id: o.id,
+        label: `${formatCents(o.discountCents)} off for ${formatPoints(o.pointsRequired)} (total ${formatCents(totalsWithDiscount(lines, o.discountCents).totalCents)})`,
+      }))
+    : [];
+  const earn = member ? pointsFor(bag.subtotalCents, ctx.rewards.config.pointsPerDollar) : 0;
 
   return (
     <div className="mx-auto w-[min(100%-2rem,60rem)]">
@@ -34,7 +49,20 @@ export default async function CheckoutPage() {
           {state.open ? (
             <ActionForm action={submitOrder} submitLabel={ctx.provider?.test ? "Place test order" : "Place order"} pendingLabel="Placing order…" disabled={slots.length === 0}>
               <SubmissionField kind="order" />
-              <ContactFields prefix="checkout" />
+              {member && (
+                <RewardChoice
+                  options={rewardOptions}
+                  balanceLabel={formatPoints(member.pointsBalance)}
+                  earnLabel={earn > 0 ? `This order earns about ${formatPoints(earn)} once it's paid (fewer if you use a reward).` : null}
+                />
+              )}
+              {ctx.rewards.active && !member && (
+                <p className="mb-4 border-l-4 border-gold bg-paper p-3 text-sm">
+                  <strong>{ctx.rewards.config.programName}:</strong> <Link href="/account?next=/checkout">sign in</Link> or{" "}
+                  <Link href="/account/join?next=/checkout">join free</Link> to earn points on this order.
+                </p>
+              )}
+              <ContactFields prefix="checkout" defaults={member ? { name: member.name, email: member.email, phone: member.phone } : undefined} />
               <fieldset className="mb-4">
                 <legend className="mb-3 font-display text-xl text-gold-text">Pickup</legend>
                 <p className="mb-3 text-sm">

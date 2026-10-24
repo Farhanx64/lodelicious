@@ -974,6 +974,71 @@ them and production falls back to approved photos ("Photo coming soon" where the
   whether she wants that, or wants them on staging only until her own photos arrive. Never present one as a
   photo of the actual product without her saying so.
 
+## D47 — Member rewards: accounts, points earned on purchases, rewards at checkout (2026-10-14)
+
+Requested by the repo owner: "a members reward system". Not in the PRD (D31: "Accounts and wishlists are
+not in the PRD"), so it is built **switched off and unapproved**, like policies (D39).
+
+- **Off until Lody says so.** Rewards → *Rewards program* starts empty: no earn rate, no rewards,
+  no terms. It can't be switched on until the earn rate (1–100 points per dollar) and at least one reward are
+  set, and the live site shows nothing about rewards (the account icon keeps its "coming soon" page) until the
+  owner ticks *Approved*, which needs terms text. A manager can prepare everything, but changing the earn rate,
+  welcome points, rewards, name or terms of an approved program clears the approval unless the owner saved it.
+  Staging shows an unapproved program with a "Draft program" notice. Audited.
+- **Members are not Payload users.** `members` is a plain collection; passwords are scrypt hashes (Node's own
+  `crypto.scrypt`, random salt, parameters stored with the hash) and the session is a signed `sp_member` cookie
+  (HMAC of `PAYLOAD_SECRET`, 30 days) carrying the member id and a session version. Why not Payload auth: a
+  second auth collection would share the admin's `payload-token` cookie and the REST login routes, and every
+  staff access rule written as "signed in → your own record" (`Users.read`/`update`) would match a customer
+  whose id equals a staff id. Keeping customers out of Payload's auth means they can never reach /admin or
+  the API at all.
+  - Sign-in: a generic answer for unknown email, wrong password and locked account; 5 failures lock the
+    account for 15 minutes; a decoy hash keeps timing the same for unknown emails; IP rate limits on join,
+    sign-in and reset (`memberJoin`, `memberSignIn`, `memberReset`).
+  - Passwords follow the staff policy (12+ characters, A23). Accounts hold redeemable value.
+  - Reset: a random token emailed (through D44's sending path, so console-only today), stored only as a
+    hash, valid 60 minutes, single use. A reset, "sign out on all devices" and closing an account bump the
+    session version, ending every session. The reset link uses `NEXT_PUBLIC_SITE_URL` (never the request's
+    Host header); away from live it falls back to `http://localhost:3000`.
+  - Members can't edit their details or close their account themselves yet: they ask the shop, and staff
+    edit Rewards → Members (owner/manager; fulfillment read only; owner deletes).
+- **The points ledger** (`reward-entries`) works like the stock ledger (D40): `src/lib/rewards/ledger.ts`
+  changes `members.points_balance` and inserts the entry in one `client.batch` write. A spend that would go
+  below zero aborts the batch. Every entry has a unique key naming its cause, so retries post once. Nobody can
+  create, edit or delete ledger rows through Payload. The member's balance field is replaced by the live
+  value on every Payload save, so a stale admin form can't overwrite it. Staff change points only through
+  Rewards → *Points adjustments* (owner/manager, a reason required, never below zero).
+  - **Keys never use a bare row id.** SQLite gives a deleted row's id to the next row, so `earn:orders:12`
+    would match a deleted order's entry and the new order would never earn. Records use their unique
+    idempotency key; welcome points use the member id plus the moment they joined. A test covers it.
+- **Earning.** Points are worked out at checkout and frozen on the record (`rewards.earnPoints`):
+  `floor(paid before tax, after any reward, in cents × points per dollar / 100)`. They're posted when a shop
+  order is `paid`, or a basket reservation is `paid_in_full` (a deposit alone earns nothing). Only for
+  orders placed while signed in: an order is never matched to a member by the email typed at checkout.
+- **Redeeming.** Shop orders only, one reward per order: a fixed amount off, never more than the subtotal.
+  The discount is spread over the lines in proportion (largest remainder, exact cents) and taken off
+  **before tax**, then tax is worked out per line as usual (D34). Stored on the order (`totals.discountCents`,
+  each line's `discountCents` and tax) and shown in the bag summary, the confirmation page and email.
+  - Points are spent **before** the charge, under a key per payment attempt, so two simultaneous orders
+    can't spend the same points (tested). A declined charge gives them back, and the retry spends them
+    again. An *unknown* result keeps them until staff mark the payment paid or failed. An error before the
+    provider was asked gives them back at once.
+  - **Refund** (payment status → Refunded): the points the order earned are taken back (the balance may go
+    below zero if they were spent) and the points it used are returned. Partial refunds aren't modelled;
+    staff use a points adjustment. Cancelling without a refund changes nothing.
+  - All of this runs in an `afterChange` hook on orders and reservations (`settleRecordRewards`), so a staff
+    edit in the admin has the same effect as checkout. It never fails the save; an error is logged.
+- **Customer pages:** `/rewards` (how it works, rewards, terms), `/account` (sign in; once signed in:
+  balance, next reward, rewards, points history, recent orders, sign out / sign out everywhere),
+  `/account/join`, `/account/forgot`, `/account/reset`. Checkout fills in a member's details and offers the
+  rewards they can afford, each labelled with the total it leaves; guests see a "sign in or join" line. Pages
+  are noindex except an approved `/rewards`.
+- Migration `member_rewards`.
+- **Open for Lody:** whether to run a program at all; the earn rate, rewards and welcome points; the terms
+  (cash value, expiry, changes, closing accounts); whether in-store Clover purchases should earn (needs
+  matching a customer at the till, not built); whether reservations should earn on the deposit; and her
+  accountant's view on reducing taxable sales by a store reward (built that way, D34 rounding per line).
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,
