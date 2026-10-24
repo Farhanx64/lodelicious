@@ -61,7 +61,7 @@ export async function runBatch(payload: Payload, stmts: Stmt[]): Promise<ResultS
     } catch (e) {
       const message = messageOf(e);
       if (/integer overflow/i.test(message)) throw new GuardFailed();
-      if (/UNIQUE constraint failed: (stock_movements\.idempotency_key|outbox\.idempotency_key)/i.test(message)) throw new AlreadyApplied();
+      if (/UNIQUE constraint failed: (stock_movements\.idempotency_key|outbox\.idempotency_key|reward_entries\.idempotency_key)/i.test(message)) throw new AlreadyApplied();
       if (!isBusy(e) || attempt >= delays.length) throw e;
       await sleep(delays[attempt] + Math.floor(Math.random() * delays[attempt]));
     }

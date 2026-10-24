@@ -4,6 +4,7 @@ import { isOwner, isStaff, nobody } from "../src/access/roles";
 import { centsComponents } from "../src/fields/money";
 import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { advanceWhenPaid } from "../src/hooks/payment-status";
+import { settleRewardsAfterChange } from "../src/hooks/rewards";
 import { sendRecordEmails } from "../src/hooks/send-emails";
 import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
@@ -17,6 +18,7 @@ import {
   paymentReference,
   paymentStatusAccess,
   pickupFields,
+  rewardsFields,
   staffNotesField,
   stockDetailFields,
   stockStatusField,
@@ -41,7 +43,7 @@ export const Orders: CollectionConfig = {
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   hooks: {
     beforeChange: [guardStockStatus, advanceWhenPaid("orders")],
-    afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus"), sendRecordEmails("orders")],
+    afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus"), settleRewardsAfterChange("orders"), sendRecordEmails("orders")],
     afterDelete: [auditDelete(["number", "paymentStatus", "fulfillmentStatus", "stockStatus", "testMode"])],
   },
   fields: [
@@ -109,6 +111,7 @@ export const Orders: CollectionConfig = {
                   type: "row",
                   fields: [
                     { name: "subtotalCents", label: "Subtotal", type: "number", required: true, admin: { components: centsComponents } },
+                    { name: "discountCents", label: "Reward discount", type: "number", defaultValue: 0, admin: { components: centsComponents, description: "Taken off before tax (D47)." } },
                     { name: "taxCents", label: "Tax", type: "number", required: true, admin: { components: centsComponents } },
                     { name: "totalCents", label: "Total", type: "number", required: true, admin: { components: centsComponents } },
                   ],
@@ -124,6 +127,7 @@ export const Orders: CollectionConfig = {
     stockStatusField,
     paymentReference,
     paymentAttempts,
+    rewardsFields("orders"),
     orderEmailFields,
   ],
 };

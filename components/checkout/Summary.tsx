@@ -6,6 +6,7 @@ export type SummaryLine = { key: string; title: string; detail?: string | null; 
 export function Summary({
   lines,
   subtotalCents,
+  discountCents = 0,
   taxCents,
   totalCents,
   taxApproved,
@@ -13,6 +14,8 @@ export function Summary({
 }: {
   lines: SummaryLine[];
   subtotalCents: number;
+  /** A rewards discount, taken off before tax (D47). */
+  discountCents?: number;
   taxCents: number;
   totalCents: number;
   taxApproved: boolean;
@@ -34,6 +37,12 @@ export function Summary({
       <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
         <dt>Subtotal</dt>
         <dd className="text-right">{formatCents(subtotalCents)}</dd>
+        {discountCents > 0 && (
+          <>
+            <dt>Reward</dt>
+            <dd className="text-right">−{formatCents(discountCents)}</dd>
+          </>
+        )}
         <dt>{taxApproved ? "Tax" : "Estimated tax (to be confirmed)"}</dt>
         <dd className="text-right">{formatCents(taxCents)}</dd>
         <dt className="font-semibold">Total</dt>

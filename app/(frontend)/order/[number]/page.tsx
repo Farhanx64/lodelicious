@@ -8,6 +8,7 @@ import { Summary } from "@/components/checkout/Summary";
 import { findByToken } from "@/src/lib/checkout/service";
 import { checkoutPayload } from "@/src/lib/checkout/session";
 import { singleParam } from "@/src/lib/checkout/token-param";
+import { formatPoints } from "@/src/lib/rewards/program";
 import { getStoreSettings } from "@/src/lib/store";
 
 export const metadata: Metadata = { title: "Order confirmed", robots: { index: false } };
@@ -47,10 +48,17 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       <Summary
         lines={lines.map((l) => ({ key: l.unitId, title: l.title, detail: l.option, quantity: l.quantity, totalCents: l.lineTotalCents }))}
         subtotalCents={order.totals.subtotalCents}
+        discountCents={order.totals.discountCents ?? 0}
         taxCents={order.totals.taxCents}
         totalCents={order.totals.totalCents}
         taxApproved={Boolean(order.totals.taxApproved)}
       />
+      {order.rewards?.member && (order.rewards.earnPoints ?? 0) > 0 && (
+        <p className="mt-4 text-center">
+          {order.paymentStatus === "paid" ? "You earned" : "You'll earn"} <strong>{formatPoints(order.rewards.earnPoints ?? 0)}</strong> on this order.{" "}
+          <Link href="/account">See your points</Link>
+        </p>
+      )}
       <p className="mt-6 text-center">
         <Link href="/shop" className={secondaryButton}>
           Continue shopping

@@ -159,3 +159,29 @@ export const inquiryEmailFields: Field = {
   admin: { position: "sidebar", description: "Set by the system when an email is sent. Empty means not sent yet." },
   fields: [sentAt("confirmationSentAt", "Customer receipt"), sentAt("staffNotifiedAt", "Staff notified")],
 };
+
+/**
+ * The rewards member who placed this record, and its points (D47). Frozen at checkout: earning,
+ * returning and taking back points all use these numbers, never today's settings.
+ */
+export function rewardsFields(collection: "orders" | "reservations"): Field {
+  return {
+    name: "rewards",
+    label: "Rewards",
+    type: "group",
+    access: frozen,
+    admin: { position: "sidebar", description: "Set by checkout when a signed-in member placed this. Points move when the payment is paid, fails or is refunded." },
+    fields: [
+      { name: "member", type: "relationship", relationTo: "members", index: true, admin: { readOnly: true } },
+      ...(collection === "orders"
+        ? [{ name: "redeemedPoints", label: "Points spent", type: "number" as const, admin: { readOnly: true } }]
+        : []),
+      {
+        name: "earnPoints",
+        label: collection === "orders" ? "Points to earn when paid" : "Points to earn when paid in full",
+        type: "number",
+        admin: { readOnly: true },
+      },
+    ],
+  };
+}
