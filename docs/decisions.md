@@ -345,6 +345,637 @@ At the project lead's direction, Build a Basket is separate from the bag: a fini
 
   Baskets with dietary or special requests start in "Needs staff review" (GFT 06).
 
+## D37 — Inquiries, chocolate-fountain requests and the Contact page (2026-10-06)
+
+Anything that can't be bought online goes through an **inquiry** that staff review. Nothing is
+booked, ordered or charged by an inquiry, and no email is sent yet (the shop replies by email or
+phone; notification emails come with milestone 6).
+
+- **`inquiries` collection** (/admin → Orders → Inquiries):
+  - Number `INQ-1001`, `INQ-1002`, … from a hidden sequence (the highest used plus one, so a
+    deleted inquiry never causes a clash).
+  - Topics, shared with every page that links to `/contact?topic=…`: `general`, `gift_basket`,
+    `gift_box`, `baby_white`, `cowboy`, `filled_ceramic`, `custom_request`, `fountain`.
+  - Status: new (the start), in review, waiting for the customer, confirmed, declined, closed.
+  - Access: every staff role reads; nobody creates through the API (only the server action does);
+    staff update the status and notes; only the owner deletes.
+  - What the customer wrote, the product, the event details and the estimate are read-only for
+    staff. Only status and staff notes are audited, so the audit log never copies the customer's
+    own submission (staff notes are free text, so keep personal details out of them).
+- **`event-settings` global** (Settings → Events (chocolate fountain); owner and manager edit,
+  audited, public read because the prices are public):
+  - The confirmed offer (PRD): $250 for 2 hours including setup and service, $8.50 per person
+    ($5.00 chocolate + $3.50 fruit), and a 25% deposit, with an on/off switch.
+  - Cancellation wording, service area, minimum guests and extra time stay empty. Customers see
+    each one only once it is filled in. "Free cancellation within one week" is not published
+    because the PRD calls it ambiguous.
+- **Fountain estimate** = base + per person × guests, in integer cents, guests a whole number from
+  1 to 1000. It is shown as an estimate that staff confirm. Tax and other approved charges are
+  not computed and are said to be separate, because nobody has said whether a rental is taxable
+  (D34 covers products). The deposit is shown as a percentage only and "requested after we
+  confirm", never as an amount, because its basis is not decided. The form itself charges nothing
+  and takes no deposit; if quote acceptance and payment are added later, they stay on this site
+  through the Clover payment design (PRD).
+- **The server decides.** `/events` shows a live calculator that uses the same pure function, but
+  the stored estimate is recomputed from the stored settings and anything the browser sends is
+  ignored. The date must not be in the past in America/New_York; the topic comes from a fixed list;
+  `?item=` is matched against published, non-hidden products only and unknown slugs are ignored.
+- **Spam and abuse:** a honeypot field (a hit looks like success but stores nothing), the same
+  submission twice is one inquiry, length limits, and control characters stripped. Server actions
+  accept only POST and Next.js rejects a request whose Origin header doesn't match the site's host
+  (or `X-Forwarded-Host`), which is the CSRF protection; on the cPanel proxy that relies on the
+  public host being forwarded, as it already does for checkout. There is **no rate limit yet**.
+- **Entry points:** an "Ask about this" link on inquiry-only product pages, Baby White and filled
+  ceramics on Baby Gifts, and Cowboy, Baby White and filled ceramics on Build a Basket (whichever
+  the gift rules mark inquiry-only). The Contact page reads `?topic=` and `?item=`.
+- Migration `inquiries_events`.
+
+## D38 — Curated gift baskets: inquiry-only, price observed but not approved (2026-10-06)
+
+Curated baskets (ready-made, priced as a whole) are catalog products in a new **Gift baskets**
+category, with a /gift-baskets page.
+
+- **Nine baskets:** Small, Medium, Large and Extra Large Gift Basket; Large Birthday; Large Savory;
+  Small, Medium and Large Sympathy. Names, contents, item counts and basket sizes come from the
+  owner's basket chart. Where Clover's name differs ("Medium sympathy gift basket"), the chart's
+  name is used.
+- **Price:** the price observed on the public Clover storefront on 2026-09-22 (C07–C10, C12, C13,
+  C15, C17, C19). It is **not approved**. D25 ("Clover's price wins") covers Lody's inventory
+  export, and that export has no baskets, so it does not approve these older observations. Each
+  product has `priceApproved: false`, a `priceSource` naming the listing and its C ref, and the C
+  row in `sourceRecords`.
+- **Inquiry-only:** `channel: "inquiry_only"`, so customers see "Available by inquiry" and there is
+  no purchase action. Stock is unknown, `basketEligible` is false, allergen and dietary fields are
+  "unknown", and there is no photo ("Photo coming soon"). The seed only fills what the sources
+  state: the sympathy baskets are marked perishable because the chart lists fresh fruit.
+- **Contents are not a BOM:** descriptions say "Typically includes …" using the chart's words, and
+  "Contents vary with availability". The exact components of each basket, and its stock, are
+  undefined until milestone 5.
+- **No second packaging fee (AC 03):** a curated price already includes the basket and
+  presentation. `packagingFor(settings, "curated")` is 0 for every size, the bag never adds a
+  packaging line, and a curated basket is not basket-eligible, so it can't be nested in a custom
+  basket. Tests cover each.
+- **Left out, C14 "Medium Nut Free Basket":** "Nut Free" is a source title, not a verified
+  allergen claim (PRD), and a product named that would make one. Its source record stays for Lody.
+  Customers with a dietary request use the contact form; /gift-baskets asks them to say so.
+- **Extra Large:** the builder's Extra Large size stays off (D27). The curated Extra Large Gift
+  Basket (C07, $199.99) is a separate Clover product, so it is seeded like the others.
+- **Page:** baskets are grouped everyday, birthday, savory and sympathy by an explicit slug map in
+  `src/lib/catalog/gift-baskets.ts` (it also sets the order, since the shop lists by title). A
+  basket staff add in /admin that isn't in the map goes in a final "More gift baskets" group.
+  The page also links to Build a Basket and, for seasonal gift boxes (inquiry only, nothing to buy),
+  to `/contact?topic=gift_box`.
+- **Unapproved prices on cards:** `ProductCard` had an opt-in `hideUnapprovedPrice`, which /gift-baskets
+  turned on so a card said "Price on request" until the price was approved. **Superseded by D41 (A06):**
+  every listing, the product page, the builder and the bag now say "Price to be confirmed" for an
+  unapproved price, and the prop is gone.
+- **Going live, per basket, in /admin:** confirm the price and tick "approved", set the channel to
+  "Sold online", and count stock. The seed is create-only (D24), so existing databases get the new
+  category and products on the next `npm run seed:catalog` and nothing already there changes.
+
+## D39 — Customer policies: Lody approves the text; drafts stay on staging (2026-10-06)
+
+The PRD lists policy pages but says the final text, the reporting deadline, the refund and
+cancellation terms and the privacy terms are not approved. So the website holds the policies but
+never writes the terms for Lody.
+
+- **Five fixed policies:** pickup and delivery, cancellations and refunds, substitutions and
+  dietary requests, damaged or missing items, and privacy, at `/policies/<slug>`, listed at
+  `/policies`. There is no separate allergen policy: the dietary policy shows the existing allergy
+  notice from Store settings.
+- **Admin:** Settings → Policies is a global with one fixed group per policy: title, text (a blank
+  line starts a paragraph), an **Approved** tick and a last-reviewed date. Owner and manager can
+  edit the text and changes are audited, but **only the owner can tick Approved**, nobody can
+  approve a policy with no text, and a manager's change to the title or text of an approved policy
+  clears the tick until Lody approves again. (To let the manager approve, relax the check in
+  `globals/Policies.ts`.) Read access is staff-only so unapproved text isn't published through the
+  REST/GraphQL API; the pages read it on the server.
+- **What a visitor sees** (`resolvePolicy`, `src/lib/policies.ts`):
+
+  | Site | Saved and approved | Saved, not approved | Nothing saved |
+  | --- | --- | --- | --- |
+  | Live (`APP_ENV=production`) | the text | "This policy is being finalised. Please contact us with any questions." | the same message |
+  | Staging and local | the text | the text, with a "Draft — awaiting Lody's approval" banner | built-in draft, with the banner and a list of the terms still to be decided |
+
+  The live site never shows the draft. An approved policy with a blank body counts as not approved.
+  The check uses `APP_ENV` like D32's photos, not `NODE_ENV`, because staging also runs with
+  `NODE_ENV=production`.
+- **Built-in drafts** live in code and are never written to the database, so they can't drift onto
+  the live site. They use only confirmed facts: pickup is free at the shop and takes about an hour
+  depending on workload (not guaranteed); local delivery is through DoorDash; shipping isn't offered
+  online; significant substitutions are discussed first; dietary requests aren't guarantees;
+  custom-order cancellation and refund requests get staff review; and damaged or missing items
+  should be reported promptly. Refund amounts, the cancellation window, whether the basket deposit
+  can be refunded, the reporting deadline, the escalation process, data retention and deletion are
+  stated as "being finalised: contact the shop". Tests fail if a draft contains a price,
+  percentage or deadline.
+- **Privacy facts** come from the code: checkout and reservations collect name, email, phone,
+  pickup time, notes, and for baskets the gift message and requests. Inquiry forms collect name,
+  email, phone, a message and event details. The bag is a server-side record with an httpOnly
+  random token cookie (30 days). The basket being reserved travels in a signed cookie (2 hours).
+  There are no third-party requests or trackers (D13), and card details are never stored. A test
+  checks the two cookie lifetimes against `src/lib/checkout/session.ts`.
+- **Checkout and reserve pages** carry one line linking to the pickup and cancellation policies. It
+  only informs: nobody has to agree to policies that aren't approved yet.
+
+## D40 — Inventory: ledger, holds, bill of materials, outbox (2026-10-07)
+
+The website half of milestone 5, with no Clover network access. Sellable stock for the online shop is
+now **counted − in-store reserve (D26) − other customers' active holds**, per product and per option,
+and unknown or stale counts are not sellable at all. Customers still see only "Currently unavailable"
+or "Low stock", never a count.
+
+- **Atomic changes, and what Payload does not give us.** Payload's transactions are off for SQLite
+  here: the adapter is built without `transactionOptions`, so `beginTransaction` returns null and
+  `req.transactionID` is never set. (The comment in `src/hooks/audit.ts` saying audit rows share the
+  change's transaction is therefore not true today.) `client.transaction()` is no use either: libsql
+  opens a second connection for every other caller while it is open, and with SQLite's 0 busy timeout
+  they fail at once with `SQLITE_BUSY` (the busy timeout is only about 5 ms here). So every stock change is **one `client.batch(..., "write")`**
+  (`src/lib/inventory/db.ts`): libsql runs `BEGIN IMMEDIATE`, every statement and `COMMIT` in a single
+  synchronous call, so nothing else in the process can run in between, and other processes (the cron
+  script) are serialised by SQLite's write lock. The conditions are in the SQL itself: each guarded
+  statement is followed by a check that raises SQLite's "integer overflow" if it changed no row, which
+  rolls the whole batch back and is mapped to "insufficient stock". `SQLITE_BUSY` from another process is
+  retried with jitter. A UNIQUE violation on a movement key means "already applied".
+- **`stock-movements` is the ledger.** One append-only row per change: product, option, signed
+  `delta`, `reason` (sale, reservation, cancel_restock, count_correction, manual_adjustment, sync), the
+  resulting quantity, a reference (order or reservation number), the staff user, a note and a **unique
+  idempotency key** (`sale:<number>.<created ms>:<product>[:<option>]`). Nobody can create, update or
+  delete a row through the API; staff can read. Holds are not movements, so there is no `hold_release`.
+- **Holds (`stock-holds`, staff read).** One row per owner and component, with `expiresAt` (Settings →
+  Inventory → "Checkout hold", default **15 minutes**, to confirm with Lody). Placing an order or reserving
+  a basket **holds every component all-or-nothing before charging**; the owner's earlier holds are
+  replaced in the same batch, so a retry never competes with itself. Owners are the bag's token hash
+  (orders) and a hash of basket, email and pickup (reservations), and an owner's own holds are left out
+  when its own bag or basket is priced. Expired holds are ignored everywhere sellable stock is worked out;
+  `scripts/release-expired-holds.ts` (`npx payload run …`, cron every 5 minutes, no-overlap lock in
+  `sync-jobs`) marks them expired and removes finished ones after 7 days.
+- **How a sale flows.** price → hold (all or nothing) → create the record (`stockStatus: held`, with a frozen
+  copy of what it takes from stock) → charge → **paid:** one batch converts the holds into sale movements
+  (decrement, movement, outbox event and hold marked converted for every component; a component whose key
+  already exists is skipped, so a second submit moves nothing); **declined or error:** holds released,
+  `stockStatus: released`. Customers see the same messages as before.
+- **A paid order is never lost (INV 06).** If the stock can't be taken after a successful payment (the hold
+  expired and the shelf changed, a count shrank stock, a component went unknown, or the batch failed), the
+  paid record is kept, flagged `stockStatus: needs_attention` with a note, moved to "Needs staff review",
+  logged, and **nobody is charged again**. Only the owner or a manager can mark it Resolved once the stock is fixed.
+  A record that is paid after staff cancelled it is kept and flagged the same way, with nothing taken from stock. A
+  late "paid" for a checkout that had been released, or a record found paid but still `held` after a crash,
+  is settled by the same code (`settleStock`, run by the cron job): it takes the stock only if it is still
+  sellable (the in-store reserve and other holds still apply), otherwise it is flagged.
+- **Bill of materials.** Products have an optional `components` list (product, option, quantity), shown on a
+  "Basket contents" tab. It is **empty until Lody supplies the contents; nothing is seeded**. A basket with
+  contents is sold from its components and never from itself, and a component bought on its own in the same
+  order is added to the same line, so each component moves once. Its availability is the smallest of
+  floor(component sellable ÷ quantity), after each component's own reserve, and unknown if any component is
+  unknown or stale. Components are one level deep, can't be the basket itself, must name an option when
+  the component has options, and a basket with contents can't have options of its own; all checked when a
+  product is published. Custom-basket reservations deduct their snapshot components. Without contents a
+  basket's own stock is deducted. The tab shows for the gift-baskets category, or once contents are filled in (a hidden,
+  unstored `categorySlug` field gives the form the slug); after changing a product's category, save it before the tab
+  appears.
+- **Drafts and versions can't write old stock back.** Stock lives on the product row the storefront reads, but
+  Payload builds every update from the latest saved *version* (a draft, or the snapshot at the last publish).
+  A price-only save, publishing an older draft or restoring a version would otherwise put that version's
+  stock over the sales since (this was reproduced). `pinLiveStock` puts the live row's stock (and each
+  option's, matched by key) back into every update; only server code with no signed-in user, and not a
+  restore, that **explicitly** sends stock fields (seeding, tests) keeps them. A product made in the admin
+  starts uncounted. Staff see the live number when they open a product. Renaming an option's key makes it a
+  new option, which starts uncounted. Residual risk: between the hook and the write there is a window of a few
+  microtasks in which a sale could land; the ledger's `quantityAfter` would show it.
+- **Staff change stock through the ledger.** The product form's stock fields are read-only. Under Inventory →
+  **Stock adjustments** the owner or a manager records a **count** (sets the quantity to what was counted,
+  marks it known and counted now) or an **adjustment** (adds or removes units, never below zero); each is
+  applied atomically with its ledger row and outbox event, and the row is the audit record (who, why) and
+  can't be edited or deleted. A count replaces the number, and units sold online are taken off it when the order is paid, even while
+  they are still on the shelf waiting to be packed. So a shelf count must leave out units set aside for paid, unpacked orders
+  (or be taken after packing), or the shop would sell them twice (open question for Lody). Fulfillment staff can only
+  restock.
+- **Cancel and restock are separate from refunds.** Cancelling or refunding never changes stock. A
+  "Put cancelled stock back" adjustment names an order or reservation and the components to return; it can't
+  exceed what that record took minus what was already put back, is all-or-nothing, and is refused for
+  perishable items unless an owner or manager ticks the confirmation. Opened or assembled goods are simply
+  not chosen; nothing returns by itself. Cancelling an order still waiting for payment releases its hold.
+- **Stale stock (INV 05).** Settings → Inventory → "Longest age of a stock count" is **empty (off)**, so
+  nothing changes until Lody sets it. When set, a product or option whose count date is older, or missing, is
+  unknown. Options have their own count date. The check applies when holding stock, not when a paid sale is
+  taken.
+- **Outbox (website half).** Every movement writes one `stock_changed` event in the same batch (product,
+  Clover ID, option, delta, quantity after, movement id, reason, reference), status pending, unique key
+  `stock_changed:<movement key>`. Movements from the Clover read (`sync`) and zero-change recounts write none.
+  Nothing sends them yet; `src/lib/inventory/outbox.ts` holds the retry timing (30 s doubling to 6 h, dead
+  after 8 failures). See `docs/clover-sync-needs.md`.
+- **Fixes that live in checkout.** A02: order and reservation numbers are one above the highest in use (a
+  numeric `MAX`), and only a number collision is retried. A01: a basket's components come from the merged,
+  validated selections.
+- **Known edges.** Holds belong to a bag (orders) or to a basket, email and pickup time (reservations), not to one record: a
+  late payment for an old order from the same bag can use up a newer checkout's hold, and cancelling releases every hold the
+  bag has. The newer order is then flagged for staff, never oversold. `reserveBasket` now checks contact and pickup before
+  the basket, so those errors come first. Do not switch on `transactionOptions` for the SQLite adapter without re-running
+  the inventory tests: Payload would then swap the shared connection mid-request. A larger `busyTimeout` on the adapter
+  would help writes that collide with the cron script.
+- **Staging.** With `PREVIEW_ASSUME_STOCK`, uncounted stock can still be ordered and is neither held nor
+  deducted.
+- Migration `inventory`. New: `stock-movements`, `stock-holds`, `stock-adjustments`, `outbox`, the
+  `inventory-settings` global, `products.components`, per-option `stockCountedAt`, and `stockStatus`,
+  `stockOwner`, `stockPlan`, `stockNote` on orders and reservations.
+
+## D41 — Security and audit fixes (2026-10-06)
+
+Fixes from the repo audit (`AUDIT.md`, A01–A23) that need no schema change and no change to
+`src/lib/checkout/service.ts`. No migration. The rest of the audit is with the inventory and
+checkout-hardening work (A02, A04, A05, A11, A12, A14, A20) and the integrator (A17, A21, footer).
+
+- **What "live" means (A09).** Everything that is only allowed away from the live store is now an
+  allowlist (`src/lib/app-env.ts`): the test payment provider, unapproved photos, the staging
+  banner, draft policies, `PREVIEW_ASSUME_STOCK`, and the `noindex` robots rules apply **only when
+  `APP_ENV` is explicitly `local`, `staging` or `test`** (case and spaces ignored). `production`, an
+  unset variable and a mistyped one (`prod`, `stage`) are all the live store, so a forgotten variable
+  closes ordering and hides placeholder photos instead of opening them. This refines the wording of
+  D32, D35 and D39 ("APP_ENV=production") to "anything that is not local, staging or test".
+  `/ops/system-check` and `npm run doctor` gain an **APP_ENV** check: it passes for `production`,
+  `local`, `staging` and `test`, and fails (with what the server will do) for unset or unrecognised
+  values. Tests run with `APP_ENV=test` (`tests/setup-env.ts`), which is on the allowlist.
+  `.env.example` keeps `APP_ENV=local` for development and says so. `robots.txt` and the `noindex` meta
+  tag follow the same rule; `app/robots.ts` is now `force-dynamic`, because Next otherwise builds it once
+  and a build made with a different `APP_ENV` would fix the wrong rules into the live site.
+- **Unapproved prices (A06).** `formatPrice`, `priceRange` and the option list live in
+  `src/lib/catalog/product.ts`. A product whose price is not approved shows **"Price to be
+  confirmed"** and never a number: product cards on every listing (shop, baby gifts, gift baskets,
+  home), the product page and its option list, the builder's item cards and the bag (a line whose
+  price was approved when added but is not now). "Price on request" remains only for an approved
+  product with no price. This replaces the opt-in `hideUnapprovedPrice` prop that D38 added; the baby
+  ceramics' assumed prices (D19) are therefore no longer shown. Admin views are unchanged.
+- **Basket requests (A01).** `parseCustomRequest` rejects a selection with a quantity that is not a
+  whole number from 1 to 99 (negative, zero, fractional, `NaN`, huge) or with no product id, and merges
+  a product listed twice into one line (rejecting if the merge passes 99). Both the builder actions and
+  the signed basket cookie read requests through it, so `service.ts` only ever sees clean lines; its own
+  hardening is with the inventory work.
+- **Standing closures (A07).** The catalog seed fills Checkout settings → Closed dates **only when the
+  list is empty**: December 25, January 1 and Labor Day (first Monday of September), PRD FUL 01, as
+  explicit dates for the next **18 months** (`src/lib/checkout/closed-dates.ts`). From October 2026 that
+  is 2026-12-25, 2027-01-01, 2027-09-06, 2027-12-25 and 2028-01-01. The field holds plain dates, and
+  recurring rules would need a schema change, so **Lody adds later years in /admin** (or the seed fills
+  the next 18 months again if the list is ever emptied). Store settings → "Timezone" and "Closed days"
+  remain labels that checkout does not read (pickup uses `America/New_York`, and the closed-day text
+  is for the footer). Wiring or removing them is a schema change, left for later.
+- **Headers, cookies, CSRF, GraphQL (A08).**
+  - `next.config.ts` sets `X-Frame-Options: SAMEORIGIN`, `X-Content-Type-Options: nosniff` and
+    `Referrer-Policy: strict-origin-when-cross-origin` on every path, `Referrer-Policy: no-referrer` on
+    `/order/*` and `/reservation/*` (their URL carries the guest token), and `poweredByHeader: false`
+    (Payload's own `X-Powered-By` is suppressed with it). `Strict-Transport-Security: max-age=31536000`
+    (no `includeSubDomains`, no `preload`, since domain changes need Lody's approval) is sent **only for a
+    production build**. Next evaluates `headers()` when it builds, so run `npm run build` on the host with
+    `APP_ENV=production` set. No CSP yet: the admin needs inline scripts, so a report-only policy comes
+    later.
+  - The Payload login cookie is `Secure` unless this is a local, staging or test server not in production
+    mode.
+  - `csrf` is the origin(s) in `NEXT_PUBLIC_SITE_URL` (comma-separated allowed, so apex and www both
+    work) **only when that variable is set**; unset leaves Payload's allowlist off. With it set, the admin
+    must be opened at exactly that origin, or the browser's API calls are treated as logged out.
+  - `graphQL: { disable: true }`: nothing uses it (the admin runs on REST). The `/api/graphql` routes
+    remain and answer 404. The cloudflared tunnel (`docs/preview-and-sharing.md`) works with
+    `NEXT_PUBLIC_SITE_URL` unset or set to the tunnel's https address.
+- **First owner (A03).** `scripts/create-owner.ts` (`npx payload run scripts/create-owner.ts`) creates
+  the first owner from `OWNER_EMAIL` and `OWNER_PASSWORD`, refuses if **any** user exists, applies the
+  password policy and never prints the password. Separately, when `FIRST_OWNER_EMAIL` is set the Users
+  collection rejects any other email for the first account, including `/api/users/first-register` and
+  the admin's create-first-user screen. It is read when the account is created and does nothing once a
+  user exists. Run the script (or open /admin yourself) **before the host is reachable**, and keep
+  `FIRST_OWNER_EMAIL` set.
+- **Photos (A10).** On the live store anonymous reads of Media are limited to photos with
+  `approvedForLaunch`, through the REST list, the file route and its resized files, and related photos
+  on products (which come back unpopulated and show "Photo coming soon"). Staff of every role keep full
+  access; local, staging and test are unchanged.
+- **Passwords and uploads (A23).** Staff passwords need at least 12 characters (at most 128), not a
+  repeated character, run or keyboard row, not a very common password, not built on the shop's name, and
+  under 16 characters a mix of three of lowercase, capitals, numbers and symbols
+  (`src/lib/password-policy.ts`, a Users `beforeValidate` hook). **Not covered:** Payload's
+  reset-password-by-email flow does not pass the new password through collection hooks. There is no
+  email adapter yet, so that flow isn't live. Photos over **15 MB** are refused before Payload resizes
+  them (Payload's own parser cap is 20 MB), and sharp will not decode an image over 64 megapixels.
+  There is no 2FA.
+- **Forms keep what customers typed (A13).** React 19 resets a `<form action>` after the action runs.
+  The checkout, reservation and add-to-bag actions now return the submitted values with the error
+  (`src/lib/checkout/form-state.ts`: only known fields, short strings), and the fields read them as
+  `defaultValue`: `ActionForm` provides them through a context, which `ContactFields`, `PickupSelect`,
+  the notes box and the payment choice (new client components in `components/checkout/`) use. While an
+  action runs the button is `aria-disabled` (a second click is ignored; focus stays), and after an error
+  focus moves to the message. The inquiry forms already did this.
+- **Rate limits and stale bags (A15).** An in-memory limiter keyed by client IP and action
+  (`src/lib/rate-limit.ts`, shared by every bundle through `globalThis`) answers "Too many attempts,
+  please wait a minute and try again." Per minute: add to bag 30, check basket 20, start reservation 20,
+  place order 6, reserve 6, contact 5, fountain 5. Limited form actions still return what the customer
+  typed. It is a speed bump for one Node process: counts reset on restart. The IP is the **last**
+  `X-Forwarded-For` entry (the one the proxy appended), then `X-Real-IP`; with neither, everyone shares
+  one "unknown" bucket, so confirm the host forwards the header. `scripts/purge-carts.ts` deletes shopping
+  bags untouched for over 30 days (`npx payload run scripts/purge-carts.ts`); run it daily from cron.
+- **Error pages (A16).** The storefront has a branded `error.tsx` (Next 16's `retry` prop, never the
+  error message, a short digest reference) and `not-found.tsx`. A repeated `?t=a&t=b` on a receipt link
+  is now a 404 instead of a 500 (`singleParam`, outside `service.ts`). Next only uses a route group's
+  `not-found.tsx` when a page calls `notFound()`: a URL that matches no page still gets Next's default
+  404 because the site has two root layouts (storefront and admin); `experimental.globalNotFound` would
+  fix that and needs a build to verify.
+- **Accessibility (A18, except the footer).** `/shop` has a visually hidden h2 above the cards, so the
+  outline no longer jumps from h1 to h3. Card photos have empty alt text because the title link beside
+  them names the product. The Add-to-bag button names the option ("Add to bag: Pink") and shows it, even
+  when there is only one; the builder's "Add another (2)" button's name now contains those words.
+- **Seed guard (A19).** `npm run seed:catalog` refuses a database that already has products when
+  `APP_ENV` is not local, staging or test, prints why, and exits 1. `SEED_FORCE=1` overrides it
+  (a `--force` flag cannot work: `payload run` passes a script only its positional arguments). An empty database, or any local, staging or test one, is unaffected.
+- **Tests and CI (A22).** Unit tests for each fix, integration tests in `tests/int/audit-fixes.test.ts`
+  (first owner, passwords, media access, upload limits, API surface, closed dates, cart purge) and CI
+  now fails when `payload migrate:create` finds schema changes no migration covers or writes a file.
+  Actions are still pinned by tag.
+
+New environment variables: `FIRST_OWNER_EMAIL`, `OWNER_EMAIL`, `OWNER_PASSWORD`, `SEED_FORCE`.
+Changed meaning: `APP_ENV` (allowlist, must be set to `production` on the live host),
+`NEXT_PUBLIC_SITE_URL` (now enables the CSRF allowlist; the `.env.example` value is commented out).
+
+## D42 — Checkout hardening: private product API, payment states, one submission per form (2026-10-07)
+
+Fixes from the repo audit (A04, A05, A11, A12, A14, A20) plus the SQLite busy timeout from D40.
+One migration, `checkout_hardening`.
+
+- **The product API is private (A04).** `products` and `categories` are readable by **staff only**
+  (`isStaff`); an anonymous `GET /api/products` is now "not allowed" (a REST-handler test checks it, and
+  that no staff-only field name appears in the answer). The audit's field-level `read` was **not** used
+  because the storefront reads as anonymous. Instead every storefront and server read states its own
+  rule and passes `overrideAccess: true`: `queries.ts` (`_status = published`, `channel != hidden`),
+  `builder-catalog.ts` (published, not hidden, online, basket-eligible), `loadProducts` in `service.ts`
+  (published, not hidden: a hidden product can't be added to a bag), and the inquiries `findPublishedItem`.
+  The builder is sent each unit's stock **capped at `maxPerGift`** (rules are unchanged: a request over
+  `maxPerGift` is already refused, so a larger count never mattered). Because reads now override access,
+  photos that are not approved for launch are populated on a product; `isImagePublishable` (used by
+  `ProductImage`, `PhotoStrip` and the builder) is the guard, and the A10 test now checks that. Categories had
+  the milder form of the same problem (non-shop categories and their text were public) and are staff-only too.
+  New code that reads these collections for visitors **must** state `published` and `not hidden` itself.
+- **Payments with a live provider (A05).**
+  (a) The tax gate is `orderingState(provider, taxApproved)` after pricing, for both orders and
+  reservations; with no provider at all they still stop before pricing.
+  (b) Each charge has the key `<record key>:<attempt>`. `paymentAttempts` is stored on the record and
+  written **before** the call. A declined record gets the next number, so a gateway can't replay a cached
+  decline; a record still `pending` (a crash mid-charge) keeps its number, so the gateway deduplicates.
+  (c) A reservation retry charges the stored `depositCents` and records the balance from the stored total;
+  editing the deposit setting between attempts changes nothing for that record.
+  (d) `charge()` is wrapped (`chargeSafely`): an exception, a timeout (`PAYMENT_TIMEOUT_MS`, 30 s by default) or
+  an unrecognised answer is **unknown**. A provider may also return `unknown`. The record is kept as
+  `paymentStatus: unknown`, stays awaiting payment, keeps its stock hold (which expires after the hold time;
+  the cron's `reconcilePaidHeld` handles a record that is later marked paid) and the customer's bag, and gets
+  a stock note. The customer is told not to pay again. **Nothing charges again while a record from the same
+  bag or basket is `unknown`**, whatever the customer changes, until staff mark it paid or failed in the
+  admin (owner and manager only, as before). `ChargeResult.status` gained `"unknown"`.
+- **One submission, one record (A11).** The checkout and reserve pages render a hidden `submission`
+  field: a random nonce signed with `PAYLOAD_SECRET` and tied to its form kind (`src/lib/checkout/submission.ts`).
+  The server action verifies it and passes it to the service, which adds it to the idempotency key. A true
+  double submit of one rendered form is one order; the same items, details and slot from a fresh form later
+  is a new order (and a new receipt link). A retry after a decline from the same form is the same record
+  (next attempt). A missing or forged nonce answers "This page has expired. Please reload it", with the
+  customer's entries kept (A13). The service accepts `submission` as optional so older callers keep working;
+  the actions always send it. There is no expiry: the nonce is only an identity.
+- **Allergy and dietary notes (A12).** A paid shop order with non-empty notes, or a paid reservation with
+  requests, goes to **Needs staff review** instead of Preparing or Confirmed. The checkout page shows the
+  Store settings allergy notice next to the notes box (and the reserve page shows it), and says that a note means
+  a person reads the order first. **Payment timing is unchanged and is Lody's decision:** the PRD says an
+  unresolved dietary request should go through an inquiry before payment; today the customer pays first and
+  staff review afterwards. If Lody wants review before payment, that is a separate flow (open question).
+- **Waiting states (A14).** Orders start `awaiting_payment` (default) and become `preparing` (or
+  `staff_review` with notes) only when `paymentStatus` becomes `paid`. Reservations start `awaiting_payment` and
+  become `confirmed` (or `staff_review` with requests) when the deposit or full payment is paid. This is one
+  `beforeChange` hook (`advanceWhenPaid`), so it also applies when staff mark a payment paid by hand, and an
+  order staff cancelled while a charge was in flight stays cancelled. A declined or unknown payment leaves the
+  record awaiting payment; the status labels say "do not pack". New select values: `paymentStatus: unknown`
+  (orders and reservations), `awaiting_payment` (both status fields). This fits D40: `stockStatus`
+  (`held`, `committed`, `needs_attention`, `released`) is unchanged, and `settleStock` still sets `staff_review`
+  when a paid record's stock could not be taken. Test orders show a **TEST** badge in the Test order column of
+  the Orders and Reservations lists (`testMode`, now with a custom cell).
+- **Deletes are audited (A20).** `auditDelete` writes an `audit-log` row with `action: delete`, the user, the
+  record's name/number/email and the last audited values. Applied to products, categories, tax classes, users,
+  orders, reservations, inquiries, media and stock adjustments. Audited fields added: `Media.approvedForLaunch`
+  (media is now audited on change), `Products.taxClass`, `shippable`, `perishable`, `maxPerGift`, `fitUnits`.
+  The comment in `src/hooks/audit.ts` claiming audit rows share the change's transaction is corrected: the
+  SQLite adapter runs without transactions (D40), so the change and its audit row are two writes.
+- **SQLite busy timeout.** `busyTimeout: 5000` on the adapter (the option is a top-level adapter argument in
+  `@payloadcms/db-sqlite` 3.90, applied as `PRAGMA busy_timeout`). `transactionOptions` stays off. The inventory
+  integration tests pass with it.
+- **Migration `checkout_hardening`.** Adds `payment_attempts` to `orders` and `reservations`. Payload's generator
+  also proposed rebuilding both tables to change the stored DEFAULT of the status columns; that rebuild
+  drops the table (it would null `stock_adjustments.order_id`/`reservation_id` if foreign keys are enforced) and nothing
+  needs it, because Payload applies the configured default itself and the new select values are plain text. The
+  migration is hand-trimmed to the two `ALTER TABLE ... ADD`; the snapshot `.json` is the generated one, so the
+  CI drift check stays clean. Existing rows keep their old status values.
+- **For what comes next.** A record is "paid" in exactly two places: `placeOrder`/`reserveBasket` when the
+  provider answers `paid`, and staff changing `paymentStatus` in the admin. The emails work should send
+  "order confirmed" when `paymentStatus` becomes `paid` (or `deposit_paid`/`paid_in_full`), and tell
+  staff-review customers that a person will check their note.
+
+## D43 — Clover inventory sync worker, built against a fake (2026-10-07)
+
+The Clover half of milestone 5 (INV 03, INV 05, INV 06, AC 10). **No network, no credentials: nothing
+in this decision has ever talked to Clover.** The workers are written against an adapter interface
+and tested against an in-memory fake. No schema change and no change to existing files in
+`src/lib/inventory/`; the code is in `src/lib/clover/`.
+
+- **Adapter (`adapter.ts`).** `CloverInventoryAdapter`: `listItems({cursor, limit})` (paginated, with
+  stock), `getItemStock(cloverId)` and `pushStockChange({cloverId, delta, quantityAfter, idempotencyKey})`.
+  Errors are typed: `CloverTransientError` (timeout, rate limit with `retryAfterMs`, 5xx, network) and
+  `CloverPermanentError` (auth, not found, rejected, config). `FakeCloverAdapter` is in memory, records
+  calls, and can be scripted to time out, throttle, return 5xx or reject, or to apply a change and then
+  time out (a lost answer). `getCloverAdapter(env)` returns the fake (only when `APP_ENV` is local,
+  staging or test, and `CLOVER_ADAPTER=fake`, since a fake on the live store would mark real changes as
+  sent), the HTTP adapter (when `CLOVER_MERCHANT_ID` or `CLOVER_API_TOKEN` is set), or `none` (the scripts
+  say so and exit 0).
+- **HTTP adapter (`http-adapter.ts`): a stub, never called in tests.** It refuses to be built unless
+  `CLOVER_ENVIRONMENT` (`sandbox` or `production`), `CLOVER_MERCHANT_ID` and `CLOVER_API_TOKEN` are all set,
+  and refuses `production` unless `CLOVER_SYNC_LIVE=1`. 10 s timeout on every call, IDs checked before
+  they go into a URL, token only in the `Authorization` header and never in a message. Written from
+  general knowledge of Clover's REST API, with no web lookup. **Must be verified in the Clover sandbox
+  before use:** base URLs (EU and Latin America hosts are refused); the `items?expand=itemStock` response
+  shape, page size and which of `quantity` / `stockCount` is on-hand; the `item_stocks` read and update
+  endpoints; **whether the update sets an absolute number or adds a delta** (the stub reads the current
+  quantity, adds the delta and writes the total back, which has a small race with an in-store sale; use a
+  true delta call if one exists); whether any idempotency header is honoured (one is sent; if not, a request
+  that times out after Clover applied it is applied twice on retry, and the next read lets Clover win, so the
+  website only ever sells less); `Retry-After`; the token scopes; whether deleted items are listed; how
+  option-level stock is modelled.
+- **Push (`push.ts`, job lock `clover-push`).** Takes `pending` / `failed` outbox rows with `nextAttemptAt`
+  empty or past, oldest first, in batches of 25. A row is **claimed** by one conditional UPDATE (counts the
+  attempt, moves `nextAttemptAt` out by a 2-minute lease), so a second run, or a run that outlived its lock,
+  cannot send it too; the result write is conditional on the row still being `pending` / `failed` (a row
+  changed under us is counted as `lostRace` and not overwritten). The row's `idempotencyKey` goes to Clover.
+  Success: `sent`, `sentAt`, `lastError` cleared. Transient failure: `afterFailure()` (30 s doubling to 6 h,
+  `dead` after 8) with the message in `lastError`. A 429 is not a failed attempt (attempt undone, the row
+  waits at least 30 s or `Retry-After`, the run stops). Three transient failures in a row stop the run
+  ("Clover is down"; the remaining rows keep their attempts) and the run is recorded as failed. A permanent
+  rejection is `dead` at once; bad credentials stop the run and leave every row untouched. The run stops
+  starting rows after 50 s. A failure never touches the paid order or the website's stock.
+- **Rows with nothing to send to.** The current `products.cloverId` is used (it may have been set after the
+  event was queued). A product with no Clover ID, or an event for one **option** (options have no Clover
+  item of their own, see "Schema" below), is not sent and not retried against Clover: it stays `failed` with
+  `lastError` starting `not mapped:`, is looked at again every 6 hours without using up attempts, and goes
+  out by itself once the ID exists. No new status values were added.
+- **Pull (`pull.ts`, job lock `clover-pull`).** Reads Clover page by page (100 items) and applies each
+  matched product **only through `applyMovements({ mode: "count", reason: "sync", countedAt })`**, key
+  `sync:<run id>:<Clover ID>`: ledger row, known, count date = the moment the page was read, no outbox
+  event (no echo). Every matched item is stamped, even unchanged (a ledger row of 0). **Matching is by
+  `cloverId` only.** Reported and left alone: Clover items with no website product; website products
+  with a Clover ID Clover did not return; website products without a Clover ID; items Clover does not track;
+  a Clover ID shared by more than one website product (a split Clover item is ambiguous; the Philips bar
+  and Princess Assortment until Lody splits them); products with options (no per-option IDs).
+- **Pending deltas.** Before applying, the product's unsent outbox deltas are added to Clover's number:
+  `pending`, `failed` and `dead` rows (a dead row is a sale Clover never got), plus rows `sent` since this
+  page's read began (a push that lands while the page is in flight). That can double count a sale, which
+  only sells less and corrects itself at the next read. The result is floored at 0 (reported as `clamped`).
+  Remaining window: a sale committed between the delta lookup and the count (a few milliseconds) is
+  overwritten; the in-store reserve (D26) covers it. **Open:** a dead row keeps being subtracted until it is
+  dealt with; there is no staff action to retire one yet (outbox is read-only to staff).
+- **Restartable.** The cursor, run id, items seen and counters are saved in `sync-jobs.checkpoint` after
+  every page. A run that stops (50 s budget, Clover down, crash) resumes from it within 24 hours with the same
+  run id, so a replayed page hits the `sync:` keys and is harmless (`alreadyApplied`). When a run finishes the
+  checkpoint keeps its report (`completed: true`) for the staff view and the next run starts fresh.
+- **Dry run.** `CLOVER_DRY_RUN=1` (since `payload run` passes scripts only positional arguments): push
+  counts what it would send; pull reads Clover and reports what it would change. No lock, no writes.
+- **Staff visibility.** `getCloverSyncHealth()` (`health.ts`): pending, retrying, dead, unmapped counts, oldest
+  unsent age, last failure, last success of each job, the last pull report. `/ops/system-check` now has three
+  lines: outbox (fails on any dead event or anything unsent for over an hour), last stock read, last send. Until
+  Clover is configured it shows one informational line that fails only on dead events. No emails or alerts are
+  sent from here (no outside services); staff see it in the system check and in Inventory → Outbox events.
+- **Schema.** No change. **Needed later:** a per-option Clover ID (`variants.cloverId`, in a migration) if
+  options are separate Clover items; until then option stock is neither pushed nor pulled. Outbox events for
+  options wait as `not mapped:`. Also worth considering: a staff action to retire a dead event.
+- **Cron (cPanel), once Lody has given the token and chosen the interval:**
+  `npx payload run scripts/clover-push.ts` every 1 to 2 minutes and `npx payload run scripts/clover-pull.ts`
+  every 5 to 15 minutes. Both exit 0 when another run holds the lock, or Clover is not configured; 1 on failure.
+- **Tests.** Unit (`src/lib/clover/clover.test.ts`): errors, retry timing, the fake, the HTTP adapter's refusals
+  (incomplete, bad environment, production without `CLOVER_SYNC_LIVE=1`) with a stub `fetch`, the factory.
+  Integration (`tests/int/clover-push.test.ts`, `clover-pull.test.ts`) on the real migrations.
+
+## D44 — Transactional emails, built and tested, delivered only to the console (2026-10-07)
+
+PRD AC 07 (notifications). **Nothing in this decision has ever sent an email**: there is no sending
+service, no credentials and no `nodemailer` in `node_modules`. Until Lody approves a service, every
+email goes to the console log. One migration, `email_settings`.
+
+- **What is sent** (`src/lib/email/`):
+  - Customer: order confirmation (number, lines, subtotal, tax, total, pickup slot, the private order link, the
+    store address and phone); different wording when the customer left a note ("a person will read it before
+    your order is packed"). Reservation confirmation (deposit or paid in full, balance due at pickup, pickup,
+    private link; the same staff-review wording for requests). Inquiry receipt ("we'll reply"; nothing booked
+    or charged). Test orders are subject-prefixed `[TEST]`.
+  - Staff: a new paid order, reservation or inquiry; and "needs attention" for an **unknown payment** and for a
+    paid record whose stock is `needs_attention`. Staff emails list the customer's contact details and notes
+    (staff need them) and an admin link. They never include `staffNotes`, the stock note, a payment
+    reference or the token hash; the templates take only the fields they print.
+  - Plain text plus simple HTML (inline styles, no images, fonts or scripts). Customer text is escaped; subjects
+    have control characters removed; only `http(s)` links are rendered as links.
+- **When it is sent (`due.ts`).** From an `afterChange` hook, decided from the saved state: orders when
+  `paymentStatus` is `paid`; reservations when it is `deposit_paid` or `paid_in_full`; never while pending,
+  failed, unknown or refunded, and not for a canceled record. Because it reads state, staff marking an
+  unknown payment paid by hand (the `advanceWhenPaid` path, D42) sends the confirmation then. An **unknown**
+  payment emails staff only (the customer was already told on the page not to pay again). Inquiries send on
+  create; honeypot-dropped ones are never stored, so never email.
+- **Exactly once.** `emails.{confirmationSentAt, staffNotifiedAt, unknownNotifiedAt, attentionNotifiedAt}` on
+  orders and reservations (`confirmationSentAt`, `staffNotifiedAt` on inquiries), read-only in the admin. Before
+  sending, `notify.ts` claims a marker with one conditional `UPDATE ... WHERE marker IS NULL`, so repeated
+  saves, staff edits, two overlapping runs and the retry script never send an email twice. If the send fails
+  the marker is cleared again. A crash between the claim and the send loses that one email (it is never sent
+  twice). **An email failure never fails the write:** the hook and `sendDueEmails` catch everything.
+- **Console mode counts as sent.** With the console adapter the email is "handed over" and the marker is set,
+  so connecting a real service later does **not** email every old order. (If Lody wants the backlog sent, clear
+  the markers.)
+- **The private link** is rebuilt, not stored: the URL token is `HMAC(PAYLOAD_SECRET, kind:idempotencyKey)`
+  (`accessUrlToken` in `checkout/order.ts`, which `service.ts` now calls), so the retry script can email the
+  same link long after checkout. Rotating `PAYLOAD_SECRET` changes every link. It needs `NEXT_PUBLIC_SITE_URL`;
+  if that is unset the email simply omits the link.
+- **Recipients and senders.** Staff go to the new optional Store settings field `notificationEmail`, else the
+  shop email. `EMAIL_FROM` (default: shop name and shop email) and `EMAIL_REPLY_TO` (default: the shop email).
+  Addresses with line breaks or that are not plausible are ignored.
+- **Adapter (`config.ts`, `adapter.ts`, wired in `payload.config.ts`).** `EMAIL_TRANSPORT` unset or `console` is
+  the default (prints the message outside the live store, only a hidden summary on it). `smtp` **refuses to
+  start** unless `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` and `EMAIL_FROM` are set, and on anything
+  that is not local/staging/test (the D41 rule, so unset or mistyped counts as live) also `EMAIL_SEND_LIVE=1`.
+  **The SMTP adapter is a stub**: `@payloadcms/email-nodemailer` is not installed and dependencies were off
+  limits, so a complete SMTP config currently stops the app with "adapter is not installed". The file comment
+  in `adapter.ts` has the few lines to put in once it is installed.
+- **`sendEmail` (`send.ts`).** Wraps `payload.sendEmail` with a 15 s timeout and never throws. It logs one line
+  (`[email] handed over customer_order SP-1001` or `FAILED ...`) with no addresses or names; error text has
+  anything that looks like an address removed.
+- **Retry:** `npx payload run scripts/send-pending-emails.ts` (cron, every 10 minutes) finds paid, unknown and
+  attention records with an empty marker, plus inquiries, and sends them under a `sync-jobs` lock
+  (`send-pending-emails`).
+- **Tests.** The transport is replaced by a capturing function on `payload.sendEmail`; the configured adapter
+  stays the console one, so no test can send.
+- **Not done / for Lody.** Choice of sending service and plan; the From address and domain, with SPF, DKIM and
+  DMARC records on it (PRD: confirm authenticated sending and Reply-To before launch); the staff address;
+  wording sign-off on the customer emails (no policy or delivery promises were added); whether staff-review
+  customers should be told earlier (see D42, review currently happens after payment); shipping and ready-for-pickup
+  emails are not built; the abandoned-bag and refund emails are not built.
+
+## D45 — Member rewards: accounts, points earned on purchases, rewards at checkout (2026-10-14)
+
+Requested by the repo owner: "a members reward system". Not in the PRD (D31: "Accounts and wishlists are
+not in the PRD"), so it is built **switched off and unapproved**, like policies (D39).
+
+- **Off until Lody says so.** Settings → Rewards → *Rewards program* starts empty: no earn rate, no rewards,
+  no terms. It can't be switched on until the earn rate (1–100 points per dollar) and at least one reward are
+  set, and the live site shows nothing about rewards (the account icon keeps its "coming soon" page) until the
+  owner ticks *Approved*, which needs terms text. A manager can prepare everything, but changing the earn rate,
+  welcome points, rewards, name or terms of an approved program clears the approval unless the owner saved it.
+  Staging shows an unapproved program with a "Draft program" notice. Audited.
+- **Members are not Payload users.** `members` is a plain collection; passwords are scrypt hashes (Node's own
+  `crypto.scrypt`, random salt, parameters stored with the hash) and the session is a signed `sp_member` cookie
+  (HMAC of `PAYLOAD_SECRET`, 30 days) carrying the member id and a session version. Why not Payload auth: a
+  second auth collection would share the admin's `payload-token` cookie and the REST login routes, and every
+  staff access rule written as "signed in → your own record" (`Users.read`/`update`) would match a customer
+  whose id equals a staff id. Keeping customers out of Payload's auth means they can never reach /admin or
+  the API at all.
+  - Sign-in: a generic answer for unknown email, wrong password and locked account; 5 failures lock the
+    account for 15 minutes; a decoy hash keeps timing the same for unknown emails; IP rate limits on join,
+    sign-in and reset (`memberJoin`, `memberSignIn`, `memberReset`).
+  - Passwords follow the staff policy (12+ characters, A23). Accounts hold redeemable value.
+  - Reset: a random token emailed (through D44's sending path, so console-only today), stored only as a
+    hash, valid 60 minutes, single use. A reset, "sign out on all devices" and closing an account bump the
+    session version, ending every session. The reset link uses `NEXT_PUBLIC_SITE_URL` (never the request's
+    Host header); away from live it falls back to `http://localhost:3000`.
+  - Members can't edit their details or close their account themselves yet: they ask the shop, and staff
+    edit Rewards → Members (owner/manager; fulfillment read only; owner deletes).
+- **The points ledger** (`reward-entries`) works like the stock ledger (D40): `src/lib/rewards/ledger.ts`
+  changes `members.points_balance` and inserts the entry in one `client.batch` write. A spend that would go
+  below zero aborts the batch. Every entry has a unique key naming its cause, so retries post once. Nobody can
+  create, edit or delete ledger rows through Payload. The member's balance field is replaced by the live
+  value on every Payload save, so a stale admin form can't overwrite it. Staff change points only through
+  Rewards → *Points adjustments* (owner/manager, a reason required, never below zero).
+  - **Keys never use a bare row id.** SQLite gives a deleted row's id to the next row, so `earn:orders:12`
+    would match a deleted order's entry and the new order would never earn. Records use their unique
+    idempotency key; welcome points use the member id plus the moment they joined. A test covers it.
+- **Earning.** Points are worked out at checkout and frozen on the record (`rewards.earnPoints`):
+  `floor(paid before tax, after any reward, in cents × points per dollar / 100)`. They're posted when a shop
+  order is `paid`, or a basket reservation is `paid_in_full` (a deposit alone earns nothing). Only for
+  orders placed while signed in: an order is never matched to a member by the email typed at checkout.
+- **Redeeming.** Shop orders only, one reward per order: a fixed amount off, never more than the subtotal.
+  The discount is spread over the lines in proportion (largest remainder, exact cents) and taken off
+  **before tax**, then tax is worked out per line as usual (D34). Stored on the order (`totals.discountCents`,
+  each line's `discountCents` and tax) and shown in the bag summary, the confirmation page and email.
+  - Points are spent **before** the charge, under a key per payment attempt, so two simultaneous orders
+    can't spend the same points (tested). A declined charge gives them back, and the retry spends them
+    again. An *unknown* result keeps them until staff mark the payment paid or failed. An error before the
+    provider was asked gives them back at once.
+  - **Refund** (payment status → Refunded): the points the order earned are taken back (the balance may go
+    below zero if they were spent) and the points it used are returned. Partial refunds aren't modelled;
+    staff use a points adjustment. Cancelling without a refund changes nothing.
+  - All of this runs in an `afterChange` hook on orders and reservations (`settleRecordRewards`), so a staff
+    edit in the admin has the same effect as checkout. It never fails the save; an error is logged.
+- **Customer pages:** `/rewards` (how it works, rewards, terms), `/account` (sign in; once signed in:
+  balance, next reward, rewards, points history, recent orders, sign out / sign out everywhere),
+  `/account/join`, `/account/forgot`, `/account/reset`. Checkout fills in a member's details and offers the
+  rewards they can afford, each labelled with the total it leaves; guests see a "sign in or join" line. Pages
+  are noindex except an approved `/rewards`.
+- Migration `member_rewards`.
+- **Open for Lody:** whether to run a program at all; the earn rate, rewards and welcome points; the terms
+  (cash value, expiry, changes, closing accounts); whether in-store Clover purchases should earn (needs
+  matching a customer at the till, not built); whether reservations should earn on the deposit; and her
+  accountant's view on reducing taxable sales by a store reward (built that way, D34 rounding per line).
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

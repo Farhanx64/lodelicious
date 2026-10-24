@@ -9,18 +9,32 @@ import sharp from "sharp";
 import { AuditLog } from "./collections/AuditLog";
 import { Carts } from "./collections/Carts";
 import { Categories } from "./collections/Categories";
+import { Inquiries } from "./collections/Inquiries";
 import { Media } from "./collections/Media";
+import { Members } from "./collections/Members";
 import { Orders } from "./collections/Orders";
+import { Outbox } from "./collections/Outbox";
 import { Products } from "./collections/Products";
 import { Reservations } from "./collections/Reservations";
+import { RewardAdjustments } from "./collections/RewardAdjustments";
+import { RewardEntries } from "./collections/RewardEntries";
 import { SourceRecords } from "./collections/SourceRecords";
+import { StockAdjustments } from "./collections/StockAdjustments";
+import { StockHolds } from "./collections/StockHolds";
+import { StockMovements } from "./collections/StockMovements";
 import { SyncJobs } from "./collections/SyncJobs";
 import { TaxClasses } from "./collections/TaxClasses";
 import { Users } from "./collections/Users";
 import { CheckoutSettings } from "./globals/CheckoutSettings";
+import { EventSettings } from "./globals/EventSettings";
 import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { HomePage } from "./globals/HomePage";
+import { InventorySettings } from "./globals/InventorySettings";
+import { Policies } from "./globals/Policies";
+import { RewardsSettings } from "./globals/RewardsSettings";
 import { StoreSettings } from "./globals/StoreSettings";
+import { emailAdapterFromEnv } from "./src/lib/email/adapter";
+import { csrfOrigins } from "./src/lib/security";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -41,9 +55,16 @@ export default buildConfig({
       titleSuffix: " — Lodelicious admin",
     },
   },
-  collections: [Orders, Reservations, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs],
-  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings],
+  collections: [Orders, Reservations, Inquiries, Products, Categories, Media, TaxClasses, Carts, SourceRecords, Users, AuditLog, SyncJobs, StockMovements, StockHolds, StockAdjustments, Outbox, Members, RewardEntries, RewardAdjustments],
+  globals: [StoreSettings, HomePage, GiftBuilderSettings, CheckoutSettings, EventSettings, Policies, InventorySettings, RewardsSettings],
+  // Transactional email (D44): the console by default; SMTP only with complete settings (and EMAIL_SEND_LIVE=1 on the live store).
+  email: emailAdapterFromEnv(process.env),
   editor: lexicalEditor(),
+  // Cookie-authenticated API requests are accepted only from the site's own origin(s) when
+  // NEXT_PUBLIC_SITE_URL is set; unset leaves the allowlist off (local dev, tunnels, tests) (A08, D41).
+  csrf: csrfOrigins(process.env),
+  // Nothing uses GraphQL (the admin and storefront use the Local API and REST). The routes stay but answer 404 (A08, D41).
+  graphQL: { disable: true },
   secret: process.env.PAYLOAD_SECRET || "",
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
@@ -53,6 +74,9 @@ export default buildConfig({
       url: process.env.DATABASE_URI || `file:${path.resolve(dataDir, "lodelicious.db")}`,
     },
     migrationDir: path.resolve(dirname, "migrations"),
+    // How long a write waits for another connection (the cron scripts, a second request) before
+    // failing with SQLITE_BUSY. The default is 0. Do NOT enable `transactionOptions` (D40, D42).
+    busyTimeout: 5000,
     // Never auto-push schema, even in development. Dev push on SQLite re-creates existing
     // indexes and fails on alternate runs, and it marks the database so that a later
     // non-interactive `payload migrate` silently exits 0 without migrating (D23).

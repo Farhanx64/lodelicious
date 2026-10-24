@@ -1,9 +1,13 @@
 import type { CollectionConfig } from "payload";
 
 import { isOwner, isStaff, nobody } from "../src/access/roles";
-import { auditCollection } from "../src/hooks/audit";
+import { auditCollection, auditDelete } from "../src/hooks/audit";
+import { advanceWhenPaid } from "../src/hooks/payment-status";
+import { settleRewardsAfterChange } from "../src/hooks/rewards";
+import { sendRecordEmails } from "../src/hooks/send-emails";
+import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
-import { customerFields, frozen, identityFields, paymentReference, paymentStatusAccess, pickupFields } from "./order-fields";
+import { customerFields, frozen, identityFields, inventoryFields, orderEmailFields, paymentAttempts, paymentReference, paymentStatusAccess, pickupFields, rewardsFields } from "./order-fields";
 
 /**
  * Shop orders (D35). Created only by checkout through the Local API; the lines and totals are an
@@ -16,11 +20,15 @@ export const Orders: CollectionConfig = {
   admin: {
     useAsTitle: "number",
     group: "Orders",
-    defaultColumns: ["number", "customer.name", "pickup.label", "paymentStatus", "fulfillmentStatus", "totals.totalCents", "testMode"],
+    defaultColumns: ["number", "testMode", "customer.name", "pickup.label", "paymentStatus", "fulfillmentStatus", "stockStatus", "totals.totalCents"],
     listSearchableFields: ["number", "customer.name", "customer.email"],
   },
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
-  hooks: { afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "staffNotes"])] },
+  hooks: {
+    beforeChange: [guardStockStatus, advanceWhenPaid("orders")],
+    afterChange: [auditCollection(["paymentStatus", "fulfillmentStatus", "stockStatus", "staffNotes"]), releaseHoldOnCancel("fulfillmentStatus"), settleRewardsAfterChange("orders"), sendRecordEmails("orders")],
+    afterDelete: [auditDelete(["number", "paymentStatus", "fulfillmentStatus", "stockStatus", "testMode"])],
+  },
   fields: [
     ...identityFields,
     {
@@ -36,6 +44,7 @@ export const Orders: CollectionConfig = {
             { label: "Pending payment", value: "pending" },
             { label: "Paid", value: "paid" },
             { label: "Failed", value: "failed" },
+            { label: "Unknown: check with the payment provider", value: "unknown" },
             { label: "Refunded", value: "refunded" },
           ],
         },
@@ -43,8 +52,9 @@ export const Orders: CollectionConfig = {
           name: "fulfillmentStatus",
           type: "select",
           required: true,
-          defaultValue: "preparing",
+          defaultValue: "awaiting_payment",
           options: [
+            { label: "Awaiting payment (do not pack)", value: "awaiting_payment" },
             { label: "Needs staff review", value: "staff_review" },
             { label: "Preparing", value: "preparing" },
             { label: "Ready for pickup", value: "ready" },
@@ -67,6 +77,7 @@ export const Orders: CollectionConfig = {
           type: "row",
           fields: [
             { name: "subtotalCents", type: "number", required: true, admin: { components: { Cell: "@/components/admin/CentsCell#CentsCell" } } },
+            { name: "discountCents", label: "Reward discount", type: "number", defaultValue: 0, admin: { description: "Taken off before tax (D45)." } },
             { name: "taxCents", type: "number", required: true },
             { name: "totalCents", type: "number", required: true, admin: { components: { Cell: "@/components/admin/CentsCell#CentsCell" } } },
           ],
@@ -75,6 +86,10 @@ export const Orders: CollectionConfig = {
       ],
     },
     paymentReference,
+    paymentAttempts,
+    rewardsFields("orders"),
+    ...inventoryFields,
+    orderEmailFields,
     { name: "staffNotes", type: "textarea" },
   ],
 };

@@ -1,11 +1,14 @@
 import config from "@payload-config";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { getPayload } from "payload";
 
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
+import { secondaryButton } from "@/components/checkout/styles";
 import type { Media } from "@/payload-types";
 import { listProducts } from "@/src/lib/catalog/queries";
+import { contactHref } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
 
@@ -45,10 +48,15 @@ export default async function BabyGiftsPage() {
               </li>
             </ul>
             {babyWhite.status === "inquiry" && (
-              <p className="border-l-4 border-gold bg-cream p-4">
-                Made to order — call <a href={telHref(store.phone)}>{store.phone}</a> or email{" "}
-                <a href={`mailto:${store.email}`}>{store.email}</a> to arrange yours.
-              </p>
+              <div className="border-l-4 border-gold bg-cream p-4">
+                <p className="mb-3">
+                  Made to order — call <a href={telHref(store.phone)}>{store.phone}</a> or email{" "}
+                  <a href={`mailto:${store.email}`}>{store.email}</a> to arrange yours.
+                </p>
+                <Link href={contactHref({ topic: "baby_white" })} className={secondaryButton}>
+                  Ask about the Baby White basket
+                </Link>
+              </div>
             )}
           </div>
         </section>
@@ -57,6 +65,11 @@ export default async function BabyGiftsPage() {
       <h2 className="mb-4 text-3xl">Baby ceramics</h2>
       <p className="mb-6 max-w-[68ch]">
         Pink or blue, sold empty or filled with sweets. Ask us about filling one for a baby shower or new arrival.
+      </p>
+      <p className="mb-6">
+        <Link href={contactHref({ topic: "filled_ceramic" })} className={secondaryButton}>
+          Ask about a filled ceramic
+        </Link>
       </p>
       {products.length === 0 ? (
         <p>Our baby ceramics will be listed here soon.</p>

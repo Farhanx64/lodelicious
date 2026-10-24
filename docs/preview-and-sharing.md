@@ -16,9 +16,12 @@ The link works only while your computer is on and the two commands below keep ru
 
    ```
    PAYLOAD_SECRET=<run: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))">
-   APP_ENV=staging
+   APP_ENV=staging                # must be exactly local, staging or test; anything else (or unset) behaves as the live store (D41)
    PREVIEW_ASSUME_STOCK=true      # lets Lody try the bag, checkout and Build a Basket before stock is counted
    ```
+
+   Leave `NEXT_PUBLIC_SITE_URL` unset (or set it to the tunnel's `https://…trycloudflare.com` address
+   once you have it). When it is set, the admin only works when opened at exactly that address.
 
 2. Load the catalog and build:
 
@@ -30,7 +33,10 @@ The link works only while your computer is on and the two commands below keep ru
 
 3. **Before sharing anything**, open http://localhost:3000/admin and create your own account.
    The first account becomes the owner — if you share the link first, whoever opens /admin first
-   gets owner access.
+   gets owner access. To make that impossible, set `FIRST_OWNER_EMAIL=<your email>` in `.env` first
+   (only that address can then create the first account), or create the owner from the command line
+   with `OWNER_EMAIL=<email> OWNER_PASSWORD='<12+ characters>' npx payload run scripts/create-owner.ts`
+   (D41). Passwords need at least 12 characters.
 
 4. In a second terminal, start a free Cloudflare quick tunnel (no account needed; install
    `cloudflared` from https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/downloads/):

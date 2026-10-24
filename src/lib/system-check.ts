@@ -8,6 +8,8 @@
  */
 import path from "node:path";
 
+import { appEnvKind } from "./app-env";
+
 export const MIN_NODE = "20.9.0";
 export const MAX_HEAP_MB = 1024;
 export const MIN_SECRET_LENGTH = 32;
@@ -18,6 +20,8 @@ export type RuntimeEnv = {
   nodeVersion: string;
   heapLimitMb: number;
   production: boolean;
+  /** The raw APP_ENV value (undefined when unset). */
+  appEnv: string | undefined;
   payloadSecretLength: number;
   dataDir: string;
   dataDirWritable: boolean;
@@ -40,6 +44,20 @@ function isInside(child: string, parent: string): boolean {
   return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
 }
 
+/**
+ * APP_ENV must say what this server is (D41). Only local, staging and test turn on the test
+ * payment provider, unapproved photos and drafts; anything else, including unset, is treated as
+ * the live store. An unset or mistyped value is not unsafe, but it is almost certainly a mistake,
+ * so it fails the check and names what the process will do.
+ */
+export function appEnvCheck(appEnv: string | undefined): CheckResult {
+  const kind = appEnvKind({ APP_ENV: appEnv });
+  const expected = "production on the live site; local, staging or test elsewhere";
+  if (kind === "unset") return { check: "APP_ENV", expected, actual: "unset (treated as production)", ok: false };
+  if (kind === "unrecognised") return { check: "APP_ENV", expected, actual: `"${appEnv}" is not recognised (treated as production)`, ok: false };
+  return { check: "APP_ENV", expected, actual: kind, ok: true };
+}
+
 export function evaluate(env: RuntimeEnv): CheckResult[] {
   const results: CheckResult[] = [
     {
@@ -55,6 +73,7 @@ export function evaluate(env: RuntimeEnv): CheckResult[] {
       // Only enforced in production: development machines have no LVE limit.
       ok: !env.production || env.heapLimitMb <= MAX_HEAP_MB,
     },
+    appEnvCheck(env.appEnv),
     {
       check: "PAYLOAD_SECRET",
       expected: `set, >= ${MIN_SECRET_LENGTH} chars`,
