@@ -248,7 +248,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                 type="button"
                 aria-pressed={category === c}
                 onClick={() => setCategory(c)}
-                className={`min-h-11 border px-4 ${category === c ? "border-gold-text bg-gold-text text-cream" : "border-line bg-paper"}`}
+                className={`min-h-11 border px-4 ${category === c ? "border-coastal-deep bg-coastal-deep text-cream" : "border-line bg-paper"}`}
               >
                 {c || "All"}
               </button>
@@ -291,7 +291,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                             type="button"
                             onClick={() => change(d.id, 1)}
                             disabled={!status.eligible}
-                            className="min-h-11 flex-1 bg-gold-text px-3 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
+                            className="min-h-11 flex-1 bg-coastal-deep px-3 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
                             aria-label={quantity > 0 ? `Add another (${quantity}) ${d.title}` : `Add ${d.title}`}
                           >
                             {quantity > 0 ? `Add another (${quantity})` : "Add"}
@@ -406,7 +406,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
           type="button"
           disabled={!result.complete || checking}
           onClick={() => startCheck(async () => setServerResult(await checkBasket(request)))}
-          className="min-h-11 w-full bg-gold-text px-4 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
+          className="min-h-11 w-full bg-coastal-deep px-4 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
         >
           {checking ? "Checking…" : "Review my basket"}
         </button>
@@ -428,7 +428,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                     if (r?.error) setReserveError(r.error);
                   })
                 }
-                className="min-h-11 w-full bg-gold-text px-4 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
+                className="min-h-11 w-full bg-coastal-deep px-4 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
               >
                 {reserving ? "One moment…" : "Reserve this basket"}
               </button>

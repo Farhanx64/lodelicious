@@ -45,7 +45,7 @@ export default async function HomePage() {
             favorites or let us build a basket around your budget.
           </p>
           <p className="flex flex-wrap justify-center gap-3">
-            <Link href="/shop" className={`${button} bg-gold-text text-paper`}>
+            <Link href="/shop" className={`${button} bg-coastal-deep text-paper`}>
               Shop sweets
             </Link>
             <Link href="/build-a-basket" className={`${button} border border-gold-text text-gold-text`}>
@@ -92,13 +92,13 @@ export default async function HomePage() {
         <h2 id="get-it" className="sr-only">
           Getting your order
         </h2>
-        <div className="border-t-4 border-coastal bg-coastal-pale p-5">
+        <div className="border-t-4 border-coastal-deep bg-coastal-pale p-5">
           <h3 className="mb-1 text-xl">Pickup</h3>
           <p>
             Free from our shop at {store.street}, {store.locality}.
           </p>
         </div>
-        <div className="border-t-4 border-coastal bg-coastal-pale p-5">
+        <div className="border-t-4 border-coastal-deep bg-coastal-pale p-5">
           <h3 className="mb-1 text-xl">Local delivery</h3>
           <p>
             Through DoorDash
@@ -113,7 +113,7 @@ export default async function HomePage() {
             Shipping is coming with online checkout.
           </p>
         </div>
-        <div className="border-t-4 border-coastal bg-coastal-pale p-5">
+        <div className="border-t-4 border-coastal-deep bg-coastal-pale p-5">
           <h3 className="mb-1 text-xl">Order by phone</h3>
           <p>
             Online checkout is coming soon. Call <a href={telHref(store.phone)}>{store.phone}</a> today.

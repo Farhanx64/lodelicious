@@ -28,7 +28,7 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
   const story = store.story?.trim();
   return (
     // Coastal-blue band and gold rule at the bottom of the page (Lody's board); blue is never text.
-    <footer className="border-t-[6px] border-coastal bg-linen text-[0.95rem] text-ink">
+    <footer className="border-t-[6px] border-coastal-deep bg-linen text-[0.95rem] text-ink">
       <div aria-hidden="true" className="h-1.5 border-b border-gold bg-coastal-pale" />
       <div className="mx-auto grid w-[min(100%-2rem,72rem)] grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))] gap-6 py-10">
         <section aria-labelledby="footer-shop">

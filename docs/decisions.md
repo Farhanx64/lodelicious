@@ -1039,6 +1039,17 @@ not in the PRD"), so it is built **switched off and unapproved**, like policies 
   matching a customer at the till, not built); whether reservations should earn on the deposit; and her
   accountant's view on reducing taxable sales by a store reward (built that way, D34 rounding per line).
 
+## D48 — Phone polish: 2-wide grids, 44px targets, stronger colour contrast (2026-10-31)
+
+- **Phones:** product grids are two columns (shop, baby gifts, gift baskets) with compact cards; tap
+  targets in the footer, contact card, home links and mobile menu are 44px; the home page shows the logo
+  once (the header's) above the awning edge.
+- **Colour (changes Lody's D31 board palette, needs her OK):** cards and panels are white (`paper`
+  #ffffff) so they lift off the cream page; gold text is deepened #9c7f5b → #735a39 (AA, replacing the
+  3.4:1 deviation D31 accepted); buttons, selected chips, the bag count and the pickup/delivery bands use a
+  new `coastal-deep` #56708a; low-stock labels get a blush pill. Frames and rules keep the board gold.
+- **Open for Lody:** approve the white cards, darker gold and blue buttons, or ask for the board colours back.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

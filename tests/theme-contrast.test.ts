@@ -32,15 +32,17 @@ describe("palette (Lody's mood board, D31)", () => {
     }
   });
 
-  it("matches the colours sampled from the board", () => {
+  it("matches the board colours, with the D48 changes", () => {
     expect(tokens).toMatchObject({
       cream: "#f7f2ee",
+      paper: "#ffffff",
       ivory: "#f7f0ea",
       linen: "#eadccf",
       blush: "#efd5ce",
       coastal: "#98a9b9",
       gold: "#b99870",
-      "gold-text": "#9c7f5b",
+      "coastal-deep": "#56708a",
+      "gold-text": "#735a39",
       nav: "#605b57",
     });
   });
@@ -57,10 +59,11 @@ describe("palette (Lody's mood board, D31)", () => {
     for (const bg of SURFACES) expect(contrast(tokens.focus, tokens[bg]), `focus on ${bg}`).toBeGreaterThanOrEqual(3);
   });
 
-  it("records the client-accepted gold deviation: board gold text is below AA (D31)", () => {
-    // If this starts passing AA, D31 can be retired; if it drops further, someone changed the board colour.
-    const ratio = contrast(tokens["gold-text"], tokens.cream);
-    expect(ratio).toBeGreaterThan(3.3);
-    expect(ratio).toBeLessThan(4.5);
+  it("gold text is AA on the page and on cards (D48 deepened the board gold)", () => {
+    for (const bg of ["cream", "paper"]) expect(contrast(tokens["gold-text"], tokens[bg]), bg).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("white button text is AA on the deep coastal blue", () => {
+    expect(contrast(tokens["coastal-deep"], tokens.paper)).toBeGreaterThanOrEqual(4.5);
   });
 });

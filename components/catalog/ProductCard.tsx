@@ -9,7 +9,7 @@ import { ProductImage } from "./ProductImage";
 export function AvailabilityNote({ product }: { product: Product }) {
   const availability = productAvailability(product);
   if (!availability.label) return null;
-  const tone = availability.status === "low_stock" ? "text-gold-text" : "text-ink-soft";
+  const tone = availability.status === "low_stock" ? "w-fit bg-blush px-2 text-ink" : "text-ink-soft";
   return <p className={`text-sm font-semibold ${tone}`}>{availability.label}</p>;
 }
 
@@ -25,19 +25,19 @@ export function ProductCard({ product }: { product: Product }) {
   return (
     // Gold double frame around every product (Lody's board): outer antique-gold line, ivory gap,
     // inner hairline. Decorative only; the title link carries the meaning.
-    <li className="group relative flex flex-col border border-gold bg-paper p-1.5">
+    <li className="group relative flex flex-col border border-gold bg-paper p-1 sm:p-1.5">
       <div className="flex flex-1 flex-col border border-gold/50">
         <ProductImage media={image} decorative className="aspect-square w-full" />
-        <div className="flex flex-1 flex-col gap-1 p-4">
-          {product.brand && <p className="text-xs tracking-[0.12em] text-gold-text uppercase">{product.brand}</p>}
-          <h3 className="text-xl leading-snug">
+        <div className="flex flex-1 flex-col gap-1 p-2.5 sm:p-4">
+          {product.brand && <p className="text-[0.65rem] tracking-[0.1em] sm:text-xs sm:tracking-[0.12em] text-gold-text uppercase">{product.brand}</p>}
+          <h3 className="text-base leading-snug break-words sm:text-xl">
             <Link href={`/shop/${product.slug}`} className="no-underline after:absolute after:inset-0 group-focus-within:underline hover:underline">
               {product.title}
             </Link>
           </h3>
           {product.sizeLabel && <p className="text-sm text-ink-soft">{product.sizeLabel}</p>}
           <div className="mt-auto flex flex-wrap items-baseline justify-between gap-x-2 pt-2">
-            <p className={isPrice ? "text-lg font-semibold text-gold-text" : "text-sm text-ink-soft"}>{price}</p>
+            <p className={isPrice ? "text-base font-semibold sm:text-lg text-gold-text" : "text-sm text-ink-soft"}>{price}</p>
             <AvailabilityNote product={product} />
           </div>
         </div>

@@ -34,7 +34,7 @@ export default async function ShopPage({ searchParams }: Props) {
             className="min-h-11 border border-ink-soft bg-paper px-3"
           />
         </div>
-        <button type="submit" className="min-h-11 bg-gold-text px-5 text-cream">
+        <button type="submit" className="min-h-11 bg-coastal-deep px-5 text-cream">
           Search
         </button>
       </form>
@@ -49,7 +49,7 @@ export default async function ShopPage({ searchParams }: Props) {
                 <Link
                   href={`/shop${params.size ? `?${params}` : ""}`}
                   aria-current={current ? "page" : undefined}
-                  className={`inline-flex min-h-11 items-center border px-4 no-underline ${current ? "border-gold-text bg-gold-text text-cream" : "border-line bg-paper text-ink"}`}
+                  className={`inline-flex min-h-11 items-center border px-4 no-underline ${current ? "border-coastal-deep bg-coastal-deep text-cream" : "border-line bg-paper text-ink"}`}
                 >
                   {c.name}
                 </Link>
@@ -75,7 +75,7 @@ export default async function ShopPage({ searchParams }: Props) {
         <>
           {/* The cards' titles are h3, so give them an h2 to sit under (the outline would otherwise jump from h1 to h3). */}
           <h2 className="sr-only">{active ? `${active.name} products` : "Products"}</h2>
-          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-5">
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(10rem,100%),1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] sm:gap-5">
             {products.map((p) => (
               <ProductCard key={p.id} product={p} />
             ))}

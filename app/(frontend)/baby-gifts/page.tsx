@@ -74,7 +74,7 @@ export default async function BabyGiftsPage() {
       {products.length === 0 ? (
         <p>Our baby ceramics will be listed here soon.</p>
       ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-5">
+        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(10rem,100%),1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] sm:gap-5">
           {products.map((p) => (
             <ProductCard key={p.id} product={p} />
           ))}
