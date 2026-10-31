@@ -1,7 +1,6 @@
 import Link from "next/link";
 
 import { AwningHem } from "@/components/brand/Awning";
-import { Lockup } from "@/components/brand/Lockup";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { FavoritesSlider } from "@/components/home/FavoritesSlider";
@@ -25,7 +24,7 @@ export default async function HomePage() {
 
   return (
     <div className="mx-auto w-[min(100%-2rem,72rem)]">
-      {/* The board's awning, drawn; an approved shop photo uploaded in /admin replaces it. */}
+      {/* The header already carries the logo, so the top is only the board's awning, drawn; an approved shop photo uploaded in /admin replaces it. */}
       <section aria-labelledby="welcome" className="mb-10">
         <h1 id="welcome" className="sr-only">
           {store.name} — {store.tagline}
@@ -35,12 +34,9 @@ export default async function HomePage() {
             <ProductImage media={hero} size="large" priority className="aspect-[16/7] w-full object-cover!" />
           </div>
         ) : (
-          <>
-            <div className="border-x border-t border-gold bg-paper px-6 pt-10 pb-8">
-              <Lockup name={store.name} tagline={store.tagline} size="lg" />
-            </div>
+          <div className="border-t border-gold">
             <AwningHem />
-          </>
+          </div>
         )}
         <div className="mx-auto mt-8 max-w-[60ch] text-center">
           <p className="caps mb-3 text-[0.75rem] text-gold-text">Plymouth, Massachusetts</p>
@@ -81,11 +77,11 @@ export default async function HomePage() {
               ))}
             </ul>
           )}
-          <p className="mt-6 flex flex-wrap justify-center gap-6">
-            <Link href="/shop" className="caps text-[0.75rem] text-gold-text">
+          <p className="mt-4 flex flex-wrap justify-center gap-x-6">
+            <Link href="/shop" className="caps inline-flex min-h-11 items-center text-[0.75rem] text-gold-text">
               See the whole shop
             </Link>
-            <Link href="/baby-gifts" className="caps text-[0.75rem] text-gold-text">
+            <Link href="/baby-gifts" className="caps inline-flex min-h-11 items-center text-[0.75rem] text-gold-text">
               Baby gifts
             </Link>
           </p>

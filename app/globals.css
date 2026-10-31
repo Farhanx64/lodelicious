@@ -83,7 +83,7 @@
   z-index: 100;
   background: var(--color-gold-text);
   color: var(--color-paper);
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
 }
 .skip-link:focus {
   top: 1rem;

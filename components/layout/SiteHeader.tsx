@@ -156,7 +156,7 @@ export function SiteHeader({
                 <ul className="mx-auto flex w-[min(100%-2rem,72rem)] flex-col">
                   {[...NAV_LEFT, ...NAV_RIGHT].map((item) => (
                     <li key={item.href} className="border-b border-line last:border-b-0">
-                      <Link href={item.href} className={linkClass}>
+                      <Link href={item.href} className={`${linkClass} w-full`}>
                         {item.label}
                       </Link>
                     </li>

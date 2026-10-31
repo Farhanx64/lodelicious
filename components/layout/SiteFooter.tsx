@@ -19,8 +19,9 @@ const POLICY_LINKS = [
   { href: "/policies", label: "All policies" },
 ];
 
-// At least 24 px tall so stacked links meet WCAG 2.2 target size (2.5.8).
-const footerLink = "inline-flex min-h-6 items-center text-nav";
+// 44 px tall so stacked links are easy to hit with a thumb (WCAG 2.2 2.5.8 asks for 24).
+const footerLink = "inline-flex min-h-11 items-center text-nav";
+const contactLink = "inline-flex min-h-11 items-center";
 
 export function SiteFooter({ store }: { store: StoreSetting }) {
   const closed = (store.closedDays ?? []).map((d) => d.label);
@@ -93,22 +94,27 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
           <h2 id="footer-contact" className="mb-3 text-base">
             Contact
           </h2>
-          <p>
-            <a href={telHref(store.phone)}>
-              {store.phone}
-            </a>
-            <br />
-            <a href={`mailto:${store.email}`} className="break-words">
-              {store.email}
-            </a>
-          </p>
-          <p className="mt-3">
-            <Link href="/contact">Send us a message</Link>
-          </p>
+          <ul className="flex flex-col">
+            <li>
+              <a href={telHref(store.phone)} className={contactLink}>
+                {store.phone}
+              </a>
+            </li>
+            <li>
+              <a href={`mailto:${store.email}`} className={`${contactLink} break-words`}>
+                {store.email}
+              </a>
+            </li>
+            <li>
+              <Link href="/contact" className={contactLink}>
+                Send us a message
+              </Link>
+            </li>
+          </ul>
           {store.doordashUrl && (
-            <p className="mt-3">
+            <p className="mt-2">
               Local delivery:{" "}
-              <a href={store.doordashUrl}>
+              <a href={store.doordashUrl} className="inline-flex min-h-11 items-center">
                 order on DoorDash
               </a>
             </p>
