@@ -59,7 +59,7 @@ export default async function GiftBasketsPage() {
               {group.title}
             </h2>
             {group.blurb && <p className="mb-6 max-w-[68ch]">{group.blurb}</p>}
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] gap-5">
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(10rem,100%),1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] sm:gap-5">
               {group.products.map((p) => (
                 <ProductCard key={p.id} product={p} />
               ))}
@@ -69,7 +69,7 @@ export default async function GiftBasketsPage() {
       )}
 
       <div className="mb-8 grid gap-6 md:grid-cols-2">
-        <section aria-labelledby="build-your-own" className="border-t-4 border-coastal bg-coastal-pale p-5">
+        <section aria-labelledby="build-your-own" className="border-t-4 border-coastal-deep bg-coastal-pale p-5">
           <h2 id="build-your-own" className="mb-2 text-2xl">
             Build your own basket
           </h2>
@@ -81,7 +81,7 @@ export default async function GiftBasketsPage() {
             Build your own basket
           </Link>
         </section>
-        <section aria-labelledby="seasonal-gift-boxes" className="border-t-4 border-coastal bg-coastal-pale p-5">
+        <section aria-labelledby="seasonal-gift-boxes" className="border-t-4 border-coastal-deep bg-coastal-pale p-5">
           <h2 id="seasonal-gift-boxes" className="mb-2 text-2xl">
             Seasonal gift boxes
           </h2>

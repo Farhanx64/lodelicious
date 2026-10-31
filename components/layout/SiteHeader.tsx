@@ -93,7 +93,7 @@ export function SiteHeader({
             <Link href={icon.href} aria-label={label} className="relative inline-flex size-11 items-center justify-center text-gold-text hover:text-nav">
               {icon.svg}
               {isBag && bagCount > 0 && (
-                <span aria-hidden="true" data-bag-count className="absolute top-1 right-0 min-w-5 rounded-full bg-gold-text px-1 text-center text-[0.7rem] leading-5 text-paper">
+                <span aria-hidden="true" data-bag-count className="absolute top-1 right-0 min-w-5 rounded-full bg-coastal-deep px-1 text-center text-[0.7rem] leading-5 text-paper">
                   {bagCount}
                 </span>
               )}
@@ -156,7 +156,7 @@ export function SiteHeader({
                 <ul className="mx-auto flex w-[min(100%-2rem,72rem)] flex-col">
                   {[...NAV_LEFT, ...NAV_RIGHT].map((item) => (
                     <li key={item.href} className="border-b border-line last:border-b-0">
-                      <Link href={item.href} className={linkClass}>
+                      <Link href={item.href} className={`${linkClass} w-full`}>
                         {item.label}
                       </Link>
                     </li>

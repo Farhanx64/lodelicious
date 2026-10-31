@@ -58,7 +58,7 @@ export function FavoritesSlider({ children, count }: { children?: React.ReactNod
   }, [autoplay, step]);
 
   const control =
-    "inline-flex size-11 items-center justify-center border border-gold-text bg-paper text-gold-text hover:bg-gold-text hover:text-paper";
+    "inline-flex size-11 items-center justify-center border border-gold-text bg-paper text-gold-text hover:bg-coastal-deep hover:text-paper";
 
   return (
     <div

@@ -20,9 +20,9 @@ export function StoreDetails({ store }: { store: Store }) {
         {store.locality}
       </address>
       <p className="mb-4">
-        <a href={telHref(store.phone)}>{store.phone}</a>
+        <a href={telHref(store.phone)} className="inline-flex min-h-11 items-center">{store.phone}</a>
         <br />
-        <a href={`mailto:${store.email}`}>{store.email}</a>
+        <a href={`mailto:${store.email}`} className="inline-flex min-h-11 items-center">{store.email}</a>
       </p>
       {hours.length > 0 && (
         <>

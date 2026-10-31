@@ -6,17 +6,18 @@
    tests/theme-contrast.test.ts. */
 @theme {
   --color-cream: #f7f2ee;        /* page background, sampled from the board */
-  --color-paper: #fbf8f5;        /* cards and panels */
+  --color-paper: #ffffff;        /* cards and panels: white so they lift off the cream page */
   --color-ivory: #f7f0ea;        /* board swatch "Ivory" */
   --color-linen: #eadccf;        /* board swatch "Linen" */
   --color-blush: #efd5ce;        /* board swatch "Blush" */
   --color-coastal: #98a9b9;      /* board swatch "Coastal Blue": bands and accents */
+  --color-coastal-deep: #56708a; /* buttons and bands: white text 5.1:1 */
   --color-coastal-pale: #e4e9ee;
   --color-ink: #3b2f25;          /* body text: 11.7:1 */
   --color-ink-soft: #665a4e;     /* secondary text: 6.0:1 */
   --color-nav: #605b57;          /* board nav lettering: 6.0:1 */
   --color-gold: #b99870;         /* board bow, rules and frames */
-  --color-gold-text: #9c7f5b;    /* board wordmark gold: 3.4:1, client-accepted (D31) */
+  --color-gold-text: #735a39;    /* deepened from the board's #9c7f5b (3.4:1) so gold text is AA, 6.4:1 on white */
   --color-line: #e3d8cc;
   --color-focus: #1f4fd1;
   --color-error: #a32020;
@@ -83,7 +84,7 @@
   z-index: 100;
   background: var(--color-gold-text);
   color: var(--color-paper);
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem;
 }
 .skip-link:focus {
   top: 1rem;
