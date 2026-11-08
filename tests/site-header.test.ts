@@ -40,6 +40,39 @@ describe("SiteHeader", () => {
   });
 });
 
+describe("Promo banner", () => {
+  const slides = [
+    { id: "a", text: "November fall deals — fall baskets are coming in", linkUrl: "/shop", linkLabel: "Shop fall" },
+    { id: "b", text: "Thanksgiving baskets are in season", linkUrl: "/build-a-basket", linkLabel: null },
+  ];
+
+  it("replaces the staging note at the top with a labelled, pausable carousel", () => {
+    const withPromo = renderToStaticMarkup(createElement(SiteHeader, { staging: true, storeName: "Souset-Pink", promo: { slides, seconds: 5 } }));
+    expect(withPromo).not.toContain("Staging preview");
+    expect(withPromo).toContain('aria-roledescription="carousel"');
+    expect(withPromo).toContain('aria-label="Promotions"');
+    expect(withPromo).toContain("November fall deals");
+    expect(withPromo).toMatch(/href="\/shop"[^>]*>Shop fall</);
+    expect(withPromo).toMatch(/href="\/build-a-basket"[^>]*>Shop now</);
+    expect(withPromo).toContain('aria-label="Pause promotions"');
+    expect(withPromo.indexOf("data-promo-banner")).toBeLessThan(withPromo.indexOf("<header"));
+  });
+
+  it("drops the arrows and pause button for a single slide", () => {
+    const one = renderToStaticMarkup(createElement(SiteHeader, { staging: false, storeName: "Souset-Pink", promo: { slides: slides.slice(0, 1) } }));
+    expect(one).toContain("data-promo-banner");
+    expect(one).not.toContain("Next promotion");
+  });
+
+  it("falls back to the staging note when the promo is switched off or empty", () => {
+    for (const promo of [null, { slides: [] }]) {
+      const off = renderToStaticMarkup(createElement(SiteHeader, { staging: true, storeName: "Souset-Pink", promo }));
+      expect(off).toContain("Staging preview");
+      expect(off).not.toContain("data-promo-banner");
+    }
+  });
+});
+
 describe("PhotoStrip", () => {
   const placeholder = { id: 9, alt: "Gift box", approvedForLaunch: false, url: "/media/x.jpg", sizes: {} } as never;
 

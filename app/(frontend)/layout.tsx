@@ -39,6 +39,7 @@ export const dynamic = "force-dynamic";
 export default async function FrontendLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const store = await getStoreSettings();
   const staging = isStaging();
+  const promo = store.promoEnabled ? { slides: (store.promoSlides ?? []).filter((s) => s.text?.trim()), seconds: store.promoSeconds } : null;
 
   return (
     <html lang="en" className={`${cormorant.variable} ${sourceSans.variable}`}>
@@ -46,7 +47,7 @@ export default async function FrontendLayout({ children }: Readonly<{ children: 
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <SiteHeader staging={staging} storeName={store.name} tagline={store.tagline} bagCount={await bagCount()} />
+        <SiteHeader staging={staging} promo={promo} storeName={store.name} tagline={store.tagline} bagCount={await bagCount()} />
         <main id="main" tabIndex={-1} className="flex-1 py-10">
           {children}
         </main>

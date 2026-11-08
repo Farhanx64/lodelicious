@@ -4,6 +4,7 @@ import { Bow } from "@/components/brand/Bow";
 import { Lockup } from "@/components/brand/Lockup";
 
 import { MenuDisclosure } from "./MenuDisclosure";
+import { PromoBanner, type PromoSlide } from "./PromoBanner";
 
 // Order and wording from Lody's mood board: four links, the bow, two links, then the icons.
 export const NAV_LEFT = [
@@ -77,8 +78,10 @@ export function SiteHeader({
   storeName,
   tagline,
   bagCount = 0,
+  promo,
 }: {
   staging: boolean;
+  promo?: { slides: PromoSlide[]; seconds?: number | null } | null;
   storeName: string;
   tagline?: string | null;
   bagCount?: number;
@@ -106,10 +109,15 @@ export function SiteHeader({
 
   return (
     <>
-      {staging && (
-        <div role="note" className="border-b border-gold bg-blush px-4 py-2 text-center text-sm text-ink">
-          Staging preview — prices, stock and photos are not final. Orders are not fulfilled.
-        </div>
+      {/* The promo ribbon takes the top spot; the staging note shows only while it is switched off. */}
+      {promo && promo.slides.length > 0 ? (
+        <PromoBanner slides={promo.slides} seconds={promo.seconds} />
+      ) : (
+        staging && (
+          <div role="note" className="border-b border-gold bg-blush px-4 py-2 text-center text-sm text-ink">
+            Staging preview — prices, stock and photos are not final. Orders are not fulfilled.
+          </div>
+        )
       )}
       <header className="bg-cream">
         <div className="mx-auto w-[min(100%-2rem,72rem)] pt-7 pb-5">
