@@ -9,7 +9,9 @@ import { isPreviewEnv } from "./app-env";
 
 export async function getStoreSettings(): Promise<StoreSetting> {
   const payload = await getPayload({ config });
-  return payload.findGlobal({ slug: "store-settings" });
+  const store = await payload.findGlobal({ slug: "store-settings" });
+  // Staff type names with stray spaces ("Lodelicious "); keep them out of titles and labels.
+  return { ...store, name: store.name.trim() };
 }
 
 /**
