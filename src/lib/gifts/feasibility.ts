@@ -43,7 +43,7 @@ function cheapestFill(
   for (const u of units) {
     if (taken === min) break;
     if (u.premium) {
-      if (premiumTaken >= cap) continue;
+      if (cap !== null && premiumTaken >= cap) continue;
       premiumTaken++;
     }
     total += u.price;

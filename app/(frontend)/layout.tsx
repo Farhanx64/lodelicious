@@ -24,21 +24,26 @@ const sourceSans = localFont({
   display: "swap",
 });
 
-export const metadata: Metadata = {
-  title: {
-    default: "Souset-Pink — Sweets, Chocolates & Gifts · Plymouth, MA",
-    template: "%s — Souset-Pink",
-  },
-  description: "Gift baskets, chocolates and sweets from a family-owned shop in Plymouth, Massachusetts.",
-  // Staging previews shared with the client must not end up in search results.
-  robots: isPreviewEnv() ? { index: false, follow: false } : undefined,
-};
+// Titles follow the shop name in Website → Store details, so a rename reaches every tab title.
+export async function generateMetadata(): Promise<Metadata> {
+  const { name } = await getStoreSettings();
+  return {
+    title: {
+      default: `${name} — Sweets, Chocolates & Gifts · Plymouth, MA`,
+      template: `%s — ${name}`,
+    },
+    description: "Gift baskets, chocolates and sweets from a family-owned shop in Plymouth, Massachusetts.",
+    // Staging previews shared with the client must not end up in search results.
+    robots: isPreviewEnv() ? { index: false, follow: false } : undefined,
+  };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function FrontendLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const store = await getStoreSettings();
   const staging = isStaging();
+  const promo = store.promoEnabled ? { slides: (store.promoSlides ?? []).filter((s) => s.text?.trim()), seconds: store.promoSeconds } : null;
 
   return (
     <html lang="en" className={`${cormorant.variable} ${sourceSans.variable}`}>
@@ -46,7 +51,7 @@ export default async function FrontendLayout({ children }: Readonly<{ children: 
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <SiteHeader staging={staging} storeName={store.name} tagline={store.tagline} bagCount={await bagCount()} />
+        <SiteHeader staging={staging} promo={promo} storeName={store.name} tagline={store.tagline} bagCount={await bagCount()} />
         <main id="main" tabIndex={-1} className="flex-1 py-10">
           {children}
         </main>

@@ -19,7 +19,7 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "tagline", "street", "locality", "phone", "email", "notificationEmail", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
+    afterChange: [auditGlobal(["name", "tagline", "promoEnabled", "promoSlides", "promoSeconds", "street", "locality", "phone", "email", "notificationEmail", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
   },
   fields: [
     {
@@ -70,6 +70,46 @@ export const StoreSettings: GlobalConfig = {
               validate: (value: string | null | undefined) =>
                 !value || /^https:\/\/(www\.)?doordash\.com\//.test(value) ? true : "Use the shop's https://www.doordash.com/… link",
             },
+          ],
+        },
+        {
+          label: "Promo banner",
+          admin: {
+            description:
+              "The ribbon across the very top of every page. Each slide shows for a few seconds, then slides to the next; customers can also swipe or use the arrows.",
+          },
+          fields: [
+            { name: "promoEnabled", label: "Show the promo banner", type: "checkbox", defaultValue: true },
+            {
+              name: "promoSlides",
+              label: "Slides",
+              type: "array",
+              labels: { singular: "Slide", plural: "Slides" },
+              maxRows: 8,
+              defaultValue: [
+                { text: "November fall deals — fall baskets are coming in", linkUrl: "/shop", linkLabel: "Shop fall" },
+                { text: "Thanksgiving baskets are in season. Choose your basket now", linkUrl: "/build-a-basket", linkLabel: "Choose your basket" },
+              ],
+              admin: { description: "Drag to reorder. Keep each line short so it fits on a phone." },
+              fields: [
+                { name: "text", label: "Message", type: "text", required: true, maxLength: 120 },
+                {
+                  type: "row",
+                  fields: [
+                    {
+                      name: "linkUrl",
+                      label: "Link (optional)",
+                      type: "text",
+                      admin: { description: "A page on this site such as /shop or /build-a-basket, or a full https:// link." },
+                      validate: (value: string | null | undefined) =>
+                        !value || /^\/(?!\/)/.test(value) || /^https:\/\//.test(value) ? true : "Start with / for a page on this site, or https://",
+                    },
+                    { name: "linkLabel", label: "Link text", type: "text", maxLength: 30, admin: { description: "Defaults to “Shop now”." } },
+                  ],
+                },
+              ],
+            },
+            { name: "promoSeconds", label: "Seconds per slide", type: "number", defaultValue: 5, min: 3, max: 20, admin: { step: 1 } },
           ],
         },
         {

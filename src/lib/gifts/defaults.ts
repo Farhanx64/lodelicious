@@ -161,7 +161,7 @@ export function parseSettings(doc: Row): GiftSettings {
       minItems: count(r.minItems, `${where} minimum items`),
       maxItems: count(r.maxItems, `${where} maximum items`),
       packagingCents: count(r.packagingCents, `${where} packaging`),
-      premiumCap: count(r.premiumCap, `${where} premium maximum`),
+      premiumCap: nullableCount(r.premiumCap, `${where} premium maximum`),
       basketSizeIn: String(r.basketSizeIn ?? ""),
       capacityUnits: nullableCount(r.capacityUnits, `${where} capacity`),
       // Rows saved before the switch existed were all offered.

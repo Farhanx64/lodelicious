@@ -72,6 +72,12 @@ describe("parseSettings", () => {
     expect(parseSettings(d).specialPresentations[1].allowedCategories).toEqual(["candy", "chocolate"]);
   });
 
+  it("accepts a basket size with no premium maximum (no limit)", () => {
+    const d = doc();
+    d.sizes[0].premiumCap = null as never;
+    expect(parseSettings(d).sizes[0].premiumCap).toBeNull();
+  });
+
   it.each([
     ["min above max", (d: ReturnType<typeof doc>) => { d.sizes[0].minItems = 9; }, /minimum \(9\) is above maximum \(8\)/],
     ["fractional packaging", (d: ReturnType<typeof doc>) => { d.sizes[0].packagingCents = 19.95; }, /packaging must be a whole number/],
