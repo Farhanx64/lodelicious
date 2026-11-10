@@ -73,8 +73,8 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
   const request = { kind: "custom" as const, size, giftType, budgetCents, selections };
   const result = validateGift(request, settings, catalog);
   const feasibility = assessFeasibility(settings, size, giftType, budgetCents, products);
-  const premiumCap = result.premiumCap ?? 0;
-  const premiumRemaining = premiumCap - result.totals.premiumCount;
+  const premiumCap = result.premiumCap;
+  const premiumRemaining = premiumCap === null ? null : premiumCap - result.totals.premiumCount;
   const blocking = result.violations.filter((v) => v.code !== "COUNT_BELOW_MIN");
 
   const pickerItems = display
@@ -167,7 +167,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                       {range.min}–{range.max} items{basketSize ? ` · ${basketSize}" basket` : ""}
                     </span>
                     <span className="block text-sm text-ink-soft">
-                      Basket &amp; packaging {formatCents(s.packagingCents)} · up to {s.premiumCap} premium
+                      Basket &amp; packaging {formatCents(s.packagingCents)}{s.premiumCap !== null && ` · up to ${s.premiumCap} premium`}
                     </span>
                   </span>
                 </label>
@@ -353,10 +353,14 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
           <dd className={result.totals.itemCount > result.countRange.max ? "font-semibold text-error" : ""}>
             {result.totals.itemCount} of {result.countRange.min}–{result.countRange.max}
           </dd>
-          <dt>Premium items</dt>
-          <dd className={result.totals.premiumCount > premiumCap ? "font-semibold text-error" : ""}>
-            {result.totals.premiumCount} of {premiumCap}
-          </dd>
+          {premiumCap !== null && (
+            <>
+              <dt>Premium items</dt>
+              <dd className={result.totals.premiumCount > premiumCap ? "font-semibold text-error" : ""}>
+                {result.totals.premiumCount} of {premiumCap}
+              </dd>
+            </>
+          )}
           <dt>Contents</dt>
           <dd>{formatCents(result.totals.contentsCents)}</dd>
           <dt>Basket &amp; packaging</dt>

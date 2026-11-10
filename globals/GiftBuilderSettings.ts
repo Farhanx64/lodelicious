@@ -116,7 +116,7 @@ export const GiftBuilderSettings: GlobalConfig = {
                   fields: [
                     whole("minItems", "Minimum items"),
                     whole("maxItems", "Maximum items"),
-                    whole("premiumCap", "Premium maximum"),
+                    whole("premiumCap", "Premium maximum", false, "Leave empty for no limit."),
                   ],
                 },
                 {

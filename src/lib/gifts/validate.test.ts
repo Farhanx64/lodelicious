@@ -85,6 +85,15 @@ describe("premium caps (AC 02)", () => {
     expect(codes(overCap)).toEqual(["PREMIUM_CAP"]);
   });
 
+  it("allows any number of premium items when a size has no premium maximum", () => {
+    const unlimited: GiftSettings = { ...SETTINGS, sizes: SETTINGS.sizes.map((s) => ({ ...s, premiumCap: null })) };
+    const premium = PREMIUM.map((p) => p.id);
+    const r = validateGift(custom("small", [...premium.slice(0, 3), ...plainItems(3)]), unlimited, catalog);
+    expect(r.totals.premiumCount).toBe(3);
+    expect(codes(r)).not.toContain("PREMIUM_CAP");
+    expect(r.premiumCap).toBeNull();
+  });
+
   it("counts premium items toward the overall total", () => {
     const r = validateGift(custom("small", ["P01", ...plainItems(5)]), SETTINGS, catalog);
     expect(r.totals.itemCount).toBe(6);

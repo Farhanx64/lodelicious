@@ -20,7 +20,8 @@ export type SizeRule = {
   minItems: number;
   maxItems: number;
   packagingCents: Cents;
-  premiumCap: number;
+  /** Most premium items allowed; null = no limit (Lody, 2026-11-10: every item is premium). */
+  premiumCap: number | null;
   basketSizeIn: string;
   /** Total fit units the container holds; null = enforce counts only (products not measured). */
   capacityUnits: number | null;
