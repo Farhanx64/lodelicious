@@ -14,9 +14,9 @@ const SCHEDULE = {
   "*/5 * * * *": ["release-expired-holds"],
   "*/10 * * * *": ["send-pending-emails"],
   "17 8 * * *": ["purge-carts"],
-  // Add once the Clover sync is verified (docs/clover-sync-needs.md), with the same lines in wrangler.jsonc:
+  "*/15 * * * *": ["clover-pull"],
+  // Add once pushing to Clover is approved (docs/clover-sync-needs.md), with the same line in wrangler.jsonc:
   // "*/2 * * * *": ["clover-push"],
-  // "*/15 * * * *": ["clover-pull"],
 };
 
 /** Same value as `cronKey()` in src/lib/jobs/cron-key.ts: hex HMAC-SHA256 of "cron:<job>" under PAYLOAD_SECRET. */

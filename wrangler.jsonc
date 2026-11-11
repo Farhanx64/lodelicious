@@ -34,21 +34,21 @@
     // "production" is the live store (D41). APP_ENV is also read at build time for the HSTS header.
     "APP_ENV": "production",
     // The public address; turns on Payload's CSRF allowlist. Change it if the domain differs.
-    "NEXT_PUBLIC_SITE_URL": "https://souset-pink.com"
+    "NEXT_PUBLIC_SITE_URL": "https://shoplodelicious.com,https://www.shoplodelicious.com"
   },
 
   // The public address. Leave commented out until the domain's DNS is on Cloudflare and Lody has
   // approved the switch; until then the Worker answers on its workers.dev address.
-  // "routes": [
-  //   { "pattern": "souset-pink.com", "custom_domain": true },
-  //   { "pattern": "www.souset-pink.com", "custom_domain": true }
-  // ],
+  "routes": [
+    { "pattern": "shoplodelicious.com", "custom_domain": true },
+    { "pattern": "www.shoplodelicious.com", "custom_domain": true }
+  ],
 
   "d1_databases": [
     {
       "binding": "D1",
       "database_name": "lodelicious",
-      "database_id": "00000000-0000-0000-0000-000000000000" // PLACEHOLDER
+      "database_id": "93896fdc-83a6-486d-8635-a296b37936f6"
     }
   ],
   "r2_buckets": [
@@ -74,8 +74,9 @@
     "crons": [
       "*/5 * * * *", // release-expired-holds
       "*/10 * * * *", // send-pending-emails
-      "17 8 * * *" // purge-carts, daily
-      // After the Clover sync is verified: "*/2 * * * *" (clover-push) and "*/15 * * * *" (clover-pull)
+      "17 8 * * *", // purge-carts, daily
+      "*/15 * * * *" // clover-pull (reads stock from Clover; never writes to it)
+      // Not yet: "*/2 * * * *" (clover-push), which writes to Clover
     ]
   },
 
@@ -84,11 +85,13 @@
     // owner account, seeding) talk to the REAL D1 database and R2 bucket instead of the local
     // emulation: see `npm run cf:migrate:remote`. Needs `wrangler login`.
     "remote": {
+      // Never take the custom domains: this environment is only for the command line.
+      "routes": [],
       "d1_databases": [
         {
           "binding": "D1",
           "database_name": "lodelicious",
-          "database_id": "00000000-0000-0000-0000-000000000000", // PLACEHOLDER (same as above)
+          "database_id": "93896fdc-83a6-486d-8635-a296b37936f6", // same as above
           "remote": true
         }
       ],
