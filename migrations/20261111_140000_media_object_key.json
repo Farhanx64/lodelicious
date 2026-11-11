@@ -6552,6 +6552,22 @@
           "autoincrement": false,
           "default": "'Sweets · Chocolates · Gifts'"
         },
+        "brand_color": {
+          "name": "brand_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'#9c4459'"
+        },
+        "button_color": {
+          "name": "button_color",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false,
+          "default": "'#c8a467'"
+        },
         "street": {
           "name": "street",
           "type": "text",
@@ -8251,6 +8267,6 @@
   "internal": {
     "indexes": {}
   },
-  "id": "031b3bb7-6a86-46de-b09a-82cb8078eefc",
+  "id": "e96d091e-f794-47c4-916e-d3bf946ee224",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

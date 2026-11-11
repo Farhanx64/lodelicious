@@ -50,7 +50,7 @@ jobs:
             exit 1
           fi
       - run: npm run build
-      # The Cloudflare build (D49): OpenNext must bundle the app for Workers, and the result must
+      # The Cloudflare build (D51): OpenNext must bundle the app for Workers, and the result must
       # fit the paid plan's 10 MB compressed limit. Neither step needs a Cloudflare account.
       - run: npm run cf:build
       - name: Worker fits the size limit
