@@ -1,4 +1,4 @@
-/** The header (D49): the shop name as a centred wordmark, the nav in Lody's order, and four labelled icons. */
+/** The board's header (D31): lockup, nav in board order, the bow, and four labelled icons. */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
@@ -6,20 +6,15 @@ import { describe, expect, it } from "vitest";
 import { PhotoStrip } from "@/components/home/PhotoStrip";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 
-const html = renderToStaticMarkup(createElement(SiteHeader, { staging: false, storeName: "Souset-Pink" }));
+const html = renderToStaticMarkup(createElement(SiteHeader, { staging: false, storeName: "Souset-Pink", tagline: "Sweets · Chocolates · Gifts" }));
 
 describe("SiteHeader", () => {
-  it("shows the wordmark and the nav in the shop's order", () => {
-    expect(html).toMatch(/data-wordmark="true"[^>]*>Souset-Pink</);
-    const desktop = html.slice(html.indexOf("data-desktop-nav"), html.indexOf("</nav>"));
-    const labels = [...desktop.matchAll(/data-nav-link="true"[^>]*>([^<]+)</g)].map((m) => m[1]);
+  it("shows the lockup and the nav in the board's order", () => {
+    expect(html).toContain("Souset-Pink");
+    expect(html).toContain("Sweets · Chocolates · Gifts");
+    const desktop = html.slice(html.indexOf('aria-label="Primary"'), html.indexOf("lg:hidden"));
+    const labels = [...desktop.matchAll(/class="caps[^"]*"[^>]*>([^<]+)</g)].map((m) => m[1]);
     expect(labels).toEqual(["Shop", "Sweets", "Chocolates", "Gifts", "Custom Baskets", "About"]);
-  });
-
-  it("puts the phone menu in a labelled <details>, so it works without JavaScript", () => {
-    expect(html).toMatch(/<details[^>]*><summary aria-label="Menu"/);
-    const phone = html.slice(html.indexOf("data-phone-nav"));
-    for (const href of ["/shop", "/build-a-basket", "/about", "/account", "/wishlist"]) expect(phone).toContain(`href="${href}"`);
   });
 
   it("gives every icon an accessible name and a real destination", () => {
@@ -95,7 +90,7 @@ describe("PhotoStrip", () => {
     }
   });
 
-  it("always shows five frames, with clay placeholders until photos are uploaded", () => {
+  it("always shows five frames, with branded placeholders until photos are uploaded", () => {
     const strip = renderToStaticMarkup(createElement(PhotoStrip, { images: [] }));
     expect(strip.match(/<li/g)).toHaveLength(5);
     expect(strip.match(/data-placeholder/g)).toHaveLength(5);

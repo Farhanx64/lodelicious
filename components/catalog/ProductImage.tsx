@@ -13,8 +13,6 @@ export function ProductImage({
   className = "",
   priority = false,
   decorative = false,
-  fit = "contain",
-  blend = false,
 }: {
   media: Media | number | null | undefined;
   size?: Size;
@@ -25,18 +23,11 @@ export function ProductImage({
    * screen reader does not read the title twice (A18). The "coming soon" tile is hidden too.
    */
   decorative?: boolean;
-  /** "cover" fills the frame and crops; "contain" shows the whole photo. */
-  fit?: "cover" | "contain";
-  /**
-   * Multiply the photo into the clay tile behind it, so a pack shot on a white studio background
-   * sits on the tile instead of in a white box (D49).
-   */
-  blend?: boolean;
 }) {
   const doc = typeof media === "object" ? media : null;
   if (!doc || !isImagePublishable(doc) || !doc.url) {
     return (
-      <div aria-hidden={decorative || undefined} className={`label-caps flex aspect-square items-center justify-center bg-clay p-3 text-center text-muted ${className}`}>
+      <div aria-hidden={decorative || undefined} className={`flex aspect-square items-center justify-center bg-linen text-sm text-ink-soft ${className}`}>
         Photo coming soon
       </div>
     );
@@ -57,7 +48,7 @@ export function ProductImage({
       height={doc.height ?? undefined}
       loading={priority ? "eager" : "lazy"}
       decoding="async"
-      className={`${fit === "cover" ? "object-cover" : "object-contain"} ${blend ? "mix-blend-multiply" : ""} ${className}`}
+      className={`bg-white object-contain ${className}`}
     />
   );
 }

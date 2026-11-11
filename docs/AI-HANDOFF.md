@@ -79,8 +79,8 @@ credentials (see section 7).
 - **Nothing activates live payments, live Clover sync, real email, DNS changes or purchases**
   without Lody's approval. The Clover HTTP adapter and the SMTP adapter deliberately refuse to start.
 - **Shared customer-facing copy:** plain, warm and honest. Accessibility target is WCAG 2.2 AA: labelled
-  inputs, `role="alert"` errors, 44 px targets, no horizontal scroll at 390 px or with 200% text. D49 sets the
-  palette; every text colour is AA.
+  inputs, `role="alert"` errors, 44 px targets, no horizontal scroll at 390 px or with 200% text. D31
+  documents an accepted gold-text contrast deviation.
 
 ## 4. Gotchas (learned the hard way)
 
@@ -145,7 +145,7 @@ and run `npm run build`.
   the schema and `service.ts`. The integrator merged branches one at a time into an integration
   branch, ran the full CI chain, edited the shared files (`SiteHeader`, `SiteFooter`, `STATUS.md`,
   `README.md`), and opened the PR.
-- Each change gets a decision entry in `docs/decisions.md` (next free number: **D50**), placed
+- Each change gets a decision entry in `docs/decisions.md` (next free number: **D48**), placed
   before `## Superseded`.
 - `docs/audit-2026-10-06.md` holds the security and accessibility audit. All 23 findings are fixed
   or partly fixed; the partial ones are listed there (no CSP yet, no 2FA, the decorative

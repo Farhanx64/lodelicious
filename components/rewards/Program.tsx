@@ -4,7 +4,7 @@ import { formatPoints, sortedOptions, type RewardsConfig } from "@/src/lib/rewar
 /** Staging only: the terms aren't approved, so nothing here is a promise yet (D47, like D39). */
 export function DraftNotice() {
   return (
-    <p role="note" className="mb-6 note">
+    <p role="note" className="mb-6 border border-gold bg-blush p-4">
       <strong>Draft program.</strong> The rewards terms haven&rsquo;t been approved yet, so this shows only on the preview site and may change.
     </p>
   );
@@ -26,10 +26,10 @@ export function RewardList({ program, balance }: { program: RewardsConfig; balan
         const ready = balance !== undefined && balance >= o.pointsRequired;
         return (
           <li key={o.id} className="flex flex-wrap items-baseline justify-between gap-2 py-3">
-            <span className="font-display text-[1.75rem] leading-tight text-cocoa">{formatCents(o.discountCents)} off</span>
+            <span className="font-display text-xl text-gold-text">{formatCents(o.discountCents)} off</span>
             <span>
               {formatPoints(o.pointsRequired)}
-              {ready && <span className="ml-2 border border-line px-2 py-0.5 text-sm">Ready to use</span>}
+              {ready && <span className="ml-2 border border-gold px-2 py-0.5 text-sm">Ready to use</span>}
             </span>
           </li>
         );
