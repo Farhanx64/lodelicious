@@ -3,9 +3,10 @@
 How to move the store from a Node host (SQLite file, photos on disk) to Cloudflare Workers with D1
 and R2, and how to deploy after that. Background and trade-offs: `docs/decisions.md` D51.
 
-Everything below was rehearsed on 2026-11-11 against wrangler's **local emulation** only. No real
-Cloudflare resource has been created and nothing has been deployed. Steps marked **(not yet run
-for real)** need a logged-in Cloudflare account and are untested against the real service.
+First rehearsed on 2026-11-11 against wrangler's local emulation, then **run for real on
+2026-11-11**: the store went live on `shoplodelicious.com` (and `www.`) in Lody's Cloudflare
+account. What the real run found is under "Lessons from the first go-live" below. The steps
+still say **(not yet run for real)** where they were written; read that as "now run once".
 
 ## Before you start
 
@@ -138,14 +139,29 @@ Do not run two of these commands at the same time: they share the files in `.wra
 | Roll back the code | `npx wrangler rollback` (the database and bucket are not rolled back) |
 | Bundle size | `npm run cf:size` |
 
+## Lessons from the first go-live (2026-11-11)
+
+- R2 has to be switched on once per account in the dashboard (R2 page) before
+  `wrangler r2 bucket create` works (error 10042 otherwise).
+- The real D1 ignores `PRAGMA defer_foreign_keys` during a `--file` import, so
+  `scripts/export-for-d1.sh` now writes parent rows before child rows (it stops on a cycle).
+- sqlite3 3.50+ writes text with line breaks as `unistr(...)`, which D1 refuses; the export
+  rewrites it to `replace(..., char(10))`.
+- `cf:migrate:remote` and the photo upload need the R2 bucket to exist (they start a remote
+  proxy with both bindings), so create the bucket before step 5's migration.
+- `wrangler secret put` / `secret bulk` creates the Worker. With a database that already has
+  staff accounts that is harmless; the secrets were set with `wrangler secret bulk <file.json>`
+  just before the first `cf:deploy`.
+- `env.remote` has `"routes": []` so a command-line run can never move the custom domains.
+- The domain was attached straight away (routes on the first deploy), not on `workers.dev` first.
+- `payload-types.ts` is generated, not committed: in a fresh checkout run
+  `npm run generate:types` (any `PAYLOAD_SECRET` works for it) before `cf:build`.
+- The cron jobs cannot be triggered by hand on Cloudflare; watch `npx wrangler tail` for the next
+  scheduled run.
+
 ## Not verified
 
-- Every command with `--remote`, `CLOUDFLARE_ENV=remote`, `wrangler login`, `secret put`,
-  `cf:deploy`, the cron schedules firing on Cloudflare, and the custom domain: none could be run
-  without an account.
-- That the real D1 accepts `d1-import.sql` exactly as the emulation does. The file avoids what
-  Cloudflare documents as unsupported (transactions, `PRAGMA foreign_keys`), but a production-size
-  database has not been tried; very large files may need splitting.
+- A much larger database: the 1.7 MB import went in one file; very large files may need splitting.
 - Request CPU time on Cloudflare. The admin's first request in a new isolate loads a large bundle;
   locally that is fast, but it has not been measured against the paid plan's limits.
 - The Rate Limiting bindings on Cloudflare (they work in the emulation).

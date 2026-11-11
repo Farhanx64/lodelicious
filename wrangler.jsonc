@@ -85,6 +85,8 @@
     // owner account, seeding) talk to the REAL D1 database and R2 bucket instead of the local
     // emulation: see `npm run cf:migrate:remote`. Needs `wrangler login`.
     "remote": {
+      // Never take the custom domains: this environment is only for the command line.
+      "routes": [],
       "d1_databases": [
         {
           "binding": "D1",
