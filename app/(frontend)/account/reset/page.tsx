@@ -5,7 +5,6 @@ import { ComingSoon } from "@/components/ComingSoon";
 import { ResetForm } from "@/components/rewards/MemberForms";
 import { singleParam } from "@/src/lib/checkout/token-param";
 import { rewardsPayload } from "@/src/lib/rewards/session";
-import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = { title: "Choose a new password", robots: { index: false }, referrer: "no-referrer" };
 
@@ -20,10 +19,8 @@ export default async function ResetPage({ searchParams }: { searchParams: Promis
   }
   const token = singleParam((await searchParams).token) ?? "";
   return (
-    <div className="shell page max-w-[34rem]">
-      <h1 className="mb-6">
-        <Accent text="Choose a new password" />
-      </h1>
+    <div className="mx-auto w-[min(100%-2rem,28rem)]">
+      <h1 className="mb-4 text-[clamp(1.75rem,5vw,2.5rem)]">Choose a new password</h1>
       {token ? (
         <>
           <p className="mb-6">Choosing a new password signs you out everywhere else.</p>

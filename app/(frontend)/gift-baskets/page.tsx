@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { ProductCard, productGrid } from "@/components/catalog/ProductCard";
+import { ProductCard } from "@/components/catalog/ProductCard";
 import { primaryButton, secondaryButton } from "@/components/checkout/styles";
 import { GIFT_BASKET_CATEGORY, groupGiftBaskets } from "@/src/lib/catalog/gift-baskets";
 import { listProducts } from "@/src/lib/catalog/queries";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
-import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = {
   title: "Gift Baskets",
@@ -27,15 +26,13 @@ export default async function GiftBasketsPage() {
         : "Baskets marked “Available by inquiry” are ordered by asking us.";
 
   return (
-    <div className="shell page">
-      <h1 className="mb-5">
-        <Accent text="Gift Baskets" />
-      </h1>
-      <p className="mb-4 max-w-[68ch] text-muted">
+    <div className="mx-auto w-[min(100%-2rem,72rem)]">
+      <h1 className="mb-2 text-[clamp(2.25rem,5vw,3.25rem)]">Gift Baskets</h1>
+      <p className="mb-4 max-w-[68ch] text-ink-soft">
         Our curated baskets are assembled by hand in our Plymouth shop. The price of a curated basket already includes
         the basket and its presentation, with nothing added for packaging.
       </p>
-      <div className="mb-10 max-w-[68ch] note">
+      <div className="mb-10 max-w-[68ch] border-l-4 border-gold bg-paper p-4">
         <p className="mb-2">
           {inquiryNote && `${inquiryNote} `}
           Contents vary with availability, so ask us what is in the baskets right now: call{" "}
@@ -43,12 +40,12 @@ export default async function GiftBasketsPage() {
           <Link href="/contact?topic=gift_basket">send us a message about a gift basket</Link>.
         </p>
         <p>Please tell us about any allergy or dietary request when you get in touch.</p>
-        {store.allergyNotice && <p className="mt-2 text-sm text-muted">{store.allergyNotice}</p>}
+        {store.allergyNotice && <p className="mt-2 text-sm text-ink-soft">{store.allergyNotice}</p>}
       </div>
 
       {groups.length === 0 ? (
-        <div className="mb-12 panel">
-          <p className="mb-2 font-medium">Our gift baskets will be listed here soon.</p>
+        <div className="mb-12 border border-line bg-paper p-6">
+          <p className="mb-2 font-semibold">Our gift baskets will be listed here soon.</p>
           <p>
             In the meantime, call <a href={telHref(store.phone)}>{store.phone}</a> or{" "}
             <Link href="/contact?topic=gift_basket">send us a message</Link> and we will help you choose, or build your
@@ -62,9 +59,9 @@ export default async function GiftBasketsPage() {
               {group.title}
             </h2>
             {group.blurb && <p className="mb-6 max-w-[68ch]">{group.blurb}</p>}
-            <ul className={productGrid}>
-              {group.products.map((p, i) => (
-                <ProductCard key={p.id} product={p} index={i} />
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(10rem,100%),1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] sm:gap-5">
+              {group.products.map((p) => (
+                <ProductCard key={p.id} product={p} />
               ))}
             </ul>
           </section>
@@ -72,8 +69,8 @@ export default async function GiftBasketsPage() {
       )}
 
       <div className="mb-8 grid gap-6 md:grid-cols-2">
-        <section aria-labelledby="build-your-own" className="panel">
-          <h2 id="build-your-own" className="mb-2">
+        <section aria-labelledby="build-your-own" className="border-t-4 border-coastal-deep bg-coastal-pale p-5">
+          <h2 id="build-your-own" className="mb-2 text-2xl">
             Build your own basket
           </h2>
           <p className="mb-4">
@@ -84,8 +81,8 @@ export default async function GiftBasketsPage() {
             Build your own basket
           </Link>
         </section>
-        <section aria-labelledby="seasonal-gift-boxes" className="panel">
-          <h2 id="seasonal-gift-boxes" className="mb-2">
+        <section aria-labelledby="seasonal-gift-boxes" className="border-t-4 border-coastal-deep bg-coastal-pale p-5">
+          <h2 id="seasonal-gift-boxes" className="mb-2 text-2xl">
             Seasonal gift boxes
           </h2>
           <p className="mb-4">

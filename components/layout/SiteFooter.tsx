@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { Lockup } from "@/components/brand/Lockup";
 import type { StoreSetting } from "@/payload-types";
 import { telHref } from "@/src/lib/phone";
 
@@ -19,22 +20,25 @@ const POLICY_LINKS = [
 ];
 
 // 44 px tall so stacked links are easy to hit with a thumb (WCAG 2.2 2.5.8 asks for 24).
-const footerLink = "inline-flex min-h-11 items-center text-cocoa no-underline hover:underline";
+const footerLink = "inline-flex min-h-11 items-center text-nav";
 const contactLink = "inline-flex min-h-11 items-center";
-const heading = "label-caps mb-4 text-muted";
 
 export function SiteFooter({ store }: { store: StoreSetting }) {
   const closed = (store.closedDays ?? []).map((d) => d.label);
   const story = store.story?.trim();
-  const name = store.name.trim();
   return (
-    <footer className="overflow-hidden border-t border-line bg-cream text-[0.9375rem] text-cocoa">
-      <div className="shell grid grid-cols-[repeat(auto-fit,minmax(min(13rem,100%),1fr))] gap-x-8 gap-y-10 pt-16 pb-12 md:pt-24">
+    // Coastal-blue band and gold rule at the bottom of the page (Lody's board); blue is never text.
+    <footer className="border-t-[6px] border-coastal-deep bg-linen text-[0.95rem] text-ink">
+      <div aria-hidden="true" className="h-1.5 border-b border-gold bg-coastal-pale" />
+      <div className="mx-auto grid w-[min(100%-2rem,72rem)] grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))] gap-6 py-10">
         <section aria-labelledby="footer-shop">
-          <h2 id="footer-shop" className={heading}>
+          <Link href="/" aria-label={store.name} className="mb-4 block w-fit no-underline">
+            <Lockup name={store.name} tagline={store.tagline} size="sm" />
+          </Link>
+          <h2 id="footer-shop" className="sr-only">
             More to shop
           </h2>
-          <ul className="flex flex-col">
+          <ul className="caps flex flex-col gap-1 text-[0.72rem]">
             {SHOP_LINKS.map((l) => (
               <li key={l.href}>
                 <Link href={l.href} className={footerLink}>
@@ -46,8 +50,8 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
         </section>
 
         {story && (
-          <section aria-labelledby="footer-story">
-            <h2 id="footer-story" className={heading}>
+          <section aria-labelledby="footer-story" className="border-l-2 border-coastal pl-4">
+            <h2 id="footer-story" className="mb-3 text-base">
               {store.storyHeading || "Our story"}
             </h2>
             {story.split(/\n\s*\n/).map((paragraph, i) => (
@@ -59,27 +63,26 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
         )}
 
         <section aria-labelledby="footer-visit">
-          <h2 id="footer-visit" className={heading}>
+          <h2 id="footer-visit" className="mb-3 text-base">
             Visit the shop
           </h2>
           <address className="not-italic">
-            {name}
+            {store.name}
             <br />
             {store.street}
             <br />
             {store.locality}
           </address>
-          {store.tagline && <p className="mt-3 text-muted">{store.tagline}</p>}
         </section>
 
         <section aria-labelledby="footer-hours">
-          <h2 id="footer-hours" className={heading}>
+          <h2 id="footer-hours" className="mb-3 text-base">
             {store.hoursLabel}
           </h2>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4">
             {(store.hours ?? []).map((row) => (
               <div key={row.id ?? row.days} className="contents">
-                <dt>{row.days}</dt>
+                <dt className="font-semibold">{row.days}</dt>
                 <dd>{row.time}</dd>
               </div>
             ))}
@@ -88,7 +91,7 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
         </section>
 
         <section aria-labelledby="footer-contact">
-          <h2 id="footer-contact" className={heading}>
+          <h2 id="footer-contact" className="mb-3 text-base">
             Contact
           </h2>
           <ul className="flex flex-col">
@@ -119,10 +122,10 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
         </section>
 
         <nav aria-labelledby="footer-policies">
-          <h2 id="footer-policies" className={heading}>
+          <h2 id="footer-policies" className="mb-3 text-base">
             Policies
           </h2>
-          <ul className="flex flex-col">
+          <ul className="flex flex-col gap-1">
             {POLICY_LINKS.map((l) => (
               <li key={l.href}>
                 <Link href={l.href} className={footerLink}>
@@ -133,18 +136,6 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
           </ul>
         </nav>
       </div>
-
-      {/* The shop name as a full-width wordmark, cropped a little by the bottom edge. Sized from
-          the name's length so a longer name still fits the width. Decorative: the name is in the
-          address above. */}
-      <p
-        aria-hidden="true"
-        data-footer-wordmark
-        className="-mb-[0.07em] text-center font-display leading-[0.8] tracking-[-0.03em] whitespace-nowrap text-cocoa select-none"
-        style={{ fontSize: `min(22vw, ${(215 / Math.max(name.length, 1)).toFixed(2)}vw)` }}
-      >
-        {name}
-      </p>
     </footer>
   );
 }

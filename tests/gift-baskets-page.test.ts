@@ -9,8 +9,6 @@ import type { Product, StoreSetting } from "@/payload-types";
 
 const mocks = vi.hoisted(() => ({ products: [] as unknown[] }));
 
-// The cards' quick add posts to a server action; only its markup is under test.
-vi.mock("@/app/(frontend)/cart/actions", () => ({ addToBag: vi.fn() }));
 vi.mock("@/src/lib/catalog/queries", () => ({ listProducts: vi.fn(async () => mocks.products) }));
 vi.mock("@/src/lib/store", () => ({
   getStoreSettings: vi.fn(async () => ({

@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 
+import { Bow } from "@/components/brand/Bow";
 import { primaryButton, secondaryButton } from "@/components/checkout/styles";
-import { Accent } from "@/components/ui/Accent";
 
 /**
  * The storefront's error page (A16). It replaces Next's unbranded error screen for anything that
@@ -21,9 +21,10 @@ export default function StorefrontError({ error, retry }: { error: Error & { dig
   }, [error]);
 
   return (
-    <div className="shell page max-w-[44rem] flex flex-col items-center text-center">
-      <h1 ref={heading} tabIndex={-1} className="mb-6 outline-offset-4">
-        <Accent text="Something went wrong" />
+    <div className="mx-auto flex w-[min(100%-2rem,40rem)] flex-col items-center py-10 text-center">
+      <Bow className="mb-4 w-14 text-gold" />
+      <h1 ref={heading} tabIndex={-1} className="mb-4 text-[clamp(1.75rem,5vw,2.5rem)] outline-offset-4">
+        Something went wrong
       </h1>
       <p className="mb-2 text-lg">We couldn&rsquo;t show this page.</p>
       <p className="mb-6">
@@ -37,7 +38,7 @@ export default function StorefrontError({ error, retry }: { error: Error & { dig
           Continue shopping
         </Link>
       </p>
-      {error.digest && <p className="mt-6 text-sm text-muted">Reference: {error.digest}</p>}
+      {error.digest && <p className="mt-6 text-sm text-ink-soft">Reference: {error.digest}</p>}
     </div>
   );
 }

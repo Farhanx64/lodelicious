@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Bow } from "@/components/brand/Bow";
 import { secondaryButton } from "@/components/checkout/styles";
 import { Summary } from "@/components/checkout/Summary";
 import { findByToken } from "@/src/lib/checkout/service";
@@ -9,7 +10,6 @@ import { checkoutPayload } from "@/src/lib/checkout/session";
 import { singleParam } from "@/src/lib/checkout/token-param";
 import { formatPoints } from "@/src/lib/rewards/program";
 import { getStoreSettings } from "@/src/lib/store";
-import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = { title: "Order confirmed", robots: { index: false } };
 
@@ -23,20 +23,19 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const lines = order.lines as OrderLine[];
 
   return (
-    <div className="shell page max-w-[50rem]">
-      <h1 className="mb-5 text-center">
-        <Accent text="Thank you" />
-      </h1>
+    <div className="mx-auto w-[min(100%-2rem,44rem)]">
+      <Bow className="mx-auto mb-3 w-14 text-gold" />
+      <h1 className="mb-2 text-center text-[clamp(1.75rem,5vw,2.5rem)]">Thank you</h1>
       <p className="mb-6 text-center text-lg">
         Order <strong>{order.number}</strong> {order.paymentStatus === "paid" ? "is confirmed" : "is awaiting payment"}.
       </p>
       {order.testMode && (
-        <p role="note" className="mb-6 note">
+        <p role="note" className="mb-6 border border-gold bg-blush p-4">
           This was a <strong>test order</strong>: no money moved and it won&rsquo;t be prepared.
         </p>
       )}
-      <section aria-labelledby="pickup" className="mb-6 panel">
-        <h2 id="pickup" className="mb-2">
+      <section aria-labelledby="pickup" className="mb-6 border border-gold bg-paper p-5">
+        <h2 id="pickup" className="mb-2 text-xl">
           Pickup
         </h2>
         <p>
@@ -44,7 +43,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
           <br />
           {store.name}, {store.street}, {store.locality}
         </p>
-        <p className="mt-2 text-sm text-muted">Keep this page&rsquo;s link: it&rsquo;s your receipt. We&rsquo;ll contact {order.customer.email} if anything changes.</p>
+        <p className="mt-2 text-sm text-ink-soft">Keep this page&rsquo;s link: it&rsquo;s your receipt. We&rsquo;ll contact {order.customer.email} if anything changes.</p>
       </section>
       <Summary
         lines={lines.map((l) => ({ key: l.unitId, title: l.title, detail: l.option, quantity: l.quantity, totalCents: l.lineTotalCents }))}

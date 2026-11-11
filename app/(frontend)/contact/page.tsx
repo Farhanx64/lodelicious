@@ -11,7 +11,6 @@ import { CONTACT_TOPICS, TOPIC_LABELS, isContactTopic, topicForProduct } from "@
 import { getStoreSettings } from "@/src/lib/store";
 
 import { submitContact } from "./actions";
-import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -35,16 +34,14 @@ export default async function ContactPage({ searchParams }: Props) {
   const defaultTopic = isContactTopic(topic) ? topic : found ? topicForProduct(found.categorySlug) : "general";
 
   return (
-    <div className="shell page max-w-[68rem]">
-      <h1 className="mb-5">
-        <Accent text="Contact" />
-      </h1>
-      <p className="mb-8 max-w-[68ch] text-muted">
+    <div className="mx-auto w-[min(100%-2rem,60rem)]">
+      <h1 className="mb-2 text-[clamp(2.25rem,5vw,3.25rem)]">Contact</h1>
+      <p className="mb-8 max-w-[68ch] text-ink-soft">
         Ask us about a product, a gift or a special order, such as the Baby White or Cowboy basket, a filled ceramic or a seasonal gift box. We&rsquo;ll reply by email or phone.
       </p>
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section aria-labelledby="contact-form">
-          <h2 id="contact-form" className="mb-4">
+          <h2 id="contact-form" className="mb-4 text-2xl">
             Send us a message
           </h2>
           <InquiryForm

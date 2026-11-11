@@ -21,32 +21,12 @@ import {
 } from "@/src/lib/gifts";
 import { formatCents, parseCents } from "@/src/lib/money";
 
-import { field, primaryButton, secondaryButton } from "@/components/checkout/styles";
-
 const GIFT_TYPE_OPTIONS: { value: GiftType; label: string; hint: string }[] = [
   { value: "sweet", label: "Sweet", hint: "Chocolates, fudge and candy" },
   { value: "savory", label: "Savory", hint: "Crackers, nuts and snacks" },
   { value: "sweet_savory", label: "Sweet & savory", hint: "A mix of both" },
   { value: "sympathy", label: "Sympathy", hint: "Premium chocolates and comforting treats" },
 ];
-
-function StepHeading({ n, id, children, note }: { n: number; id?: string; children: React.ReactNode; note?: string }) {
-  return (
-    <div className="mb-6 flex items-baseline gap-4 border-t border-line pt-6">
-      <span aria-hidden="true" className="label-caps shrink-0 text-rose-deep">
-        {String(n).padStart(2, "0")}
-      </span>
-      <h2 id={id}>
-        {children}
-        {note && <span className="label-caps ml-3 align-middle text-muted">{note}</span>}
-      </h2>
-    </div>
-  );
-}
-
-const cardBase = "flex cursor-pointer gap-3 rounded-2xl border p-5 transition-colors has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2";
-const cardOn = "border-cocoa bg-clay ring-1 ring-rose-deep";
-const cardOff = "border-muted/50 bg-transparent hover:border-cocoa";
 
 type Props = {
   settings: GiftSettings;
@@ -132,16 +112,16 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
     <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="flex flex-col gap-10">
         {previewStock && (
-          <p role="note" className="note text-sm">
+          <p role="note" className="border border-gold bg-blush p-4 text-ink">
             Preview: stock hasn&rsquo;t been counted yet, so every item is shown as available for you to try the builder.
           </p>
         )}
 
         <fieldset>
-          <legend className="w-full"><StepHeading n={1}>What kind of gift?</StepHeading></legend>
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <legend className="mb-3 font-display text-2xl">1. What kind of gift?</legend>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(12rem,100%),1fr))] gap-3">
             {GIFT_TYPE_OPTIONS.map((o) => (
-              <label key={o.value} className={`${cardBase} ${giftType === o.value ? cardOn : cardOff}`}>
+              <label key={o.value} className={`flex cursor-pointer gap-3 border p-4 ${giftType === o.value ? "border-gold-text bg-paper ring-1 ring-gold-text" : "border-gold bg-paper/60"}`}>
                 <input
                   type="radio"
                   name={`${ids}-type`}
@@ -151,11 +131,11 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                     setGiftType(o.value);
                     setServerResult(null);
                   }}
-                  className="mt-1 size-5 shrink-0 accent-rose-deep"
+                  className="mt-1 size-5 accent-gold-text"
                 />
                 <span>
-                  <span className="block font-medium">{o.label}</span>
-                  <span className="text-sm text-muted">{o.hint}</span>
+                  <span className="block font-semibold">{o.label}</span>
+                  <span className="text-sm text-ink-soft">{o.hint}</span>
                 </span>
               </label>
             ))}
@@ -163,13 +143,13 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         </fieldset>
 
         <fieldset>
-          <legend className="w-full"><StepHeading n={2}>Choose a size</StepHeading></legend>
-          <div className="grid gap-3 sm:grid-cols-3">
+          <legend className="mb-3 font-display text-2xl">2. Choose a size</legend>
+          <div className="grid grid-cols-[repeat(auto-fit,minmax(min(12rem,100%),1fr))] gap-3">
             {sizes.map((s) => {
               const range = resolveCountRange(settings, s.code, giftType);
               const basketSize = resolveBasketSize(settings, s.code, giftType);
               return (
-                <label key={s.code} className={`${cardBase} ${size === s.code ? cardOn : cardOff}`}>
+                <label key={s.code} className={`flex cursor-pointer gap-3 border p-4 ${size === s.code ? "border-gold-text bg-paper ring-1 ring-gold-text" : "border-gold bg-paper/60"}`}>
                   <input
                     type="radio"
                     name={`${ids}-size`}
@@ -179,21 +159,15 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                       setSize(s.code);
                       setServerResult(null);
                     }}
-                    className="mt-1 size-5 shrink-0 accent-rose-deep"
+                    className="mt-1 size-5 accent-gold-text"
                   />
                   <span>
-                    <span className="block text-lg font-medium">{s.label}</span>
+                    <span className="block font-semibold">{s.label}</span>
                     <span className="block text-sm">
                       {range.min}–{range.max} items{basketSize ? ` · ${basketSize}" basket` : ""}
                     </span>
-                    <span className="mt-1 block text-sm text-muted">
-                      {formatCents(s.packagingCents)} basket &amp; packaging
-                      {s.premiumCap !== null && (
-                        <>
-                          <br />
-                          Up to {s.premiumCap} premium
-                        </>
-                      )}
+                    <span className="block text-sm text-ink-soft">
+                      Basket &amp; packaging {formatCents(s.packagingCents)}{s.premiumCap !== null && ` · up to ${s.premiumCap} premium`}
                     </span>
                   </span>
                 </label>
@@ -203,15 +177,15 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         </fieldset>
 
         <section aria-labelledby={`${ids}-budget-h`}>
-          <StepHeading n={3} id={`${ids}-budget-h`} note="(optional)">
-            Your budget
-          </StepHeading>
-          <p className="mb-3 max-w-[68ch] text-muted">{budgetNotice}</p>
-          <label htmlFor={`${ids}-budget`} className="label-caps mb-2 block">
+          <h2 id={`${ids}-budget-h`} className="mb-2 font-display text-2xl">
+            3. Your budget <span className="font-sans text-base text-ink-soft">(optional)</span>
+          </h2>
+          <p className="mb-3 max-w-[68ch]">{budgetNotice}</p>
+          <label htmlFor={`${ids}-budget`} className="mb-1 block text-sm font-semibold">
             Budget in dollars
           </label>
           <div className="flex items-center gap-2">
-            <span aria-hidden="true" className="text-lg">$</span>
+            <span aria-hidden="true">$</span>
             <input
               id={`${ids}-budget`}
               inputMode="decimal"
@@ -223,7 +197,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
               }}
               aria-invalid={budgetError ? true : undefined}
               aria-describedby={budgetError ? `${ids}-budget-err` : undefined}
-              className={`${field} w-40`}
+              className="min-h-11 w-40 border border-ink-soft bg-paper px-3"
             />
           </div>
           {budgetError && (
@@ -237,8 +211,8 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
               <strong>{formatCents(Math.max(0, budgetCents - result.totals.packagingCents))}</strong> for contents.
             </p>
           )}
-          {budgetCents !== null && !feasibility.feasible && (
-            <div role="status" className="mt-3 note">
+          {!feasibility.feasible && (
+            <div role="status" className="mt-3 border-l-4 border-gold bg-paper p-4">
               {feasibility.minimumBudgetCents === null ? (
                 <p>Not enough items are available right now to complete this size. Try a smaller size, or call us and we&rsquo;ll put one together.</p>
               ) : (
@@ -261,10 +235,10 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         </section>
 
         <section aria-labelledby={`${ids}-items-h`}>
-          <StepHeading n={4} id={`${ids}-items-h`}>
-            Choose your items
-          </StepHeading>
-          <p className="mb-3 text-sm text-muted">
+          <h2 id={`${ids}-items-h`} className="mb-2 font-display text-2xl">
+            4. Choose your items
+          </h2>
+          <p className="mb-3 text-sm text-ink-soft">
             One of each item, unless it&rsquo;s sold as an assortment. Premium items (Phillips Chocolate, Cape Cod Fudge, OMNIYA, Swiss chocolate) count toward your total.
           </p>
           <div role="group" aria-label="Filter items by category" className="mb-4 flex flex-wrap gap-2">
@@ -274,47 +248,42 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                 type="button"
                 aria-pressed={category === c}
                 onClick={() => setCategory(c)}
-                className={`label-caps min-h-11 rounded-full border px-5 ${category === c ? "border-rose-deep bg-rose-deep text-on-rose" : "border-muted/50 bg-transparent hover:border-cocoa"}`}
+                className={`min-h-11 border px-4 ${category === c ? "border-coastal-deep bg-coastal-deep text-cream" : "border-line bg-paper"}`}
               >
                 {c || "All"}
               </button>
             ))}
           </div>
           {pickerItems.length === 0 ? (
-            <p className="note">No items in this category right now.</p>
+            <p className="border border-line bg-paper p-4">No items in this category right now.</p>
           ) : (
-            <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(14rem,100%),1fr))] gap-3">
               {pickerItems.map(({ d, product, status }) => {
                 const quantity = chosen[d.id] ?? 0;
                 return (
-                  <li key={d.id} className={`relative flex flex-col overflow-hidden rounded-2xl border bg-clay ${quantity ? "border-cocoa ring-1 ring-rose-deep" : "border-transparent"}`}>
+                  <li key={d.id} className={`flex flex-col border bg-paper p-1 ${quantity ? "border-gold-text ring-1 ring-gold-text" : "border-gold"}`}>
                     {d.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- Payload's pre-sized thumbnail
-                      <img src={d.imageUrl} alt={d.imageAlt} loading="lazy" className="aspect-[4/3] w-full object-contain p-2 mix-blend-multiply" />
+                      <img src={d.imageUrl} alt={d.imageAlt} loading="lazy" className="aspect-[4/3] w-full bg-white object-contain" />
                     ) : (
-                      <div className="flex aspect-[4/3] items-center justify-center bg-clay text-sm text-muted">Photo coming soon</div>
-                    )}
-                    {quantity > 0 && (
-                      <span aria-hidden="true" className="absolute right-2 top-2 flex size-7 items-center justify-center rounded-full bg-rose-deep text-sm text-on-rose">
-                        {quantity > 1 ? quantity : "✓"}
-                      </span>
+                      <div className="flex aspect-[4/3] items-center justify-center bg-linen text-sm text-ink-soft">Photo coming soon</div>
                     )}
                     <div className="flex flex-1 flex-col gap-1 p-3">
-                      <p className="font-medium leading-snug">{d.title}</p>
-                      <p className="text-sm text-muted">
+                      <p className="font-semibold leading-snug">{d.title}</p>
+                      <p className="text-sm text-ink-soft">
                         {[d.brand, d.sizeLabel].filter(Boolean).join(" · ")}
-                        {product.premium && <span className="ml-1 font-medium text-rose-deep">Premium</span>}
+                        {product.premium && <span className="ml-1 font-semibold text-gold-text">Premium</span>}
                       </p>
                       <p className="mt-auto pt-1">{!product.priceApproved ? PRICE_TO_BE_CONFIRMED : product.priceCents !== null ? formatCents(product.priceCents) : ""}</p>
-                      {!status.eligible && quantity === 0 && <p className="text-sm text-muted">{status.message}</p>}
+                      {!status.eligible && quantity === 0 && <p className="text-sm text-ink-soft">{status.message}</p>}
                       <div className="flex items-center gap-2 pt-1">
                         {quantity > 0 && (
-                          <button type="button" onClick={() => change(d.id, -1)} className={`${secondaryButton} min-h-11! flex-1 px-3!`} aria-label={`Remove ${d.title}`}>
+                          <button type="button" onClick={() => change(d.id, -1)} className="min-h-11 flex-1 border border-gold-text px-3" aria-label={`Remove ${d.title}`}>
                             Remove
                           </button>
                         )}
                         {quantity > 0 && product.maxPerGift <= 1 ? (
-                          <p className="flex min-h-11 flex-1 items-center justify-center text-sm font-medium">
+                          <p className="flex min-h-11 flex-1 items-center justify-center text-sm font-semibold">
                             <span aria-hidden="true">✓&nbsp;</span>In your basket
                           </p>
                         ) : (
@@ -322,7 +291,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                             type="button"
                             onClick={() => change(d.id, 1)}
                             disabled={!status.eligible}
-                            className={`${primaryButton} min-h-11! flex-1 px-3! disabled:border disabled:border-muted/50`}
+                            className="min-h-11 flex-1 bg-coastal-deep px-3 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
                             aria-label={quantity > 0 ? `Add another (${quantity}) ${d.title}` : `Add ${d.title}`}
                           >
                             {quantity > 0 ? `Add another (${quantity})` : "Add"}
@@ -338,10 +307,10 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         </section>
 
         <section aria-labelledby={`${ids}-msg-h`}>
-          <StepHeading n={5} id={`${ids}-msg-h`}>
-            Message &amp; requests
-          </StepHeading>
-          <label htmlFor={`${ids}-message`} className="label-caps mb-2 block">
+          <h2 id={`${ids}-msg-h`} className="mb-3 font-display text-2xl">
+            5. Message &amp; requests
+          </h2>
+          <label htmlFor={`${ids}-message`} className="mb-1 block text-sm font-semibold">
             Gift message (optional)
           </label>
           <textarea
@@ -350,10 +319,10 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
             maxLength={300}
             rows={3}
             onChange={(e) => setMessage(e.target.value)}
-            className={`${field} mb-1`}
+            className="mb-1 w-full border border-ink-soft bg-paper p-3"
           />
-          <p className="mb-4 text-sm text-muted">{300 - message.length} characters left</p>
-          <label htmlFor={`${ids}-requests`} className="label-caps mb-2 block">
+          <p className="mb-4 text-sm text-ink-soft">{300 - message.length} characters left</p>
+          <label htmlFor={`${ids}-requests`} className="mb-1 block text-sm font-semibold">
             Dietary needs or special requests (optional)
           </label>
           <textarea
@@ -363,45 +332,31 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
             rows={3}
             onChange={(e) => setRequests(e.target.value)}
             aria-describedby={`${ids}-requests-note`}
-            className={field}
+            className="w-full border border-ink-soft bg-paper p-3"
           />
-          <p id={`${ids}-requests-note`} className="mt-1 text-sm text-muted">
+          <p id={`${ids}-requests-note`} className="mt-1 text-sm text-ink-soft">
             We do our best with requests, depending on what&rsquo;s in stock, and we&rsquo;ll contact you before making any significant change. We choose
             the ribbon and presentation to suit your gift.
           </p>
         </section>
       </div>
 
-      <aside aria-labelledby={`${ids}-sum-h`} className="panel h-fit lg:sticky lg:top-28">
-        <h2 id={`${ids}-sum-h`} className="mb-4">
+      <aside aria-labelledby={`${ids}-sum-h`} className="h-fit border border-line bg-paper p-5 lg:sticky lg:top-4">
+        <h2 id={`${ids}-sum-h`} className="mb-3 font-display text-2xl">
           Your basket
         </h2>
         <p className="sr-only" aria-live="polite">
           {liveSummary}
         </p>
-        <div className="mb-4">
-          <div className="mb-1 flex justify-between text-sm font-medium">
-            <span>Items</span>
-            <span className={result.totals.itemCount > result.countRange.max ? "text-error" : ""}>
-              {result.totals.itemCount} of {result.countRange.min}–{result.countRange.max}
-            </span>
-          </div>
-          <div aria-hidden="true" className="h-2 overflow-hidden rounded-full bg-clay">
-            <div
-              className={`h-full rounded-full ${result.totals.itemCount >= result.countRange.min ? "bg-rose-deep" : "bg-rose-deep"}`}
-              style={{ width: `${Math.min(100, (result.totals.itemCount / Math.max(1, result.countRange.max)) * 100)}%` }}
-            />
-          </div>
-        </div>
         <dl className="mb-4 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
-          <dt className="sr-only">Items</dt>
-          <dd className="sr-only">
+          <dt>Items</dt>
+          <dd className={result.totals.itemCount > result.countRange.max ? "font-semibold text-error" : ""}>
             {result.totals.itemCount} of {result.countRange.min}–{result.countRange.max}
           </dd>
           {premiumCap !== null && (
             <>
               <dt>Premium items</dt>
-              <dd className={result.totals.premiumCount > premiumCap ? "font-medium text-error" : ""}>
+              <dd className={result.totals.premiumCount > premiumCap ? "font-semibold text-error" : ""}>
                 {result.totals.premiumCount} of {premiumCap}
               </dd>
             </>
@@ -410,16 +365,16 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
           <dd>{formatCents(result.totals.contentsCents)}</dd>
           <dt>Basket &amp; packaging</dt>
           <dd>{formatCents(result.totals.packagingCents)}</dd>
-          <dt className="mt-2 border-t border-cocoa/15 pt-3 font-display text-2xl leading-none font-normal">Total</dt>
-          <dd className="mt-2 border-t border-cocoa/15 pt-3 text-right font-display text-2xl leading-none">{formatCents(result.totals.totalCents)}</dd>
+          <dt className="border-t border-line pt-1 font-semibold">Total</dt>
+          <dd className="border-t border-line pt-1 font-semibold">{formatCents(result.totals.totalCents)}</dd>
           {result.totals.remainingBudgetCents !== null && (
             <>
               <dt>Budget left</dt>
-              <dd className={result.totals.remainingBudgetCents < 0 ? "font-medium text-error" : ""}>{formatCents(result.totals.remainingBudgetCents)}</dd>
+              <dd className={result.totals.remainingBudgetCents < 0 ? "font-semibold text-error" : ""}>{formatCents(result.totals.remainingBudgetCents)}</dd>
             </>
           )}
         </dl>
-        <p className="mb-4 text-sm text-muted">Tax and delivery or shipping are added at checkout.</p>
+        <p className="mb-4 text-sm text-ink-soft">Tax and delivery or shipping are added at checkout.</p>
 
         {selections.length > 0 && (
           <ul className="mb-4 divide-y divide-line border-y border-line text-sm">
@@ -455,7 +410,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
           type="button"
           disabled={!result.complete || checking}
           onClick={() => startCheck(async () => setServerResult(await checkBasket(request)))}
-          className={`${primaryButton} w-full disabled:border disabled:border-muted/50`}
+          className="min-h-11 w-full bg-coastal-deep px-4 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
         >
           {checking ? "Checking…" : "Review my basket"}
         </button>
@@ -463,7 +418,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         <div aria-live="polite">
           {serverResult && "error" in serverResult && <p className="mt-3 text-sm text-error">{serverResult.error}</p>}
           {serverResult && !("error" in serverResult) && serverResult.complete && (
-            <div className="mt-4 rounded-2xl bg-cream p-4 text-sm">
+            <div className="mt-3 border-l-4 border-gold bg-cream p-3 text-sm">
               <p className="mb-3">
                 Your basket checks out at <strong>{formatCents(serverResult.totals.totalCents)}</strong> before tax. Baskets are made to order: reserve
                 yours with a deposit and pay the rest at pickup. Questions? Call <a href={phoneHref}>{phone}</a>.
@@ -477,7 +432,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                     if (r?.error) setReserveError(r.error);
                   })
                 }
-                className={`${primaryButton} w-full`}
+                className="min-h-11 w-full bg-coastal-deep px-4 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
               >
                 {reserving ? "One moment…" : "Reserve this basket"}
               </button>

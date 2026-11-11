@@ -1113,3 +1113,7 @@ D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin,
 MariaDB local preview). Superseded by D9. Still applicable in spirit: integer cents (D5 → `money.ts`),
 configured-vs-effective runtime checks (now `system-check.ts`), tax off until owner-approved classes
 exist (D7), bundled/self-hosted fonts (D8 → D13).
+
+## D50 — Lody keeps the original look, in pink (2026-11-11)
+
+Lody compared both previews and picked the original layout over the D49 editorial restyle. The storefront components, fonts and tests go back to their pre-D49 state (763efb6). The blue accent tokens become pink: coastal #d58f9c, coastal-deep #9c4459, coastal-pale #f8e6e8. The editable brand and button colours from D49 stay (Store details → brandColor sets coastal-deep, buttonColor sets gold), along with their migrations, so the database needs no change. The delivery pricing module stays, still unused.

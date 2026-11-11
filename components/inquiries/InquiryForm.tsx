@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef, useState } from "react";
 
-import { field, label, primaryButton, legend } from "@/components/checkout/styles";
+import { field, label, primaryButton } from "@/components/checkout/styles";
 import { MAX_GUESTS, MIN_GUESTS, type FountainTerms } from "@/src/lib/inquiries/estimate";
 import { HONEYPOT_FIELD, MAX_LOCATION_LENGTH, MAX_MESSAGE_LENGTH, type InquiryFormState } from "@/src/lib/inquiries/shared";
 
@@ -46,8 +46,8 @@ export function InquiryForm(props: Props) {
 
   if (state.sent) {
     return (
-      <div ref={sentRef} tabIndex={-1} role="status" className="panel outline-offset-4">
-        <h2 className="mb-3">Thank you, we&rsquo;ve got your {props.kind === "fountain" ? "request" : "message"}</h2>
+      <div ref={sentRef} tabIndex={-1} role="status" className="border border-gold bg-paper p-6 outline-offset-4">
+        <h2 className="mb-3 text-2xl">Thank you, we&rsquo;ve got your {props.kind === "fountain" ? "request" : "message"}</h2>
         {state.number && (
           <p className="mb-3 text-lg">
             Your reference is <strong>{state.number}</strong>.
@@ -65,7 +65,7 @@ export function InquiryForm(props: Props) {
 
   const contactDetails = (
     <fieldset className="mb-6">
-      <legend className={legend}>Your details</legend>
+      <legend className="mb-3 font-display text-xl text-gold-text">Your details</legend>
       <div className="mb-3">
         <label htmlFor={`${prefix}-name`} className={label}>
           Name
@@ -121,7 +121,7 @@ export function InquiryForm(props: Props) {
       ) : (
         <>
           <fieldset className="mb-6">
-            <legend className={legend}>Your event</legend>
+            <legend className="mb-3 font-display text-xl text-gold-text">Your event</legend>
             <div className="mb-3 grid grid-cols-[minmax(0,1fr)] gap-3 sm:grid-cols-2">
               <div>
                 <label htmlFor="fountain-date" className={label}>
@@ -160,7 +160,7 @@ export function InquiryForm(props: Props) {
                 aria-describedby="fountain-guests-hint"
                 className={field}
               />
-              <p id="fountain-guests-hint" className="mt-1 text-sm text-muted">
+              <p id="fountain-guests-hint" className="mt-1 text-sm text-ink-soft">
                 A whole number from {MIN_GUESTS} to {MAX_GUESTS}.
               </p>
             </div>
@@ -193,7 +193,7 @@ export function InquiryForm(props: Props) {
       <button type="submit" disabled={pending} className={`${primaryButton} w-full`}>
         {pending ? "Sending…" : props.kind === "fountain" ? "Send my request" : "Send message"}
       </button>
-      <p className="mt-3 text-sm text-muted">
+      <p className="mt-3 text-sm text-ink-soft">
         {props.kind === "fountain"
           ? "Sending this does not book or charge anything. We'll reply by email or phone to confirm."
           : "We'll reply by email or phone. Please don't send card numbers or other payment details."}

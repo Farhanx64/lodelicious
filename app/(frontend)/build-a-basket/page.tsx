@@ -9,7 +9,6 @@ import { loadBuilderCatalog } from "@/src/lib/catalog/builder-data";
 import { contactHref, topicForPresentation, type ContactTopic } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
-import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = {
   title: "Build a Basket",
@@ -33,11 +32,9 @@ export default async function BuildABasketPage() {
   }
 
   return (
-    <div className="shell page">
-      <h1 className="mb-5">
-        <Accent text="Build a Basket" />
-      </h1>
-      <p className="mb-8 max-w-[68ch] text-muted">
+    <div className="mx-auto w-[min(100%-2rem,72rem)]">
+      <h1 className="mb-2 text-[clamp(2.25rem,5vw,3.25rem)]">Build a Basket</h1>
+      <p className="mb-8 max-w-[68ch] text-ink-soft">
         Pick a gift type and size, set a budget if you like, and fill it with favorites from our shelves. We&rsquo;ll wrap it by hand.
       </p>
       <BasketBuilder
@@ -50,8 +47,8 @@ export default async function BuildABasketPage() {
         phoneHref={telHref(store.phone)}
       />
       {byInquiry.size > 0 && (
-        <section aria-labelledby="made-to-order" className="mt-12 panel">
-          <h2 id="made-to-order" className="mb-3">
+        <section aria-labelledby="made-to-order" className="mt-12 border border-gold bg-paper p-6">
+          <h2 id="made-to-order" className="mb-3 text-2xl">
             Looking for something special?
           </h2>
           <p className="mb-4 max-w-[68ch]">These baskets are made to order, so we arrange them with you directly.</p>

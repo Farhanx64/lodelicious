@@ -1,13 +1,10 @@
 /**
  * Product cards never present an unapproved price as a real one, on any listing (A06, D41).
- * An approved price keeps the usual display. Tiles are the D49 4:5 clay tiles.
+ * An approved price keeps the usual display.
  */
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
-
-// The quick add posts to a server action; only the card's markup is under test.
-vi.mock("@/app/(frontend)/cart/actions", () => ({ addToBag: vi.fn() }));
+import { describe, expect, it } from "vitest";
 
 import { ProductCard } from "@/components/catalog/ProductCard";
 import type { Media, Product } from "@/payload-types";

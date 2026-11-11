@@ -9,7 +9,6 @@ import { NotesField } from "@/components/checkout/FormFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
 import { SubmissionField } from "@/components/checkout/SubmissionField";
 import { RewardChoice } from "@/components/rewards/RewardChoice";
-import { legend } from "@/components/checkout/styles";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
 import { PolicyLinks } from "@/components/policies/PolicyLinks";
 import { availableSlots } from "@/src/lib/checkout/pickup";
@@ -21,7 +20,6 @@ import { formatCents } from "@/src/lib/money";
 import { affordableOptions, formatPoints, pointsFor, totalsWithDiscount } from "@/src/lib/rewards/program";
 import { currentMember } from "@/src/lib/rewards/session";
 import { getStoreSettings } from "@/src/lib/store";
-import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
 
@@ -43,12 +41,10 @@ export default async function CheckoutPage() {
   const earn = member ? pointsFor(bag.subtotalCents, ctx.rewards.config.pointsPerDollar) : 0;
 
   return (
-    <div className="shell page max-w-[68rem]">
-      <h1 className="mb-10">
-        <Accent text="Checkout" />
-      </h1>
+    <div className="mx-auto w-[min(100%-2rem,60rem)]">
+      <h1 className="mb-6 text-[clamp(1.75rem,5vw,2.5rem)]">Checkout</h1>
       {ctx.provider?.test && <TestModeNote />}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-10 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-start">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div>
           {state.open ? (
             <ActionForm action={submitOrder} submitLabel={ctx.provider?.test ? "Place test order" : "Place order"} pendingLabel="Placing order…" disabled={slots.length === 0}>
@@ -61,28 +57,28 @@ export default async function CheckoutPage() {
                 />
               )}
               {ctx.rewards.active && !member && (
-                <p className="note mb-6 text-sm">
+                <p className="mb-4 border-l-4 border-gold bg-paper p-3 text-sm">
                   <strong>{ctx.rewards.config.programName}:</strong> <Link href="/account?next=/checkout">sign in</Link> or{" "}
                   <Link href="/account/join?next=/checkout">join free</Link> to earn points on this order.
                 </p>
               )}
               <ContactFields prefix="checkout" defaults={member ? { name: member.name, email: member.email, phone: member.phone } : undefined} />
-              <fieldset className="mb-8">
-                <legend className={legend}>Pickup</legend>
+              <fieldset className="mb-4">
+                <legend className="mb-3 font-display text-xl text-gold-text">Pickup</legend>
                 <p className="mb-3 text-sm">
                   At {store.street}, {store.locality}. Local delivery is through DoorDash.
                 </p>
                 <PickupSelect slots={slots} id="checkout-pickup" />
                 <NotesField id="checkout-notes" />
                 {store.allergyNotice && (
-                  <p className="note mt-4 text-sm">
+                  <p className="mt-3 border-l-4 border-gold bg-paper p-3 text-sm">
                     <strong>Allergies and dietary needs.</strong> {store.allergyNotice} If you add a note above, our team reads your order before it is prepared.
                   </p>
                 )}
               </fieldset>
             </ActionForm>
           ) : (
-            <p className="note">
+            <p className="border-l-4 border-gold bg-paper p-4">
               Online payment is coming soon. To order today, call <a href={telHref(store.phone)}>{store.phone}</a> or visit us at {store.street},{" "}
               {store.locality}.
             </p>

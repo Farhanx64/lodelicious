@@ -2,13 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { Bow } from "@/components/brand/Bow";
 import { secondaryButton } from "@/components/checkout/styles";
 import { findByToken } from "@/src/lib/checkout/service";
 import { checkoutPayload } from "@/src/lib/checkout/session";
 import { singleParam } from "@/src/lib/checkout/token-param";
 import { formatCents } from "@/src/lib/money";
 import { getStoreSettings } from "@/src/lib/store";
-import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = { title: "Basket reserved", robots: { index: false } };
 
@@ -22,23 +22,22 @@ export default async function ReservationPage({ params, searchParams }: { params
   const basket = r.basket as Snapshot;
 
   return (
-    <div className="shell page max-w-[50rem]">
-      <h1 className="mb-5 text-center">
-        <Accent text="Basket reserved" />
-      </h1>
+    <div className="mx-auto w-[min(100%-2rem,44rem)]">
+      <Bow className="mx-auto mb-3 w-14 text-gold" />
+      <h1 className="mb-2 text-center text-[clamp(1.75rem,5vw,2.5rem)]">Basket reserved</h1>
       <p className="mb-6 text-center text-lg">
         Reservation <strong>{r.number}</strong>
       </p>
       {r.testMode && (
-        <p role="note" className="mb-6 note">
+        <p role="note" className="mb-6 border border-gold bg-blush p-4">
           This was a <strong>test reservation</strong>: no money moved and it won&rsquo;t be prepared.
         </p>
       )}
       {r.reservationStatus === "staff_review" && (
-        <p className="mb-6 note">We&rsquo;ll contact you to confirm your requests before we make your basket.</p>
+        <p className="mb-6 border-l-4 border-gold bg-paper p-4">We&rsquo;ll contact you to confirm your requests before we make your basket.</p>
       )}
-      <section aria-labelledby="pickup" className="mb-6 panel">
-        <h2 id="pickup" className="mb-2">
+      <section aria-labelledby="pickup" className="mb-6 border border-gold bg-paper p-5">
+        <h2 id="pickup" className="mb-2 text-xl">
           Pickup
         </h2>
         <p>
@@ -47,8 +46,8 @@ export default async function ReservationPage({ params, searchParams }: { params
           {store.name}, {store.street}, {store.locality}
         </p>
       </section>
-      <section aria-labelledby="basket" className="mb-6 panel">
-        <h2 id="basket" className="mb-2">
+      <section aria-labelledby="basket" className="mb-6 border border-gold bg-paper p-5">
+        <h2 id="basket" className="mb-2 text-xl">
           {basket.title}
         </h2>
         <ul className="mb-3 list-disc pl-5">
@@ -64,8 +63,8 @@ export default async function ReservationPage({ params, searchParams }: { params
           <dd className="text-right">{formatCents(r.totalCents)}</dd>
           <dt>Paid now</dt>
           <dd className="text-right">{formatCents(r.amountPaidCents)}</dd>
-          <dt className="font-medium">Due at pickup</dt>
-          <dd className="text-right font-medium">{formatCents(r.balanceDueCents)}</dd>
+          <dt className="font-semibold">Due at pickup</dt>
+          <dd className="text-right font-semibold">{formatCents(r.balanceDueCents)}</dd>
         </dl>
       </section>
       <p className="text-center">
