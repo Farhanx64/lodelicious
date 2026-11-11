@@ -35,10 +35,10 @@ function Input({
     <div className="mb-4">
       <label htmlFor={id} className={label}>
         {text}
-        {!required && <span className="font-normal text-ink-soft"> (optional)</span>}
+        {!required && <span className="font-normal text-muted"> (optional)</span>}
       </label>
       {hint && (
-        <p id={`${id}-hint`} className="mb-1 text-sm text-ink-soft">
+        <p id={`${id}-hint`} className="mb-1 text-sm text-muted">
           {hint}
         </p>
       )}

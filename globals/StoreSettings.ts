@@ -1,6 +1,7 @@
 import type { GlobalConfig } from "payload";
 
 import { anyone, isCommerceManager } from "../src/access/roles";
+import { BRAND_COLOR_DEFAULT, BUTTON_COLOR_DEFAULT, validateBrandColor, validateButtonColor } from "../src/lib/brand-color";
 import { auditGlobal } from "../src/hooks/audit";
 
 /**
@@ -19,7 +20,7 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "tagline", "promoEnabled", "promoSlides", "promoSeconds", "street", "locality", "phone", "email", "notificationEmail", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
+    afterChange: [auditGlobal(["name", "tagline", "brandColor", "buttonColor", "promoEnabled", "promoSlides", "promoSeconds", "street", "locality", "phone", "email", "notificationEmail", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
   },
   fields: [
     {
@@ -35,6 +36,30 @@ export const StoreSettings: GlobalConfig = {
                 { name: "name", label: "Shop name", type: "text", required: true, defaultValue: "Souset-Pink" },
                 { name: "tagline", type: "text", defaultValue: "Sweets · Chocolates · Gifts", admin: { description: "Shown in small capitals under the name." } },
               ],
+            },
+            {
+              name: "brandColor",
+              label: "Brand colour",
+              type: "text",
+              defaultValue: BRAND_COLOR_DEFAULT,
+              validate: validateBrandColor,
+              admin: {
+                placeholder: BRAND_COLOR_DEFAULT,
+                description:
+                  "The main pink on the website: the announcement bar, buttons and coloured panels. A colour code like #9c4459. It must be deep enough for white text on it to stay readable; leave empty for the default.",
+              },
+            },
+            {
+              name: "buttonColor",
+              label: "Button colour",
+              type: "text",
+              defaultValue: BUTTON_COLOR_DEFAULT,
+              validate: validateButtonColor,
+              admin: {
+                placeholder: BUTTON_COLOR_DEFAULT,
+                description:
+                  "The filled buttons (gold by default), such as Shop sweets and Add to bag. A colour code like #c8a467. It must be light enough for the dark button text to stay readable; leave empty for the default.",
+              },
             },
             {
               type: "row",

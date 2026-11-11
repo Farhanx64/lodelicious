@@ -22,8 +22,8 @@ export function FountainOffer({ offer }: { offer: EventOffer }) {
   ].filter((x): x is { label: string; text: string } => x !== null);
 
   return (
-    <section aria-labelledby="fountain-offer" className="border border-gold bg-paper p-6">
-      <h2 id="fountain-offer" className="mb-3 text-2xl">
+    <section aria-labelledby="fountain-offer" className="panel">
+      <h2 id="fountain-offer" className="mb-3">
         The offer
       </h2>
       <ul className="mb-4 list-disc pl-6">
@@ -44,7 +44,7 @@ export function FountainOffer({ offer }: { offer: EventOffer }) {
         <dl className="mt-4 grid grid-cols-[minmax(0,1fr)] gap-x-4 gap-y-1 sm:grid-cols-[auto_minmax(0,1fr)]" data-fountain-terms>
           {extras.map((e) => (
             <div key={e.label} className="contents">
-              <dt className="font-semibold">{e.label}</dt>
+              <dt className="font-medium">{e.label}</dt>
               <dd className="whitespace-pre-line">{e.text}</dd>
             </div>
           ))}

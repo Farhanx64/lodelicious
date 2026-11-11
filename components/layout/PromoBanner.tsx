@@ -11,7 +11,8 @@ export type PromoSlide = {
 };
 
 /**
- * The promo ribbon above the header, edited under Website → Store details → Promo banner.
+ * The announcement bar above the header, edited under Website → Store details → Promo banner:
+ * 36 px of deep rose with one centred line of small cream text (it grows if the text wraps).
  * One full-width slide at a time on a scroll-snap track, so swipe and trackpad work natively.
  * It advances every few seconds and loops; like the Favorites slider (D33) it has a Pause/Play
  * button (WCAG 2.2.2) and holds still while hovered, focused, hidden, or for reduced motion.
@@ -66,7 +67,9 @@ export function PromoBanner({ slides, seconds = 5 }: { slides: PromoSlide[]; sec
 
   if (slides.length === 0) return null;
 
-  const control = "inline-flex size-11 shrink-0 items-center justify-center text-paper/90 hover:text-paper";
+  // The bar is 36 px tall; the pseudo-element stretches each control's hit area to 44 px.
+  const control =
+    "relative inline-flex h-9 w-11 shrink-0 items-center justify-center text-on-rose/90 before:absolute before:-inset-y-1 before:inset-x-0 hover:text-on-rose";
   const icon = {
     viewBox: "0 0 24 24",
     fill: "none",
@@ -74,7 +77,7 @@ export function PromoBanner({ slides, seconds = 5 }: { slides: PromoSlide[]; sec
     strokeWidth: 1.6,
     strokeLinecap: "round" as const,
     "aria-hidden": true,
-    className: "size-5",
+    className: "size-4",
   };
 
   return (
@@ -83,7 +86,7 @@ export function PromoBanner({ slides, seconds = 5 }: { slides: PromoSlide[]; sec
       aria-roledescription="carousel"
       aria-label="Promotions"
       data-promo-banner
-      className="bg-coastal-deep text-paper"
+      className="on-rose bg-rose-deep text-on-rose"
       onMouseEnter={() => setHeld(true)}
       onMouseLeave={() => setHeld(false)}
       onFocus={() => setHeld(true)}
@@ -91,7 +94,7 @@ export function PromoBanner({ slides, seconds = 5 }: { slides: PromoSlide[]; sec
         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHeld(false);
       }}
     >
-      <div className="mx-auto flex w-[min(100%-1rem,72rem)] items-center">
+      <div className="shell flex min-h-9 items-center px-2!">
         {many && (
           <button type="button" className={control} aria-label="Previous promotion" onClick={() => go(current - 1)}>
             <svg {...icon}>
@@ -111,11 +114,11 @@ export function PromoBanner({ slides, seconds = 5 }: { slides: PromoSlide[]; sec
               aria-roledescription="slide"
               aria-label={`${i + 1} of ${slides.length}`}
               inert={many && i !== current ? true : undefined}
-              className="flex w-full shrink-0 snap-center flex-wrap items-center justify-center gap-x-3 gap-y-0.5 px-2 py-2 text-center text-[0.92rem] leading-snug"
+              className="flex w-full shrink-0 snap-center flex-wrap items-center justify-center gap-x-3 px-2 py-1.5 text-center text-[0.8125rem] leading-snug"
             >
-              <span className="font-semibold">{slide.text}</span>
+              <span>{slide.text}</span>
               {slide.linkUrl && (
-                <Link href={slide.linkUrl} className="caps inline-flex min-h-8 items-center text-[0.75rem] text-paper underline underline-offset-4 hover:no-underline">
+                <Link href={slide.linkUrl} className="relative inline-flex items-center text-[0.6875rem] font-medium tracking-[0.12em] text-on-rose uppercase underline decoration-on-rose underline-offset-4 before:absolute before:-inset-x-2 before:-inset-y-3 hover:no-underline">
                   {slide.linkLabel || "Shop now"}
                 </Link>
               )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowLeft, ArrowRight, Pause, Play } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 const INTERVAL_MS = 5000;
@@ -58,7 +59,8 @@ export function FavoritesSlider({ children, count }: { children?: React.ReactNod
   }, [autoplay, step]);
 
   const control =
-    "inline-flex size-11 items-center justify-center border border-gold-text bg-paper text-gold-text hover:bg-coastal-deep hover:text-paper";
+    "inline-flex size-11 items-center justify-center rounded-full border border-cocoa text-cocoa transition-colors hover:bg-cocoa hover:text-cream";
+  const icon = { size: 18, strokeWidth: 1.5, "aria-hidden": true } as const;
 
   return (
     <div
@@ -73,7 +75,7 @@ export function FavoritesSlider({ children, count }: { children?: React.ReactNod
       }}
     >
       {overflowing && (
-        <div className="mb-3 flex justify-end gap-2">
+        <div className="mb-6 flex justify-end gap-2">
           <button
             type="button"
             className={control}
@@ -82,7 +84,7 @@ export function FavoritesSlider({ children, count }: { children?: React.ReactNod
             data-slider-toggle
             onClick={() => setPlaying((p) => !p)}
           >
-            <span aria-hidden="true">{playing ? "❚❚" : "▶"}</span>
+            {playing ? <Pause {...icon} /> : <Play {...icon} />}
           </button>
           <button
             type="button"
@@ -93,7 +95,7 @@ export function FavoritesSlider({ children, count }: { children?: React.ReactNod
               step(-1);
             }}
           >
-            <span aria-hidden="true">‹</span>
+            <ArrowLeft {...icon} />
           </button>
           <button
             type="button"
@@ -104,15 +106,15 @@ export function FavoritesSlider({ children, count }: { children?: React.ReactNod
               step(1);
             }}
           >
-            <span aria-hidden="true">›</span>
+            <ArrowRight {...icon} />
           </button>
         </div>
       )}
       <ul
         ref={track}
         data-slider-track
-        // Each card takes 4 per row on desktop, 2 on tablets and ~1.3 on phones.
-        className="grid snap-x snap-mandatory auto-cols-[76%] grid-flow-col gap-5 overflow-x-auto scroll-smooth pb-3 [scrollbar-width:thin] sm:auto-cols-[calc((100%-1.25rem)/2)] lg:auto-cols-[calc((100%-3.75rem)/4)] [&>li]:snap-start"
+        // A row shows 1.3 tiles on phones and 2.5 on tablets, so the next one peeks in, and 4 on desktop.
+        className="grid snap-x snap-mandatory auto-cols-[74%] grid-flow-col gap-4 overflow-x-auto scroll-smooth pb-4 [scrollbar-color:var(--color-rose)_transparent] [scrollbar-width:thin] sm:auto-cols-[38%] md:gap-6 lg:auto-cols-[calc((100%-4.5rem)/4)] [&>li]:snap-start"
       >
         {children}
       </ul>

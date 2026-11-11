@@ -8,8 +8,8 @@ export function StoreDetails({ store }: { store: Store }) {
   const closed = (store.closedDays ?? []).map((d) => d.label);
   const hours = store.hours ?? [];
   return (
-    <section aria-labelledby="store-details" className="border border-gold bg-paper p-6">
-      <h2 id="store-details" className="mb-4 text-2xl">
+    <section aria-labelledby="store-details" className="panel">
+      <h2 id="store-details" className="mb-4">
         Visit or call
       </h2>
       <address className="mb-4 not-italic">
@@ -26,11 +26,11 @@ export function StoreDetails({ store }: { store: Store }) {
       </p>
       {hours.length > 0 && (
         <>
-          <h3 className="mb-2 text-lg">{store.hoursLabel}</h3>
+          <h3 className="mb-2">{store.hoursLabel}</h3>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4">
             {hours.map((row) => (
               <div key={row.id ?? row.days} className="contents">
-                <dt className="font-semibold">{row.days}</dt>
+                <dt className="font-medium">{row.days}</dt>
                 <dd>{row.time}</dd>
               </div>
             ))}

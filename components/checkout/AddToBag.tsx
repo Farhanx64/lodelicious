@@ -25,7 +25,7 @@ export function AddToBag({ options }: { options: BagOption[] }) {
   const chosenUnit = state.values?.unitId && options.some((o) => o.unitId === state.values?.unitId) ? state.values.unitId : undefined;
   const visibleLabel = pending ? "Adding…" : "Add to bag";
   return (
-    <form action={action} className="mb-8 flex flex-wrap items-end gap-3 border border-gold bg-paper p-4">
+    <form action={action} className="panel mb-8 flex flex-wrap items-end gap-4">
       {options.length > 1 ? (
         <div className="min-w-[12rem] flex-1">
           <label htmlFor={`${ids}-unit`} className={label}>
