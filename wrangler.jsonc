@@ -1,0 +1,104 @@
+/**
+ * Cloudflare Workers configuration (D51). Read docs/cloudflare-go-live.md before deploying.
+ *
+ * PLACEHOLDERS to replace before the first deploy:
+ *   - d1_databases[].database_id  (twice: top level and env.remote)  <- `wrangler d1 create lodelicious`
+ * Names you may keep or change (keep top level and env.remote the same):
+ *   - name "lodelicious", D1 database "lodelicious", R2 bucket "lodelicious-media"
+ * Secrets are NOT in this file: `wrangler secret put PAYLOAD_SECRET`.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "lodelicious",
+  // OpenNext's Worker plus the `scheduled` handler for the cron jobs.
+  "main": "cloudflare-worker.mjs",
+  "compatibility_date": "2026-11-10",
+  "compatibility_flags": [
+    // Node APIs (crypto, Buffer, process.env): Payload and Next need them.
+    "nodejs_compat",
+    // `fetch` to public addresses only.
+    "global_fetch_strictly_public"
+  ],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": true },
+    "traces": { "enabled": true }
+  },
+
+  // Not secret. The local preview overrides these from .dev.vars (see .dev.vars.example).
+  "vars": {
+    // "production" is the live store (D41). APP_ENV is also read at build time for the HSTS header.
+    "APP_ENV": "production",
+    // The public address; turns on Payload's CSRF allowlist. Change it if the domain differs.
+    "NEXT_PUBLIC_SITE_URL": "https://souset-pink.com"
+  },
+
+  // The public address. Leave commented out until the domain's DNS is on Cloudflare and Lody has
+  // approved the switch; until then the Worker answers on its workers.dev address.
+  // "routes": [
+  //   { "pattern": "souset-pink.com", "custom_domain": true },
+  //   { "pattern": "www.souset-pink.com", "custom_domain": true }
+  // ],
+
+  "d1_databases": [
+    {
+      "binding": "D1",
+      "database_name": "lodelicious",
+      "database_id": "00000000-0000-0000-0000-000000000000" // PLACEHOLDER
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "R2",
+      "bucket_name": "lodelicious-media"
+    }
+  ],
+
+  // One limiter per distinct per-minute limit in ACTION_LIMITS (src/lib/rate-limit.ts). The
+  // namespace_id is any whole number that is unique within the Cloudflare account; nothing has to
+  // be created first.
+  "ratelimits": [
+    { "name": "RATE_LIMIT_30", "namespace_id": "4830", "simple": { "limit": 30, "period": 60 } },
+    { "name": "RATE_LIMIT_20", "namespace_id": "4820", "simple": { "limit": 20, "period": 60 } },
+    { "name": "RATE_LIMIT_10", "namespace_id": "4810", "simple": { "limit": 10, "period": 60 } },
+    { "name": "RATE_LIMIT_6", "namespace_id": "4806", "simple": { "limit": 6, "period": 60 } },
+    { "name": "RATE_LIMIT_5", "namespace_id": "4805", "simple": { "limit": 5, "period": 60 } }
+  ],
+
+  // The cron jobs (times are UTC). Each expression must also be in SCHEDULE in cloudflare-worker.mjs.
+  "triggers": {
+    "crons": [
+      "*/5 * * * *", // release-expired-holds
+      "*/10 * * * *", // send-pending-emails
+      "17 8 * * *" // purge-carts, daily
+      // After the Clover sync is verified: "*/2 * * * *" (clover-push) and "*/15 * * * *" (clover-pull)
+    ]
+  },
+
+  "env": {
+    // Never deployed. `CLOUDFLARE_ENV=remote` makes the `payload` command line (migrations, the
+    // owner account, seeding) talk to the REAL D1 database and R2 bucket instead of the local
+    // emulation: see `npm run cf:migrate:remote`. Needs `wrangler login`.
+    "remote": {
+      "d1_databases": [
+        {
+          "binding": "D1",
+          "database_name": "lodelicious",
+          "database_id": "00000000-0000-0000-0000-000000000000", // PLACEHOLDER (same as above)
+          "remote": true
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "R2",
+          "bucket_name": "lodelicious-media",
+          "remote": true
+        }
+      ]
+    }
+  }
+}

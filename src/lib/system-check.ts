@@ -1,5 +1,7 @@
 /**
- * Runtime requirement checks for the Namecheap Stellar Business host (PRD INF 01, INF 05).
+ * Runtime requirement checks. `evaluate` is for a Node host (written for the Namecheap Stellar
+ * Business account, PRD INF 01, INF 05, and still what `npm run doctor` and local development use);
+ * `evaluateCloudflare` at the end of the file is for the Worker (D51).
  *
  * The account has a 2 GB physical-memory (LVE) limit shared by every process. A Node server is
  * resident all day, so its V8 heap must be capped well below that (NODE_OPTIONS
@@ -100,4 +102,36 @@ export function evaluate(env: RuntimeEnv): CheckResult[] {
   }
 
   return results;
+}
+
+/** What the Worker can see about itself on Cloudflare (D51). There is no heap cap to set and no data directory. */
+export type CloudflareRuntimeEnv = {
+  appEnv: string | undefined;
+  payloadSecretLength: number;
+  /** Binding names that are present on the Worker. */
+  bindings: string[];
+  /** Binding names the app needs: the database, the uploads bucket and one rate limiter per distinct limit. */
+  requiredBindings: string[];
+};
+
+/**
+ * The Cloudflare counterpart of `evaluate` (D51). The Node, heap and DATA_DIR checks have no
+ * meaning in a Worker; what can go wrong instead is a binding missing from wrangler.jsonc or a
+ * secret that was never set (`wrangler secret put PAYLOAD_SECRET`).
+ */
+export function evaluateCloudflare(env: CloudflareRuntimeEnv): CheckResult[] {
+  return [
+    { check: "Host", expected: "Cloudflare Workers", actual: "Cloudflare Workers", ok: true },
+    appEnvCheck(env.appEnv),
+    {
+      check: "PAYLOAD_SECRET",
+      expected: `set, >= ${MIN_SECRET_LENGTH} chars`,
+      actual: env.payloadSecretLength === 0 ? "missing" : `${env.payloadSecretLength} chars`,
+      ok: env.payloadSecretLength >= MIN_SECRET_LENGTH,
+    },
+    ...env.requiredBindings.map((name) => {
+      const present = env.bindings.includes(name);
+      return { check: `Binding ${name}`, expected: "present", actual: present ? "present" : "missing from wrangler.jsonc", ok: present };
+    }),
+  ];
 }

@@ -1,7 +1,7 @@
 import config from "@payload-config";
 import { getPayload } from "payload";
 
-// Force the full Node.js runtime (never edge) — required on cPanel/Passenger.
+// The Node.js runtime, never edge: Payload needs it, on a Node host and under OpenNext on Cloudflare alike (D51).
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 

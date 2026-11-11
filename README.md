@@ -1,7 +1,9 @@
 # Lodelicious Gifts & Sweets — online store
 
-Source for the souset-pink.com store: **Payload 3 + Next.js 16** on SQLite, run as a cPanel Node.js
-app (Passenger/LiteSpeed) on Namecheap Stellar Business. Same architecture as `Farhanx64/pasto-hair`.
+Source for the souset-pink.com store: **Payload 3 + Next.js 16**, hosted on **Cloudflare**: Workers
+(through OpenNext), D1 for the database and R2 for uploaded photos (decision D51). Local development
+and the tests run the same code on plain Node with a SQLite file. Going live:
+`docs/cloudflare-go-live.md`.
 
 **AI agents and new developers: start with [`docs/AI-HANDOFF.md`](docs/AI-HANDOFF.md).**
 
@@ -35,22 +37,48 @@ the PRD's WooCommerce baseline: [`docs/decisions.md`](docs/decisions.md).
 | `data/source/` | Verbatim source evidence (Clover, price screenshot, DoorDash, owner product cards, allergen chart, supplier specs, basket chart) |
 | `data/catalog/catalog.json` | Starting catalog for `npm run seed:catalog` |
 | `data/assets/` | Logo master, product photos, product cards, supplier images (see its README) |
-| `scripts/` | Run via `npx payload run scripts/<name>.ts`: `doctor`, `check-migrations`, `seed-source-records`, `seed-catalog` (refuses a live database that has products unless `SEED_FORCE=1`), `create-owner` (first owner from env), `purge-carts` (daily cron), `release-expired-holds` (every 5 minutes), `send-pending-emails` (every 10 minutes), `clover-push` / `clover-pull` (once the sync is verified; `CLOVER_DRY_RUN=1` for trials) |
+| `scripts/` | Run via `npx payload run scripts/<name>.ts`: `doctor`, `check-migrations`, `seed-source-records`, `seed-catalog` (refuses a live database that has products unless `SEED_FORCE=1`), `create-owner` (first owner from env), `purge-carts` (daily), `release-expired-holds` (every 5 minutes), `send-pending-emails` (every 10 minutes), `clover-push` / `clover-pull` (once the sync is verified; `CLOVER_DRY_RUN=1` for trials). On Cloudflare the scheduled ones run as Cron Triggers instead (D51). Also `export-for-d1.sh` and `upload-media-to-r2.mjs` for the move to Cloudflare |
 | `tests/` | Source-data guard tests, page-render tests and Payload integration tests (catalog, checkout, reservations, gift baskets, inquiries, policies, security fixes, permissions) |
-| `server.js` | Passenger/LiteSpeed entry point (no top-level await — see comment) |
+| `src/platform/` | The two hosts (D51): `node.ts` (SQLite file, uploads on disk, sharp) and `cloudflare.ts` (D1, R2) |
+| `src/lib/jobs/` | The scheduled jobs as functions, shared by `scripts/` and Cloudflare's Cron Triggers |
+| `wrangler.jsonc`, `open-next.config.ts`, `cloudflare-worker.mjs` | Cloudflare: bindings and schedules, OpenNext settings, the Worker entry (requests plus the cron handler) |
+| `server.js` | Plain Node server for the staging preview on this Mac (`npm run serve`); not used on Cloudflare |
 
 ## Local development
 
-Node 24 (what the cPanel host runs; anything ≥ 20.9 works).
+Node 24 (anything ≥ 20.9 works). This runs on plain Node with a SQLite file in `.data/`.
 
 ```bash
 npm ci
 cp .env.example .env               # then set PAYLOAD_SECRET
+mkdir -p .data/media
 npm run seed:catalog               # migrate + source records, 7 categories, photos, 80 products, closed dates (create-only)
 npm run dev                        # http://localhost:3000, admin at /admin (first account becomes owner)
 ```
 
-Production-like run: `npm run build && NODE_ENV=production npx payload migrate && npm run serve`.
+Production-like run on Node: `npm run build && NODE_ENV=production npx payload migrate && npm run serve`.
+
+## Hosting: Cloudflare Workers, D1 and R2
+
+`DEPLOY_TARGET=cloudflare` (set by the `cf:*` scripts) builds the same app for Workers. Everything
+here runs against wrangler's local emulation; only the `:remote` and `deploy` commands touch a real
+Cloudflare account. The full runbook, including moving an existing database and photos, is
+`docs/cloudflare-go-live.md`.
+
+```bash
+cp .dev.vars.example .dev.vars     # then set PAYLOAD_SECRET (the preview's settings)
+npm run cf:migrate                 # migrations on the local D1
+npm run cf:build                   # OpenNext build into .open-next/
+npm run cf:preview                 # the Worker on http://localhost:8799 with local D1 and R2
+npm run cf:size                    # compressed size (limit: 10 MB on the paid plan)
+npm run cf:migrate:remote          # migrations on the real D1 (needs `wrangler login`)
+npm run cf:deploy                  # production build and deploy
+```
+
+What differs from a Node host (D51): photos uploaded on Cloudflare get no resized copies (no sharp),
+the rate limiter uses Cloudflare's bindings, the cron scripts run as Cron Triggers, logs go to
+Workers Logs, and the Workers Paid plan is required (the Worker is about 4.7 MB compressed).
+`@opennextjs/cloudflare` is pinned to 1.20.7 because newer releases need a newer Next.js.
 
 **Environment:** `.env.example` documents every variable. The important ones:
 - `APP_ENV` is `local`, `staging` or `test` for anything that isn't the live store. Only those values
@@ -63,8 +91,9 @@ Production-like run: `npm run build && NODE_ENV=production npx payload migrate &
   `EMAIL_SEND_LIVE=1` on a live host. Nothing is sent until a service is installed (D44).
 - Clover: `CLOVER_ENVIRONMENT`, `CLOVER_MERCHANT_ID`, `CLOVER_API_TOKEN`, plus `CLOVER_SYNC_LIVE=1`
   for production and `CLOVER_ADAPTER=fake` for local trials (D43).
-- Secrets (`PAYLOAD_SECRET`, Clover token, SMTP password) live only in the cPanel Node app's
-  environment, never in the repo. Generate `PAYLOAD_SECRET` with
+- Secrets (`PAYLOAD_SECRET`, Clover token, SMTP password) are set on the Worker with
+  `npx wrangler secret put <NAME>`, never in the repo; non-secret settings are `"vars"` in
+  `wrangler.jsonc`. Generate `PAYLOAD_SECRET` with
   `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`.
 
 **Dependencies:** change them with npm 11 (bundled with Node 24; on older Node use
@@ -116,5 +145,5 @@ The security and accessibility review and what was fixed are in `docs/audit-2026
 - Money is integer cents (`src/lib/money.ts`). No floats in prices, budgets or packaging.
 - Source prices (Clover, screenshot, DoorDash) are evidence, never website prices, until approved.
 - Source evidence is immutable after import; only review fields change, and every change is audited.
-- No secrets in the repository. Production env lives in the cPanel Node app settings.
+- No secrets in the repository. Production secrets are Worker secrets (`wrangler secret put`).
 - Nothing here activates live payments, changes DNS, buys services or replaces the live site.

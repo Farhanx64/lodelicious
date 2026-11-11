@@ -10,13 +10,17 @@ import { isProductionEnv } from "../src/lib/app-env";
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
-// Uploads live in a private, persistent dir (outside public_html on the host).
-// Set MEDIA_DIR to an absolute path on cPanel; locally defaults to ./.data/media.
-const mediaDir = process.env.MEDIA_DIR
-  ? path.resolve(process.env.MEDIA_DIR)
-  : process.env.DATA_DIR
-    ? path.resolve(process.env.DATA_DIR, "media")
-    : path.resolve(dirname, "..", ".data", "media");
+// On the Node host, uploads live in a private, persistent dir: MEDIA_DIR, or DATA_DIR/media, or
+// ./.data/media locally. On Cloudflare (D51) they live in the R2 bucket and nothing is written to
+// disk, so there is no directory to name.
+const mediaDir =
+  process.env.DEPLOY_TARGET === "cloudflare"
+    ? undefined
+    : process.env.MEDIA_DIR
+      ? path.resolve(process.env.MEDIA_DIR)
+      : process.env.DATA_DIR
+        ? path.resolve(process.env.DATA_DIR, "media")
+        : path.resolve(dirname, "..", ".data", "media");
 
 /**
  * Anonymous visitors may read only photos approved for launch on the live store (audit A10, D20,
@@ -33,7 +37,11 @@ export const mediaRead: Access = ({ req }) => {
   return isProductionEnv() ? { approvedForLaunch: { equals: true } } : true;
 };
 
-/** Largest photo the admin accepts. Phone and camera photos are well under this; sharp makes three sizes of each upload. */
+/**
+ * Largest photo the admin accepts. Phone and camera photos are well under this. On the Node host
+ * sharp makes three sizes of each upload; on Cloudflare there is no sharp, so a new upload keeps
+ * only its original and the storefront serves that (D51).
+ */
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 
 /** Stops an oversized file before Payload decodes and resizes it (audit A23). Payload's own parser limit is 20 MB. */
@@ -108,6 +116,15 @@ export const Media: CollectionConfig = {
         description:
           "Tick only for owner-approved photos of the actual product. Staging placeholders stay unticked.",
       },
+    },
+    {
+      // Kept by the R2 storage plugin on Cloudflare (D51): where a directly uploaded file sits in
+      // the bucket. The plugin adds this exact field itself; it is declared here as well so the
+      // Node host has the same column and one set of migrations fits both. Always empty on Node,
+      // and empty for every photo moved over from the old host (those are found by file name).
+      name: "_objectKey",
+      type: "text",
+      admin: { hidden: true, readOnly: true },
     },
   ],
 };

@@ -1,10 +1,8 @@
 import { fileURLToPath } from "url";
 import path from "path";
 
-import { sqliteAdapter } from "@payloadcms/db-sqlite";
 import { lexicalEditor } from "@payloadcms/richtext-lexical";
 import { buildConfig } from "payload";
-import sharp from "sharp";
 
 import { AuditLog } from "./collections/AuditLog";
 import { Carts } from "./collections/Carts";
@@ -39,9 +37,14 @@ import { csrfOrigins } from "./src/lib/security";
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
 
-// Private, persistent data dir (DB + media live OUTSIDE public_html on the host).
-// Locally defaults to ./.data; on cPanel set DATA_DIR to an absolute private path.
-const dataDir = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : path.resolve(dirname, ".data");
+// The host-specific parts (D51): the database, where uploads are stored, image resizing and the
+// logger. Node with a SQLite file by default; Cloudflare Workers with D1 and R2 when
+// DEPLOY_TARGET=cloudflare. The comparison is written out here (not behind a helper) so the
+// bundler drops the branch, and the packages, that this build does not use: see src/platform/target.ts.
+const platform =
+  process.env.DEPLOY_TARGET === "cloudflare"
+    ? await import("./src/platform/cloudflare").then((m) => m.cloudflarePlatform(dirname))
+    : await import("./src/platform/node").then((m) => m.nodePlatform(dirname));
 
 export default buildConfig({
   admin: {
@@ -102,19 +105,6 @@ export default buildConfig({
   typescript: {
     outputFile: path.resolve(dirname, "payload-types.ts"),
   },
-  db: sqliteAdapter({
-    client: {
-      url: process.env.DATABASE_URI || `file:${path.resolve(dataDir, "lodelicious.db")}`,
-    },
-    migrationDir: path.resolve(dirname, "migrations"),
-    // How long a write waits for another connection (the cron scripts, a second request) before
-    // failing with SQLITE_BUSY. The default is 0. Do NOT enable `transactionOptions` (D40, D42).
-    busyTimeout: 5000,
-    // Never auto-push schema, even in development. Dev push on SQLite re-creates existing
-    // indexes and fails on alternate runs, and it marks the database so that a later
-    // non-interactive `payload migrate` silently exits 0 without migrating (D23).
-    push: false,
-  }),
-  sharp,
+  ...platform,
   telemetry: false,
 });

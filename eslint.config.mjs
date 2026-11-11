@@ -16,6 +16,9 @@ const eslintConfig = defineConfig([
     "migrations/**",
     "payload-types.ts",
     "app/(payload)/admin/importMap.js",
+    // Generated for Cloudflare (D51): the OpenNext build, wrangler's local state, binding types.
+    ".open-next/**",
+    ".wrangler/**",
   ]),
 ]);
 

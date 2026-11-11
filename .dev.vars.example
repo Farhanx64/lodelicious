@@ -1,0 +1,15 @@
+# Copy to .dev.vars for the local Workers preview (`npm run cf:preview`). Never commit .dev.vars.
+# These override the "vars" in wrangler.jsonc on this machine only. On Cloudflare, secrets are set
+# with `wrangler secret put <NAME>` and everything else lives in wrangler.jsonc.
+
+# Tells OpenNext which .env files Next would load. Keep as is.
+NEXTJS_ENV=development
+
+# Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+PAYLOAD_SECRET=replace-with-64-hex-chars
+
+# local, staging or test turn on the preview behaviour (D41). The deployed Worker uses "production".
+APP_ENV=local
+
+# Empty switches the CSRF allowlist off so the admin logs in at http://localhost:8799.
+NEXT_PUBLIC_SITE_URL=

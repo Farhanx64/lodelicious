@@ -10,6 +10,9 @@
  * are serialised by SQLite's write lock. A statement that must not be skipped is followed by
  * `ABORT_IF_NOTHING_CHANGED`, which raises an error (so the whole batch rolls back) when the
  * statement before it changed no row.
+ *
+ * On Cloudflare the client is a D1 binding, not libsql (D51). `client()` wraps it so the rest of
+ * this file, and every caller, is unchanged: see `d1Client`.
  */
 import type { Payload } from "payload";
 
@@ -22,10 +25,59 @@ type LibsqlClient = {
   execute(stmt: Stmt): Promise<ResultSet>;
 };
 
+/** The parts of a D1 binding used here (the full type comes from `wrangler types`). */
+type D1Statement = { bind(...values: unknown[]): D1Statement };
+type D1Result = { results?: Record<string, unknown>[]; meta: { changes: number } };
+type D1Client = {
+  prepare(sql: string): D1Statement;
+  batch(stmts: D1Statement[]): Promise<D1Result[]>;
+};
+
+/**
+ * D1 takes only positional parameters, so `:name` becomes `?` and the values are listed in the
+ * order they appear (a name used twice is bound twice). Quoted text is left alone, so a colon
+ * inside a string literal is never mistaken for a parameter.
+ */
+export function toPositional(stmt: Stmt): { sql: string; values: unknown[] } {
+  if (typeof stmt === "string") return { sql: stmt, values: [] };
+  const args = stmt.args ?? {};
+  const values: unknown[] = [];
+  const sql = stmt.sql.replace(/'(?:[^']|'')*'|"(?:[^"]|"")*"|`[^`]*`|:([A-Za-z_][A-Za-z0-9_]*)/g, (match, name: string | undefined) => {
+    if (name === undefined) return match;
+    if (!(name in args)) throw new Error(`No value was given for :${name}`);
+    const value = args[name];
+    // D1 rejects undefined, and stores true/false as text unless they are made numbers first.
+    values.push(value === undefined ? null : typeof value === "boolean" ? Number(value) : value);
+    return "?";
+  });
+  return { sql, values };
+}
+
+/**
+ * The same two calls on a D1 binding (D51). `batch` is one transaction there too: D1 runs the
+ * statements in order, and rolls every one of them back if any fails, so the guards in this file
+ * (`ABORT_IF_NOTHING_CHANGED`, the unique idempotency keys) keep their meaning. There is no
+ * SQLITE_BUSY to retry: D1 queues writers itself.
+ */
+function d1Client(db: D1Client): LibsqlClient {
+  const prepare = (stmt: Stmt) => {
+    const { sql, values } = toPositional(stmt);
+    const prepared = db.prepare(sql);
+    return values.length ? prepared.bind(...values) : prepared;
+  };
+  const toResultSet = (r: D1Result): ResultSet => ({ rowsAffected: r.meta.changes, rows: r.results ?? [] });
+  return {
+    batch: async (stmts) => (await db.batch(stmts.map(prepare))).map(toResultSet),
+    execute: async (stmt) => toResultSet((await db.batch([prepare(stmt)]))[0]),
+  };
+}
+
+const isD1 = (c: object): c is D1Client => typeof (c as D1Client).prepare === "function" && typeof (c as { execute?: unknown }).execute !== "function";
+
 export function client(payload: Payload): LibsqlClient {
-  const c = (payload.db as unknown as { client?: LibsqlClient }).client;
+  const c = (payload.db as unknown as { client?: LibsqlClient | D1Client }).client;
   if (!c) throw new Error("The database client isn't ready");
-  return c;
+  return isD1(c) ? d1Client(c) : c;
 }
 
 /** `abs` of the smallest integer raises "integer overflow": SQLite's way of failing on purpose. */

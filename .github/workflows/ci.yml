@@ -50,3 +50,13 @@ jobs:
             exit 1
           fi
       - run: npm run build
+      # The Cloudflare build (D49): OpenNext must bundle the app for Workers, and the result must
+      # fit the paid plan's 10 MB compressed limit. Neither step needs a Cloudflare account.
+      - run: npm run cf:build
+      - name: Worker fits the size limit
+        run: |
+          output="$(npm run --silent cf:size 2>&1)"
+          echo "$output" | tail -n 20
+          gzip_kib="$(echo "$output" | sed -n 's/.*gzip: \([0-9.]*\) KiB.*/\1/p' | tail -n 1)"
+          if [ -z "$gzip_kib" ]; then echo "::error::Could not read the Worker size from wrangler's output."; exit 1; fi
+          if [ "$(printf '%.0f' "$gzip_kib")" -gt 9500 ]; then echo "::error::The Worker is ${gzip_kib} KiB compressed; the limit is 10 MB."; exit 1; fi

@@ -1,16 +1,19 @@
 /**
- * Delete shopping bags nobody has touched for 30 days (D41, A15). A cron candidate, e.g. daily:
+ * Delete shopping bags nobody has touched for 30 days (D41, A15).
  *
  *   npx payload run scripts/purge-carts.ts
  *
- * Only the `carts` table is touched. Orders and reservations are never deleted by this.
+ * On Cloudflare a Cron Trigger runs the same job once a day (D51). Only the `carts` table is
+ * touched. Orders and reservations are never deleted by this.
  */
 import config from "@payload-config";
 import { getPayload } from "payload";
 
-import { CART_MAX_AGE_DAYS, cartCutoff, purgeStaleCarts } from "../src/lib/checkout/purge-carts";
+import { runJob } from "../src/lib/jobs/run";
+
+const JOB = "purge-carts";
 
 const payload = await getPayload({ config });
-const deleted = await purgeStaleCarts(payload, cartCutoff(new Date()));
-console.log(`Deleted ${deleted} shopping bag${deleted === 1 ? "" : "s"} untouched for over ${CART_MAX_AGE_DAYS} days.`);
-process.exit(0);
+const result = await runJob(payload, JOB);
+for (const line of result.lines) (result.ok ? console.log : console.error)(`[${JOB}] ${line}`);
+process.exit(result.ok ? 0 : 1);

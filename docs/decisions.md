@@ -1117,3 +1117,59 @@ exist (D7), bundled/self-hosted fonts (D8 → D13).
 ## D50 — Lody keeps the original look, in pink (2026-11-11)
 
 Lody compared both previews and picked the original layout over the D49 editorial restyle. The storefront components, fonts and tests go back to their pre-D49 state (763efb6). The blue accent tokens become pink: coastal #d58f9c, coastal-deep #9c4459, coastal-pale #f8e6e8. The editable brand and button colours from D49 stay (Store details → brandColor sets coastal-deep, buttonColor sets gold), along with their migrations, so the database needs no change. The delivery pricing module stays, still unused.
+
+## D51 — Hosting moves to Cloudflare: Workers, D1 and R2 (owner's decision, 2026-11-11)
+
+Replaces the plan of a long-running cPanel/Passenger Node app (D9, D14). Built and tested against
+wrangler's local emulation only; nothing is deployed and no Cloudflare resource exists yet. The steps
+to go live are in `docs/cloudflare-go-live.md`. (Numbering: a storefront restyle is being written at
+the same time and may also claim D49; renumber one of them at merge.)
+
+- **One codebase, two targets, chosen by `DEPLOY_TARGET`.** Unset is the Node target: a SQLite file
+  through libsql, uploads on disk, sharp. That is what `npm run dev`, the tests, CI and the local
+  preview (`server.js`) use, unchanged. `DEPLOY_TARGET=cloudflare` (the `cf:*` scripts) is Workers
+  through OpenNext with `@payloadcms/db-d1-sqlite` and `@payloadcms/storage-r2`, following Payload's
+  `with-cloudflare-d1` template. `next.config.ts` inlines the value so each build drops the other
+  target's packages; the host-specific code is in `src/platform/`.
+- **Versions.** Payload stays 3.90.2 and Next 16.3.6. `@opennextjs/cloudflare` is pinned to 1.20.7,
+  the last release whose supported range includes Next 16.3.6; later releases need Next 16.3.8 or
+  newer, and the current one (1.20.16) needs 16.4.5 or newer. Upgrading Next and OpenNext together
+  is a follow-up. The template itself is on Payload 3.82.1 and Next 16.4.2.
+- **Database.** The same migrations run on D1 unchanged (`npm run cf:migrate`). One new migration,
+  `media_object_key`, adds a hidden column the R2 plugin needs; it is declared on both targets so
+  one migration history fits both. The stock ledger's write batches (D40) go through a small wrapper
+  in `src/lib/inventory/db.ts` that turns named parameters into D1's positional ones. A D1 batch is
+  a single transaction, so the guards hold: `tests/int/d1-ledger-guards.test.ts` proves on emulated
+  D1 that a failed guard rolls the whole batch back and a repeated idempotency key is refused.
+- **Uploads** are stored in R2 and still served through `/api/media/file/...`, so the rule that the
+  live site shows only approved photos (D20, D32) is unchanged.
+- **Lost: resized copies of new photos.** sharp cannot run on Workers, so a photo uploaded there
+  keeps only its original; no thumb, card or large copy is made, and the crop and focal-point tools
+  in the admin have no effect. The storefront already falls back to the original, so pages work but
+  load a bigger file. Photos moved over from the old host keep their resized copies. Until this is
+  replaced (Cloudflare Images, or resizing in the browser before upload), upload photos already
+  sized for the web, about 1500 px wide.
+- **Rate limiter.** The in-memory limiter (D41) counts within one process; a Worker has no such
+  process. Cloudflare Rate Limiting bindings now enforce the same per-minute limits, one binding per
+  distinct limit, keyed by action and `CF-Connecting-IP`. Counts are per Cloudflare location and
+  approximate. If a binding fails, the in-memory count is used, so a customer is never blocked by it.
+- **Cron jobs** become Cron Triggers. The job logic moved to `src/lib/jobs/run.ts`; the
+  `scripts/*.ts` commands still work on Node. On Cloudflare the Worker's `scheduled` handler
+  (`cloudflare-worker.mjs`) posts to `/ops/cron/<job>` inside the same Worker, with a key derived
+  from `PAYLOAD_SECRET`; without the key the route answers 404. Scheduled: release-expired-holds
+  every 5 minutes, send-pending-emails every 10, purge-carts daily. The two Clover jobs are written
+  but not scheduled until the sync is verified (D43).
+- **Logs.** There is no log file; Payload logs one JSON line per message to the console, which
+  Workers Logs keeps (observability is on in `wrangler.jsonc`).
+- **System check.** `/ops/system-check` on Cloudflare checks APP_ENV, the secret and that every
+  binding is present, instead of the Node version, heap cap and DATA_DIR.
+- **Secrets.** OpenNext copies the local `.env` into the Worker as fallback values. `cf:build`
+  empties that copy (`scripts/cf-strip-env.mjs`), so settings come only from `wrangler.jsonc` and
+  `wrangler secret put`.
+- **Size.** The Worker is 4,798 KiB compressed (21.5 MB before compression), measured with
+  `npm run cf:size`. That is over the free plan's 3 MB and under the paid plan's 10 MB, so the
+  Workers Paid plan is required.
+- **Not changed:** money, checkout, inventory rules, access rules, emails (still console only), the
+  Clover adapters (still refuse to run live), and every storefront component and page.
+- **Open for the owner:** the Cloudflare account and paid plan; when to move the domain's DNS
+  (Lody's approval, as for any DNS change); whether to add Cloudflare Images for resizing.
