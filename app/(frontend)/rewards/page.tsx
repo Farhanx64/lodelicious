@@ -6,6 +6,7 @@ import { primaryButton, secondaryButton } from "@/components/checkout/styles";
 import { DraftNotice, EarnRate, RewardList, Terms } from "@/components/rewards/Program";
 import { formatPoints } from "@/src/lib/rewards/program";
 import { currentMember, rewardsPayload } from "@/src/lib/rewards/session";
+import { Accent } from "@/components/ui/Accent";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { program, state } = await rewardsPayload();
@@ -29,11 +30,13 @@ export default async function RewardsPage() {
   const member = await currentMember(ctx);
 
   return (
-    <div className="mx-auto w-[min(100%-2rem,44rem)]">
+    <div className="shell page max-w-[50rem]">
       {state.draft && <DraftNotice />}
-      <h1 className="mb-4 text-[clamp(1.75rem,5vw,2.5rem)]">{program.programName}</h1>
+      <h1 className="mb-6">
+        <Accent text={program.programName} />
+      </h1>
       <section aria-labelledby="how" className="mb-8">
-        <h2 id="how" className="mb-3 text-2xl">
+        <h2 id="how" className="mb-3">
           How it works
         </h2>
         <ol className="mb-4 list-decimal space-y-2 pl-6">
@@ -43,13 +46,13 @@ export default async function RewardsPage() {
           </li>
           <li>Spend your points at checkout for money off a shop order, taken off before tax. One reward per order.</li>
         </ol>
-        <p className="text-sm text-ink-soft">
+        <p className="text-sm text-muted">
           Points are for online orders placed while signed in. If a payment doesn&rsquo;t go through, the points you used come back. If an order is refunded,
           the points it earned are taken back and the points it used are returned.
         </p>
       </section>
       <section aria-labelledby="rewards" className="mb-8">
-        <h2 id="rewards" className="mb-3 text-2xl">
+        <h2 id="rewards" className="mb-3">
           Rewards
         </h2>
         <RewardList program={program} balance={member?.pointsBalance} />
@@ -71,10 +74,10 @@ export default async function RewardsPage() {
         )}
       </p>
       <section id="terms" aria-labelledby="terms-title" className="border-t border-line pt-6">
-        <h2 id="terms-title" className="mb-3 text-2xl">
+        <h2 id="terms-title" className="mb-3">
           Terms
         </h2>
-        {program.terms ? <Terms text={program.terms} /> : <p className="text-ink-soft">The terms are being written.</p>}
+        {program.terms ? <Terms text={program.terms} /> : <p className="text-muted">The terms are being written.</p>}
       </section>
     </div>
   );

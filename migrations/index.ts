@@ -16,6 +16,8 @@ import * as migration_20261008_010254_email_settings from './20261008_010254_ema
 import * as migration_20261014_185249_member_rewards from './20261014_185249_member_rewards';
 import * as migration_20261108_050119_promo_banner from './20261108_050119_promo_banner';
 import * as migration_20261110_185702_premium_no_limit from './20261110_185702_premium_no_limit';
+import * as migration_20261111_120000_brand_color from './20261111_120000_brand_color';
+import * as migration_20261111_130000_button_color from './20261111_130000_button_color';
 
 export const migrations = [
   {
@@ -107,5 +109,15 @@ export const migrations = [
     up: migration_20261110_185702_premium_no_limit.up,
     down: migration_20261110_185702_premium_no_limit.down,
     name: '20261110_185702_premium_no_limit'
+  },
+  {
+    up: migration_20261111_120000_brand_color.up,
+    down: migration_20261111_120000_brand_color.down,
+    name: '20261111_120000_brand_color',
+  },
+  {
+    up: migration_20261111_130000_button_color.up,
+    down: migration_20261111_130000_button_color.down,
+    name: '20261111_130000_button_color',
   },
 ];

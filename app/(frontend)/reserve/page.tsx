@@ -7,7 +7,7 @@ import { ContactFields } from "@/components/checkout/ContactFields";
 import { PaymentChoice } from "@/components/checkout/FormFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
 import { SubmissionField } from "@/components/checkout/SubmissionField";
-import { primaryButton } from "@/components/checkout/styles";
+import { primaryButton, legend } from "@/components/checkout/styles";
 import { Summary, TestModeNote } from "@/components/checkout/Summary";
 import { PolicyLinks } from "@/components/policies/PolicyLinks";
 import { paymentPlan } from "@/src/lib/checkout/deposit";
@@ -18,6 +18,7 @@ import { formatCents } from "@/src/lib/money";
 import { orderingState } from "@/src/lib/payments";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
+import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = { title: "Reserve your basket", robots: { index: false } };
 
@@ -27,9 +28,11 @@ export default async function ReservePage() {
 
   if (!draft || !basket || !basket.ok) {
     return (
-      <div className="mx-auto w-[min(100%-2rem,40rem)] py-6 text-center">
-        <h1 className="mb-4 text-[clamp(1.75rem,5vw,2.5rem)]">Reserve your basket</h1>
-        <p className="mb-6 text-lg">{basket && !basket.ok ? basket.error : "Build your basket first, then reserve it here."}</p>
+      <div className="shell page max-w-[44rem] text-center">
+        <h1 className="mb-6">
+        <Accent text="Reserve your basket" />
+      </h1>
+        <p className="mb-8 text-muted">{basket && !basket.ok ? basket.error : "Build your basket first, then reserve it here."}</p>
         <Link href="/build-a-basket" className={primaryButton}>
           Build a basket
         </Link>
@@ -43,21 +46,23 @@ export default async function ReservePage() {
   const depositLabel = ctx.deposit.type === "percent" ? `${ctx.deposit.percentBasisPoints / 100}% deposit` : "Deposit";
 
   return (
-    <div className="mx-auto w-[min(100%-2rem,60rem)]">
-      <h1 className="mb-2 text-[clamp(1.75rem,5vw,2.5rem)]">Reserve your basket</h1>
-      <p className="mb-6 max-w-[60ch]">
+    <div className="shell page max-w-[68rem]">
+      <h1 className="mb-5">
+        <Accent text="Reserve your basket" />
+      </h1>
+      <p className="mb-10 max-w-[60ch] text-muted">
         Custom baskets are made to order. A deposit reserves yours; the rest is paid when you pick it up. We&rsquo;ll be in touch if anything needs
         confirming.
       </p>
       {ctx.provider?.test && <TestModeNote />}
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-10 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] md:items-start">
         <div>
           {state.open ? (
             <ActionForm action={submitReservation} submitLabel={ctx.provider?.test ? "Reserve with test payment" : "Reserve and pay"} pendingLabel="Reserving…" disabled={slots.length === 0}>
               <SubmissionField kind="reservation" />
               <ContactFields prefix="reserve" />
-              <fieldset className="mb-4">
-                <legend className="mb-3 font-display text-xl text-gold-text">Pickup</legend>
+              <fieldset className="mb-8">
+                <legend className={legend}>Pickup</legend>
                 <p className="mb-3 text-sm">
                   Baskets need at least {ctx.reservationLeadHours} hours&rsquo; notice. Pickup at {store.street}, {store.locality}.
                 </p>
@@ -71,7 +76,7 @@ export default async function ReservePage() {
               />
             </ActionForm>
           ) : (
-            <p className="border-l-4 border-gold bg-paper p-4">
+            <p className="note">
               Online reservations are coming soon. To reserve this basket, call <a href={telHref(store.phone)}>{store.phone}</a>.
             </p>
           )}
@@ -90,7 +95,7 @@ export default async function ReservePage() {
           />
           {draft.message && <p className="mt-4 text-sm">Gift message: &ldquo;{draft.message}&rdquo;</p>}
           {draft.requests && <p className="mt-2 text-sm">Requests: {draft.requests} (we&rsquo;ll confirm these with you)</p>}
-          {store.allergyNotice && <p className="mt-4 border-l-4 border-gold bg-paper p-3 text-sm">{store.allergyNotice}</p>}
+          {store.allergyNotice && <p className="mt-4 note text-sm">{store.allergyNotice}</p>}
           <p className="mt-4">
             <Link href="/build-a-basket">Change basket</Link>
           </p>

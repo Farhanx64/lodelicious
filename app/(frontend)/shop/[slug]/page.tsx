@@ -15,6 +15,7 @@ import { contactHref, topicForProduct } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
 import { publishableProductImages } from "@/src/lib/media";
+import { Accent } from "@/components/ui/Accent";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -49,9 +50,9 @@ export default async function ProductPage({ params }: Props) {
   ].filter(Boolean);
 
   return (
-    <div className="mx-auto w-[min(100%-2rem,72rem)]">
-      <nav aria-label="Breadcrumb" className="mb-6 text-sm">
-        <ol className="flex flex-wrap gap-2">
+    <div className="shell page">
+      <nav aria-label="Breadcrumb" className="label-caps mb-8 text-muted">
+        <ol className="flex flex-wrap items-center gap-2 [&_a]:inline-flex [&_a]:min-h-11 [&_a]:items-center">
           <li>
             <Link href="/shop">Shop</Link>
           </li>
@@ -64,14 +65,16 @@ export default async function ProductPage({ params }: Props) {
         </ol>
       </nav>
 
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-2">
-        <div className="flex flex-col gap-3">
-          <ProductImage media={images[0]} size="large" priority className="w-full border border-gold p-1.5" />
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-10 md:grid-cols-2 lg:gap-x-24">
+        <div className="flex flex-col gap-4 md:sticky md:top-28 md:self-start">
+          <div className="overflow-hidden rounded-[2rem] bg-clay">
+            <ProductImage media={images[0]} size="large" priority fit="cover" className="aspect-[4/5] w-full" />
+          </div>
           {images.length > 1 && (
-            <ul className="grid grid-cols-4 gap-2">
+            <ul className="grid grid-cols-4 gap-3">
               {images.slice(1).map((m, i) => (
-                <li key={i}>
-                  <ProductImage media={m} size="thumb" className="aspect-square w-full border border-line" />
+                <li key={i} className="overflow-hidden rounded-xl bg-clay">
+                  <ProductImage media={m} size="thumb" fit="cover" className="aspect-square w-full" />
                 </li>
               ))}
             </ul>
@@ -79,29 +82,31 @@ export default async function ProductPage({ params }: Props) {
         </div>
 
         <div>
-          {product.brand && <p className="text-sm tracking-[0.12em] text-gold-text uppercase">{product.brand}</p>}
-          <h1 className="mb-2 text-[clamp(2rem,4vw,3rem)]">{product.title}</h1>
-          {product.sizeLabel && <p className="mb-3 text-ink-soft">{product.sizeLabel}</p>}
-          <div className="mb-4 flex flex-wrap items-baseline gap-4">
-            {product.priceApproved && price !== PRICE_ON_REQUEST ? <p className="text-2xl font-semibold">{price}</p> : <p>{price}</p>}
+          {product.brand && <p className="label-caps mb-4 text-rose-deep">{product.brand}</p>}
+          <h1 className="mb-5 text-[clamp(2.5rem,5vw,4.5rem)]! break-words">
+        <Accent text={product.title} />
+      </h1>
+          {product.sizeLabel && <p className="label-caps mb-4 text-muted">{product.sizeLabel}</p>}
+          <div className="mb-8 flex flex-wrap items-baseline gap-4 border-b border-line pb-8">
+            {product.priceApproved && price !== PRICE_ON_REQUEST ? <p className="font-display text-[2rem] leading-none">{price}</p> : <p className="label-caps text-muted">{price}</p>}
             <AvailabilityNote product={product} />
           </div>
 
-          {product.shortDescription && <p className="mb-4 text-lg">{product.shortDescription}</p>}
+          {product.shortDescription && <p className="mb-4 text-[1.1875rem]">{product.shortDescription}</p>}
           {product.description && product.description !== product.shortDescription && (
-            <p className="mb-6 whitespace-pre-line">{product.description}</p>
+            <p className="mb-8 whitespace-pre-line text-muted">{product.description}</p>
           )}
 
           {units.length > 1 && (
-            <section aria-labelledby="options" className="mb-6">
-              <h2 id="options" className="mb-2 text-xl">
+            <section aria-labelledby="options" className="mb-8">
+              <h2 id="options" className="label-caps mb-3 text-muted">
                 Options
               </h2>
-              <ul className="divide-y divide-line border border-line bg-paper">
+              <ul className="divide-y divide-line border-y border-line">
                 {units.map((u) => (
-                  <li key={u.id} className="flex flex-wrap justify-between gap-2 px-4 py-3">
+                  <li key={u.id} className="flex flex-wrap justify-between gap-2 py-3">
                     <span>{u.variantKey ? u.name.replace(`${product.title} — `, "") : u.name}</span>
-                    <span className="text-ink-soft">
+                    <span className="text-muted">
                       {unitPriceLabel(product, u)}
                       {u.availability.label ? ` · ${u.availability.label}` : ""}
                     </span>
@@ -114,7 +119,7 @@ export default async function ProductPage({ params }: Props) {
           {bagOptions.length > 0 ? (
             <AddToBag options={bagOptions} />
           ) : (
-            <div className="mb-8 border-l-4 border-gold bg-paper p-4">
+            <div className="note mb-8">
               <p>
                 {product.channel === "inquiry_only" ? "Available by inquiry." : "Not available to order online right now."} To order, call{" "}
                 <a href={telHref(store.phone)}>{store.phone}</a> or visit us at {store.street}, {store.locality}.
@@ -130,17 +135,17 @@ export default async function ProductPage({ params }: Props) {
             </div>
           )}
 
-          <section aria-labelledby="allergens" className="border-t border-line pt-6">
-            <h2 id="allergens" className="mb-2 text-xl">
+          <section aria-labelledby="allergens" className="mt-10 border-t border-line pt-8">
+            <h2 id="allergens" className="mb-4">
               Allergens &amp; dietary
             </h2>
-            {dietary.length > 0 && <p className="mb-2 font-semibold">{dietary.join(" · ")}</p>}
+            {dietary.length > 0 && <p className="label-caps mb-3">{dietary.join(" · ")}</p>}
             {product.allergenNotes ? (
               <p className="mb-3">{product.allergenNotes}</p>
             ) : (
               <p className="mb-3">Allergen information for this product hasn&rsquo;t been added yet — please ask us before ordering.</p>
             )}
-            <p className="text-sm text-ink-soft">{store.allergyNotice}</p>
+            <p className="text-sm text-muted">{store.allergyNotice}</p>
           </section>
         </div>
       </div>

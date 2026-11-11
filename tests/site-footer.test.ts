@@ -28,9 +28,9 @@ const store = {
 const render = (patch: Partial<StoreSetting> = {}) => renderToStaticMarkup(createElement(SiteFooter, { store: { ...store, ...patch } }));
 
 describe("SiteFooter", () => {
-  it("carries the board lockup and links to the shop sections not in the main nav", () => {
+  it("ends with the shop name as a giant wordmark, and links to the shop sections not in the main nav", () => {
     const html = render();
-    expect(html).toContain("Souset-Pink");
+    expect(html).toMatch(/data-footer-wordmark="true"[^>]*>Souset-Pink</);
     for (const href of ["/shop?category=fudge", "/shop?category=fresh-treats", "/baby-gifts", "/gift-baskets", "/events", "/contact"]) {
       expect(html).toContain(`href="${href}"`);
     }
@@ -53,5 +53,14 @@ describe("SiteFooter", () => {
   it("links DoorDash only when the link is set", () => {
     expect(render()).not.toContain("doordash.com");
     expect(render({ doordashUrl: "https://www.doordash.com/store/example" })).toContain('href="https://www.doordash.com/store/example"');
+  });
+});
+
+describe("SiteFooter wordmark", () => {
+  it("scales down so a long shop name still fits the width", () => {
+    const short = render().match(/font-size:min\(22vw, ([\d.]+)vw\)/);
+    const long = render({ name: "Lodelicious Gifts & Sweets" }).match(/font-size:min\(22vw, ([\d.]+)vw\)/);
+    expect(Number(long?.[1])).toBeLessThan(Number(short?.[1]));
+    expect(Number(long?.[1])).toBeLessThan(10);
   });
 });

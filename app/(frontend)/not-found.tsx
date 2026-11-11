@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { Bow } from "@/components/brand/Bow";
 import { primaryButton, secondaryButton } from "@/components/checkout/styles";
+import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = { title: "Page not found", robots: { index: false } };
 
@@ -13,9 +13,10 @@ export const metadata: Metadata = { title: "Page not found", robots: { index: fa
  */
 export default function StorefrontNotFound() {
   return (
-    <div className="mx-auto flex w-[min(100%-2rem,40rem)] flex-col items-center py-10 text-center">
-      <Bow className="mb-4 w-14 text-gold" />
-      <h1 className="mb-4 text-[clamp(1.75rem,5vw,2.5rem)]">We can&rsquo;t find that page</h1>
+    <div className="shell page max-w-[44rem] flex flex-col items-center text-center">
+      <h1 className="mb-6">
+        <Accent text="We can’t find that page" />
+      </h1>
       <p className="mb-2 text-lg">The link may be old or mistyped.</p>
       <p className="mb-6">
         If you were trying to open an order or reservation receipt, check that you copied the whole link. Otherwise{" "}

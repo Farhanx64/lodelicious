@@ -1050,6 +1050,63 @@ not in the PRD"), so it is built **switched off and unapproved**, like policies 
   new `coastal-deep` #56708a; low-stock labels get a blush pill. Frames and rules keep the board gold.
 - **Open for Lody:** approve the white cards, darker gold and blue buttons, or ask for the board colours back.
 
+## D49 — Soft editorial storefront: cream, cocoa and terracotta (owner's choice, 2026-11-11)
+
+The shop owner chose a new look for the whole storefront. It **supersedes D31's palette and lockup** and
+D48's colours. Content, navigation destinations and behaviour are unchanged. The admin is untouched.
+
+- **Colour.** Tokens in `app/globals.css`, pinned by `tests/theme-contrast.test.ts`:
+
+  | Token | Hex | From the brief | Use |
+  | --- | --- | --- | --- |
+  | `cream` | #f6f2ee | hsl(30 33% 95%) | page and footer |
+  | `clay` | #ece1da | hsl(24 32% 89%) | product tiles, panels, the hero pebble |
+  | `cocoa` | #362b26 | hsl(20 18% 18%) | text and headings: 12.3:1 on cream, 10.7:1 on clay |
+  | `muted` | #6b5e57 | hsl(20 10% **38%**) | secondary text and field borders: 5.6:1 / 4.9:1 |
+  | `line` | #e0d8d1 | hsl(26 20% 85%) | hairlines (decorative only) |
+  | `terracotta` | #bd816b | hsl(16 38% 58%) | decoration and large type only |
+  | `terracotta-deep` | #8d543f | hsl(16 38% **40%**) | filled buttons, announcement bar, small accent text |
+  | `on-terracotta` | #faf7f5 | hsl(30 33% 97%) | text on terracotta |
+
+  Two values are deeper than the brief, for WCAG AA. The brief's muted (46%) is 4.2:1 on cream. Cream text
+  on the brief's terracotta is 3.0:1. On `terracotta-deep` it is 5.7:1, and `terracotta-deep` itself is
+  5.4:1 on cream and 4.7:1 on clay. Focus rings stay blue (#1f4fd1, 6.1:1 / 5.3:1), and cream on terracotta.
+  D31's accepted gold-text deviation no longer applies: nothing is below AA.
+- **Type.** Instrument Serif 400 and italic for headings and the wordmark. DM Sans 300–500 for body (17px,
+  weight 300, line height 1.7) and labels (`.label-caps`: 500, 12px, uppercase, 0.12em). Bundled in
+  `app/fonts` like before. Cormorant Garamond and Source Sans 3 are removed. Display headings set one
+  word in italic (`components/ui/Accent.tsx`); no more uppercase letterspaced serif titles.
+- **Layout.** Container 1360px (`.shell`), section spacing 128px on desktop, less on phones. Sticky 76px
+  header: links left, the shop name as a centred wordmark, account, wishlist, search and bag right.
+  Phones get a menu `<details>` (still closes on navigation and Escape) and the bag. The promo banner is
+  restyled as a 36px announcement bar; its carousel and pause control are unchanged. The footer ends with
+  the shop name as a full-width wordmark, sized from the name's length. The bow, awning and gold frames
+  are removed (`components/brand/` deleted).
+- **Home.** Hero with a three-line title from the tagline; the picture is the Home-page hero photo, or
+  until one is uploaded the first favourite's photo, over a slowly morphing clay pebble. Then a values
+  marquee, the favourites (admin layouts and the slider's pause kept), a sticky-image section on the
+  four things the shop is known for (category text and product photos), the pickup, delivery and phone
+  columns, a 70vh full-bleed band (a wide gift-basket photo, else plain terracotta), the photo strip as
+  editorial cards, and a terracotta custom-basket panel. No reviews, newsletter or articles were added.
+- **Motion.** `motion` 12 (`motion/react`) in small client wrappers in `components/motion/`, plus
+  `lucide-react` icons. Everything is still for `prefers-reduced-motion` (`MotionConfig reducedMotion="user"`
+  and CSS), and content that animates in is shown without JavaScript (a `<noscript>` style).
+- **Open for Lody:** the two deepened colours, and a hero and a wide shop photo for the home page.
+- **Revised the same day (owner's feedback on the preview):**
+  - **Pink and gold instead of brown.** Tokens renamed `terracotta` → `rose`: `cream` #fbf4f3, `clay`
+    #f5e0df, `cocoa` #3a2a2e, `muted` #6f5a5f, `line` #ecd9d8, `rose` #d58f9c (decoration only),
+    `rose-deep` #9c4459 (announcement bar, panels, selected chips), `on-rose` #fdf8f7, and a new `gold`
+    #c8a467 for filled buttons with cocoa labels. All AA; `tests/theme-contrast.test.ts` checks them.
+  - **Colours editable in admin.** Website → Store details → *Brand colour* (sets `rose-deep`) and
+    *Button colour* (sets `gold`), migrations `brand_color` and `button_color`. The layout writes them
+    as CSS variables. A colour is refused unless its text stays AA on it: white text on the brand
+    colour, cocoa on the button colour (`src/lib/brand-color.ts`).
+  - **Logo in the hero.** Until a hero photo is uploaded, the shop logo (`public/brand/logo-lockup.png`)
+    stands on the pebble instead of a product photo. The header keeps the text wordmark.
+  - **The values marquee moves under Reduce Motion too**, at half speed (80s), because the owner wants it
+    to move on iPhones and Macs where Reduce Motion is on. It pauses on mouse hover and keyboard focus
+    only; a tap on a touch screen no longer freezes it. Everything else still holds still for reduced motion.
+
 ## Superseded (WooCommerce build, commit 5c36c77)
 
 D1–D8 described the WordPress 7.1.2 / WooCommerce 11.1.2 baseline (PHP plugin, classic theme,

@@ -1,66 +1,95 @@
 @import "tailwindcss";
 
-/* Design tokens sampled from Lody's SOUSET-PINK mood board (2026-10-03, D31). The board's gold
-   lettering is used for all gold text by client decision even though it is 3.4:1 on ivory, below
-   WCAG AA (D31 records the deviation). Body text, the nav and errors stay AA; see
-   tests/theme-contrast.test.ts. */
+/* Storefront palette and type (D49, replacing the mood-board theme of D31): warm cream page,
+   plum cocoa text, rose accents, blush pink panels and gold buttons (the owner asked for pink and gold in place of the first brown). Tokens are hex so
+   tests/theme-contrast.test.ts can measure them; the hsl() in each comment is the owner's brief.
+   Two were deepened from the brief to reach WCAG AA: `muted` and `rose-deep`. */
 @theme {
-  --color-cream: #f7f2ee;        /* page background, sampled from the board */
-  --color-paper: #ffffff;        /* cards and panels: white so they lift off the cream page */
-  --color-ivory: #f7f0ea;        /* board swatch "Ivory" */
-  --color-linen: #eadccf;        /* board swatch "Linen" */
-  --color-blush: #efd5ce;        /* board swatch "Blush" */
-  --color-coastal: #98a9b9;      /* board swatch "Coastal Blue": bands and accents */
-  --color-coastal-deep: #56708a; /* buttons and bands: white text 5.1:1 */
-  --color-coastal-pale: #e4e9ee;
-  --color-ink: #3b2f25;          /* body text: 11.7:1 */
-  --color-ink-soft: #665a4e;     /* secondary text: 6.0:1 */
-  --color-nav: #605b57;          /* board nav lettering: 6.0:1 */
-  --color-gold: #b99870;         /* board bow, rules and frames */
-  --color-gold-text: #735a39;    /* deepened from the board's #9c7f5b (3.4:1) so gold text is AA, 6.4:1 on white */
-  --color-line: #e3d8cc;
+  --color-cream: #fbf4f3;           /* page background: cream with a pink cast */
+  --color-clay: #f5e0df;            /* cards and panels: blush pink clay */
+  --color-cocoa: #3a2a2e;           /* text and headings: plum cocoa, 12.7:1 on cream */
+  --color-muted: #6f5a5f;           /* secondary text and field borders: AA on cream and clay */
+  --color-line: #ecd9d8;            /* hairlines; decorative, never the only edge of a control */
+  --color-rose: #d58f9c;            /* decoration and large display type only (too pale for small cream text) */
+  --color-rose-deep: #9c4459;       /* the announcement bar, panels, selected chips, small accent text: AA with cream and on clay */
+  --color-on-rose: #fdf8f7;         /* text on either rose */
+  --color-gold: #c8a467;            /* filled buttons, with cocoa labels (about 6:1) */
   --color-focus: #1f4fd1;
   --color-error: #a32020;
   --color-success: #25603a;
 
-  --font-display: var(--font-cormorant), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-sans: var(--font-source-sans), "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-instrument-serif), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-sans: var(--font-dm-sans), "Segoe UI", system-ui, -apple-system, sans-serif;
+
+  --ease-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    /* The navbar is sticky: keep anchored targets (#main, #shop-search, #terms) clear of it. */
+    scroll-padding-top: 6rem;
   }
 
   body {
     background: var(--color-cream);
-    color: var(--color-ink);
+    color: var(--color-cocoa);
     font-family: var(--font-sans);
     font-size: 1.0625rem;
-    line-height: 1.6;
+    font-weight: 300;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4 {
-    color: var(--color-gold-text);
+    color: var(--color-cocoa);
     font-family: var(--font-display);
-    font-weight: 500;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+
+  /* Inner-page titles. The home hero uses .display-1. */
+  h1 {
+    font-size: clamp(2.5rem, 6vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: -0.03em;
+  }
+
+  h2 {
+    font-size: clamp(1.75rem, 3vw, 2.5rem);
+    line-height: 1.05;
+  }
+
+  h3 {
+    font-size: 1.5rem;
     line-height: 1.15;
   }
 
-  /* The board sets its titles in letterspaced capitals. */
-  h1, h2 {
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
+  /* One word of a display heading is set in the italic (see components/ui/Accent.tsx). */
+  h1 em, h2 em {
+    font-style: italic;
+  }
+
+  /* DM Sans is bundled at 300–500, so "bold" is the 500. */
+  strong, b, th, dt {
+    font-weight: 500;
   }
 
   a {
-    text-decoration-color: var(--color-gold);
-    text-underline-offset: 0.2em;
+    text-decoration-color: var(--color-rose);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.25em;
   }
 
   :focus-visible {
     outline: 3px solid var(--color-focus);
     outline-offset: 3px;
+  }
+
+  /* On the rose surfaces the blue ring is too close in tone; cream is 5.7:1 there. */
+  .on-rose :focus-visible {
+    outline-color: var(--color-on-rose);
   }
 
   /* Long unbroken addresses must wrap at 200% text on a phone (WCAG 1.4.4 / 1.4.10). */
@@ -69,12 +98,112 @@
   }
 }
 
-/* Board-style label: small letterspaced serif capitals (nav, taglines, section labels). */
-.caps {
-  font-family: var(--font-display);
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+@layer components {
+  /* Page container: 1360px with 32px gutters on desktop, 16px on phones. Narrower pages add a
+     max-w-* utility, which wins over this layer. */
+  .shell {
+    margin-inline: auto;
+    width: 100%;
+    max-width: 85rem;
+    padding-inline: 1rem;
+  }
+
+  /* Vertical rhythm of an inner page. */
+  .page {
+    padding-block: 3rem 5rem;
+  }
+
+  /* Section spacing: py-32 on desktop, scaled down on phones. */
+  .section {
+    padding-block: 4.5rem;
+  }
+
+  @media (min-width: 48rem) {
+    .shell {
+      padding-inline: 2rem;
+    }
+
+    .page {
+      padding-block: 5rem 8rem;
+    }
+
+    .section {
+      padding-block: 8rem;
+    }
+  }
+
+  /* Labels, nav, buttons and prices: small spaced capitals in the sans. */
+  .label-caps {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    line-height: 1.4;
+    text-transform: uppercase;
+  }
+
+  /* Home hero title. */
+  .display-1 {
+    font-size: clamp(3.5rem, 9vw, 8.75rem);
+    line-height: 0.92;
+    letter-spacing: -0.03em;
+  }
+
+  /* Section titles. */
+  .display-2 {
+    font-size: clamp(2.5rem, 5vw, 4.5rem);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  /* Blush clay card: summaries, store details, anything that used to sit in a gold frame. */
+  .panel {
+    background: var(--color-clay);
+    border-radius: 1.5rem;
+    padding: 1.5rem;
+  }
+
+  /* A short notice inside a page. */
+  .note {
+    background: var(--color-clay);
+    border-radius: 1rem;
+    padding: 1rem 1.25rem;
+  }
+
+  @media (min-width: 48rem) {
+    .panel {
+      padding: 2rem;
+    }
+  }
+}
+
+/* The values strip on the home page: two copies of the list side by side, sliding left by one
+   copy's width, so it loops without a jump. Holds still while hovered or focused. */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: marquee 40s linear infinite;
+  display: flex;
+  width: max-content;
+}
+
+/* Keyboard focus pauses it everywhere. Hover pauses it only where there is a real pointer: on a
+   touch screen a tap leaves :hover (and plain focus) stuck, which froze the strip on phones. */
+.marquee:focus-visible .marquee-track {
+  animation-play-state: paused;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .marquee:hover .marquee-track {
+    animation-play-state: paused;
+  }
 }
 
 .skip-link {
@@ -82,18 +211,34 @@
   left: 1rem;
   top: -10rem;
   z-index: 100;
-  background: var(--color-gold-text);
-  color: var(--color-paper);
-  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  background: var(--color-rose-deep);
+  color: var(--color-on-rose);
+  padding: 0.75rem 1.25rem;
 }
 .skip-link:focus {
   top: 1rem;
 }
 
+/* Nothing moves for people who ask for reduced motion: CSS animation and transitions stop, the
+   the marquee only slows down, and anything motion/react would slide or fade in
+   (.js-reveal) is simply shown. The same .js-reveal rule is sent inside <noscript> by the layout,
+   so content is visible without JavaScript too. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+
+  .js-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  /* The owner wants the values strip to move for everyone (Reduce Motion is common on iPhones and
+     Macs), so it keeps sliding here, at half speed. It still pauses on hover and keyboard focus. */
+  .marquee-track {
+    animation: marquee 80s linear infinite !important;
   }
 }

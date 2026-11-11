@@ -1,6 +1,7 @@
 "use client";
 
 import { useFormValues } from "@/components/checkout/ActionForm";
+import { legend } from "@/components/checkout/styles";
 
 export type RewardChoiceOption = { id: string; label: string };
 
@@ -8,8 +9,8 @@ export type RewardChoiceOption = { id: string; label: string };
 export function RewardChoice({ options, balanceLabel, earnLabel }: { options: RewardChoiceOption[]; balanceLabel: string; earnLabel: string | null }) {
   const chosen = useFormValues().reward ?? "none";
   return (
-    <fieldset className="mb-4">
-      <legend className="mb-2 font-display text-xl text-gold-text">Your points</legend>
+    <fieldset className="mb-8">
+      <legend className={legend}>Your points</legend>
       <p className="mb-3 text-sm">
         You have {balanceLabel}.{earnLabel ? ` ${earnLabel}` : ""}
       </p>
@@ -25,10 +26,10 @@ export function RewardChoice({ options, balanceLabel, earnLabel }: { options: Re
               {o.label}
             </label>
           ))}
-          <p className="text-sm text-ink-soft">A reward comes off before tax. Your total is confirmed when you place the order.</p>
+          <p className="text-sm text-muted">A reward comes off before tax. Your total is confirmed when you place the order.</p>
         </div>
       ) : (
-        <p className="text-sm text-ink-soft">Not enough points for a reward on this order yet.</p>
+        <p className="text-sm text-muted">Not enough points for a reward on this order yet.</p>
       )}
     </fieldset>
   );

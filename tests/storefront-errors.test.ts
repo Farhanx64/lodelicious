@@ -56,7 +56,8 @@ describe("branded error pages", () => {
   it("not-found has one h1, a way back, no index, and reads nothing from the database", () => {
     const html = renderToStaticMarkup(createElement(StorefrontNotFound));
     expect(html.match(/<h1[ >]/g)).toHaveLength(1);
-    expect(html).toContain("find that page");
+    // The title sets one word in italic (D49), so compare the text without tags.
+    expect(html.replace(/<[^>]+>/g, "")).toContain("find that page");
     expect(html).toContain('href="/shop"');
     expect(html).toContain('href="/contact"');
     expect(metadata.robots).toEqual({ index: false });
@@ -66,7 +67,7 @@ describe("branded error pages", () => {
     const error = Object.assign(new Error("SQLITE_BUSY: database is locked at /home/lody/secret"), { digest: "abc123" });
     const html = renderToStaticMarkup(createElement(StorefrontError, { error, retry: () => undefined }));
     expect(html.match(/<h1[ >]/g)).toHaveLength(1);
-    expect(html).toContain("Something went wrong");
+    expect(html.replace(/<[^>]+>/g, "")).toContain("Something went wrong");
     expect(html).toContain("Try again");
     expect(html).toContain('href="/shop"');
     expect(html).toContain("Reference: abc123");

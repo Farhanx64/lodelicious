@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getPayload } from "payload";
 
-import { ProductCard } from "@/components/catalog/ProductCard";
+import { ProductCard, productGrid } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { secondaryButton } from "@/components/checkout/styles";
 import type { Media } from "@/payload-types";
@@ -11,6 +11,7 @@ import { listProducts } from "@/src/lib/catalog/queries";
 import { contactHref } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
+import { Accent } from "@/components/ui/Accent";
 
 export const metadata: Metadata = { title: "Baby Gifts" };
 
@@ -24,20 +25,22 @@ export default async function BabyGiftsPage() {
   const babyWhite = rules.specialPresentations?.find((p) => p.code === "baby_white" && p.status !== "disabled");
 
   return (
-    <div className="mx-auto w-[min(100%-2rem,72rem)]">
-      <h1 className="mb-2 text-[clamp(2.25rem,5vw,3.25rem)]">Baby Gifts</h1>
-      <p className="mb-10 max-w-[68ch] text-ink-soft">
+    <div className="shell page">
+      <h1 className="mb-5">
+        <Accent text="Baby Gifts" />
+      </h1>
+      <p className="mb-10 max-w-[68ch] text-muted">
         Keepsake ceramics and baby gift baskets, filled with sweets and finished by hand in our Plymouth shop.
       </p>
 
       {babyWhite && (
-        <section aria-labelledby="baby-white" className="mb-12 grid grid-cols-[minmax(0,1fr)] gap-6 border border-gold bg-paper p-5 outline outline-1 outline-offset-[-7px] outline-gold/50 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+        <section aria-labelledby="baby-white" className="panel mb-16 grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
           <ProductImage media={babyWhite.image as Media | number | null} className="aspect-square w-full" />
           <div>
-            <h2 id="baby-white" className="mb-2 text-3xl">
+            <h2 id="baby-white" className="mb-2">
               {babyWhite.name}
             </h2>
-            {babyWhite.container && <p className="mb-3 text-ink-soft">{babyWhite.container}</p>}
+            {babyWhite.container && <p className="mb-3 text-muted">{babyWhite.container}</p>}
             <p className="mb-2">Includes:</p>
             <ul className="mb-3 list-disc pl-6">
               {(babyWhite.includedComponents ?? []).map((c) => (
@@ -48,7 +51,7 @@ export default async function BabyGiftsPage() {
               </li>
             </ul>
             {babyWhite.status === "inquiry" && (
-              <div className="border-l-4 border-gold bg-cream p-4">
+              <div className="rounded-2xl bg-cream p-4">
                 <p className="mb-3">
                   Made to order — call <a href={telHref(store.phone)}>{store.phone}</a> or email{" "}
                   <a href={`mailto:${store.email}`}>{store.email}</a> to arrange yours.
@@ -62,7 +65,7 @@ export default async function BabyGiftsPage() {
         </section>
       )}
 
-      <h2 className="mb-4 text-3xl">Baby ceramics</h2>
+      <h2 className="mb-4">Baby ceramics</h2>
       <p className="mb-6 max-w-[68ch]">
         Pink or blue, sold empty or filled with sweets. Ask us about filling one for a baby shower or new arrival.
       </p>
@@ -74,9 +77,9 @@ export default async function BabyGiftsPage() {
       {products.length === 0 ? (
         <p>Our baby ceramics will be listed here soon.</p>
       ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(10rem,100%),1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] sm:gap-5">
-          {products.map((p) => (
-            <ProductCard key={p.id} product={p} />
+        <ul className={productGrid}>
+          {products.map((p, i) => (
+            <ProductCard key={p.id} product={p} index={i} />
           ))}
         </ul>
       )}
