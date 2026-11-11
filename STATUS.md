@@ -1,10 +1,12 @@
 # Project status
 
-Last updated: 2026-10-24 · member rewards, built switched off (D47); the admin reorganized by task (D45). `main` is at 51da35c (PR #10), which
+Last updated: 2026-11-11 · hosting ported to Cloudflare Workers, D1 and R2, verified under local emulation only (D51); member rewards, built switched off (D47); the admin reorganized by task (D45). `main` is at 51da35c (PR #10), which
 includes checkout hardening, the Clover sync worker against a fake and transactional emails to the console.
 
-**Stack:** Payload 3.90.2 + Next.js 16.3.6 + SQLite on a cPanel Node app running **Node 24**
-(confirmed from pasto-hair's live deployment; see `docs/decisions.md` D9, D14). Replaces the first
+**Stack:** Payload 3.90.2 + Next.js 16.3.6. **Hosting plan: Cloudflare** (Workers through OpenNext,
+D1, R2), decided 2026-11-11 (D51); it replaces the cPanel Node app of D9 and D14. The port is built
+and passes under local emulation; nothing is deployed yet. Local development, tests and the staging
+preview still run on Node 24 with a SQLite file. Replaces the first
 WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-house Clover sync
 (D10). Storefront design: the SOUSET-PINK mood board (D31).
 
@@ -102,25 +104,32 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 
 ## Deploying (live or staging)
 
-1. Set `APP_ENV=production` (or `staging`) in the cPanel Node app, and also when running
-   `npm run build`, which bakes in the HSTS header.
-2. Set `NEXT_PUBLIC_SITE_URL` to the exact https origin (comma-separate to add www). The admin then
-   logs in only from that address.
-3. Before the site is reachable, set `FIRST_OWNER_EMAIL`, or create the owner with
-   `OWNER_EMAIL` / `OWNER_PASSWORD` and `npx payload run scripts/create-owner.ts`, then remove
-   `OWNER_PASSWORD`.
-4. Run `npm run migrate`. Run `npm run seed:catalog` only on an empty database (`SEED_FORCE=1`
-   overrides the guard on a live database that already has products).
-5. Cron (cPanel), each as `npx payload run scripts/<name>.ts`:
+Hosting is Cloudflare (D51). The ordered commands, including creating the D1 database and R2 bucket
+and moving the existing database and photos, are in `docs/cloudflare-go-live.md`. In short:
+
+1. `wrangler.jsonc` `"vars"`: `APP_ENV` is `production` (or `staging`), and `NEXT_PUBLIC_SITE_URL` is
+   the exact https origin (comma-separate to add www). The admin then logs in only from that address.
+   `npm run cf:deploy` builds with `APP_ENV=production`, which bakes in the HSTS header.
+2. Secrets: `npx wrangler secret put PAYLOAD_SECRET`. Before the site is reachable with an empty
+   user table, also set `FIRST_OWNER_EMAIL`, or create the owner with `OWNER_EMAIL` /
+   `OWNER_PASSWORD` and `DEPLOY_TARGET=cloudflare CLOUDFLARE_ENV=remote npx payload run scripts/create-owner.ts`.
+3. `npm run cf:migrate:remote`, then `npm run cf:deploy`. Run the catalog seed only on an empty
+   database (`SEED_FORCE=1` overrides the guard on a live database that already has products).
+4. Scheduled jobs are Cron Triggers in `wrangler.jsonc`, nothing to set up by hand:
    - `release-expired-holds` every 5 minutes (expires holds, reconciles late payments)
    - `send-pending-emails` every 10 minutes
-   - `clover-push` every 1–2 minutes and `clover-pull` every 5–15 minutes, only once the Clover
-     sync is verified (D43)
    - `purge-carts` daily
+   - `clover-push` and `clover-pull` are not scheduled; add their lines in `wrangler.jsonc` and
+     `cloudflare-worker.mjs` only once the Clover sync is verified (D43)
    Count stock in /admin → Inventory → Stock adjustments, not on the product form.
-6. Log in and open `/ops/system-check`: every line, including `APP_ENV`, must pass.
-7. Confirm LiteSpeed forwards `X-Forwarded-For` and the public host, which the rate limiter and
-   server-action origin check rely on.
+5. Log in and open `/ops/system-check`: every line, including `APP_ENV` and each binding, must pass.
+6. The Workers Paid plan is required: the Worker is about 4.7 MB compressed (`npm run cf:size`),
+   over the free plan's 3 MB.
+7. Photos uploaded on Cloudflare are not resized (D51); upload them about 1500 px wide.
+
+Not yet done for real (needs the Cloudflare account): login, creating D1 and R2, the data move,
+the first deploy and the domain. On a Node host the old steps still work (`npm run migrate`,
+`npm run build`, `npm run serve`, the scripts from cron).
 
 ## Milestones
 

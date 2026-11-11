@@ -1,5 +1,7 @@
 /**
- * Custom Next.js server for LiteSpeed / Phusion Passenger (cPanel Node.js app).
+ * Custom Next.js server for a Node host. Hosting is Cloudflare Workers now (D49), which does not
+ * use this file; it stays for the staging preview on this Mac (`npm run serve`) and would still
+ * work behind LiteSpeed / Phusion Passenger (cPanel Node.js app), which is what it was written for.
  *
  * IMPORTANT: No top-level await. LiteSpeed's lsnode.js loads this file via
  * require(), and require() throws ERR_REQUIRE_ASYNC_MODULE on an ESM module

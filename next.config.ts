@@ -5,7 +5,10 @@ import { isPreviewEnv } from "./src/lib/app-env";
 import { securityHeaders } from "./src/lib/security";
 
 const nextConfig: NextConfig = {
-  // Long-running Node server (cPanel/Passenger). No edge/serverless.
+  // Built for one of two hosts (D51): Cloudflare Workers through OpenNext (`npm run cf:build`,
+  // DEPLOY_TARGET=cloudflare) or a plain Node server (the default: local development and tests).
+  // Inlined so each build drops the other host's database, storage and image packages.
+  env: { DEPLOY_TARGET: process.env.DEPLOY_TARGET === "cloudflare" ? "cloudflare" : "node" },
   // No "X-Powered-By" header (withPayload adds its own unless this is false).
   poweredByHeader: false,
   // Evaluated at build time (D41): HSTS only for a production build (APP_ENV not local, staging or test).

@@ -22,12 +22,21 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:catalog": "npm run migrate && payload run scripts/seed-catalog.ts",
-    "migrate:check": "payload run scripts/check-migrations.ts"
+    "migrate:check": "payload run scripts/check-migrations.ts",
+    "cf:build": "DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && node scripts/cf-strip-env.mjs",
+    "cf:preview": "DEPLOY_TARGET=cloudflare opennextjs-cloudflare preview --port 8799",
+    "cf:migrate": "DEPLOY_TARGET=cloudflare npm run migrate",
+    "cf:migrate:remote": "DEPLOY_TARGET=cloudflare CLOUDFLARE_ENV=remote NODE_ENV=production npm run migrate",
+    "cf:deploy": "APP_ENV=production npm run cf:build && DEPLOY_TARGET=cloudflare opennextjs-cloudflare deploy",
+    "cf:size": "wrangler deploy --dry-run --outdir .wrangler/size-check"
   },
   "dependencies": {
+    "@opennextjs/cloudflare": "1.20.7",
+    "@payloadcms/db-d1-sqlite": "3.90.2",
     "@payloadcms/db-sqlite": "3.90.2",
     "@payloadcms/next": "3.90.2",
     "@payloadcms/richtext-lexical": "3.90.2",
+    "@payloadcms/storage-r2": "3.90.2",
     "graphql": "^16.14.1",
     "next": "16.3.6",
     "payload": "3.90.2",
@@ -47,6 +56,7 @@
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.8",
+    "wrangler": "^4.160.0",
     "yaml": "^2.9.1"
   }
 }

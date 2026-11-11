@@ -3,7 +3,9 @@
  *
  * It is a speed bump, not a firewall: counts live in this Node process only (they reset on a
  * restart and are not shared between processes), which is enough to stop one script from hammering
- * add-to-bag, checkout or the inquiry forms on the single cPanel Node app. It is keyed by client IP
+ * add-to-bag, checkout or the inquiry forms on a single Node app. On Cloudflare, where there is no
+ * single process, `rate-limit-cloudflare.ts` enforces the same ACTION_LIMITS with Rate Limiting
+ * bindings and this limiter is only the fallback (D51). It is keyed by client IP
  * plus action name. Framework-free (the IP lookup that needs `next/headers` is in
  * `rate-limit-server.ts`), so it is unit-tested with a fake clock.
  */
@@ -63,7 +65,8 @@ export function createRateLimiter({ now = Date.now, maxKeys = DEFAULT_MAX_KEYS }
 const MINUTE = 60_000;
 
 /**
- * Attempts allowed per IP per minute. Generous for real use (a customer retrying a failed payment
+ * Attempts allowed per IP per minute. Each distinct limit needs a RATE_LIMIT_<n> binding in
+ * wrangler.jsonc (D51); tests/cloudflare-config.test.ts fails if one is missing. Generous for real use (a customer retrying a failed payment
  * a few times, or tapping through a basket), low enough that a loop of requests stops quickly.
  */
 export const ACTION_LIMITS = {
