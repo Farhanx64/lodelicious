@@ -3,6 +3,7 @@ import type { GlobalConfig } from "payload";
 import { anyone, isCommerceManager } from "../src/access/roles";
 import { BRAND_COLOR_DEFAULT, BUTTON_COLOR_DEFAULT, validateBrandColor, validateButtonColor } from "../src/lib/brand-color";
 import { auditGlobal } from "../src/hooks/audit";
+import { GOOGLE_RATING_DEFAULT, GOOGLE_REVIEW_COUNT_DEFAULT, GOOGLE_REVIEW_URL_DEFAULT, validateGoogleRating } from "../src/lib/reviews/shared";
 
 /**
  * Public business details. Defaults are the values Lody confirmed in the client brief
@@ -20,7 +21,7 @@ export const StoreSettings: GlobalConfig = {
     update: isCommerceManager,
   },
   hooks: {
-    afterChange: [auditGlobal(["name", "tagline", "brandColor", "buttonColor", "promoEnabled", "promoSlides", "promoSeconds", "street", "locality", "phone", "email", "notificationEmail", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "storyHeading", "story"])],
+    afterChange: [auditGlobal(["name", "tagline", "brandColor", "buttonColor", "promoEnabled", "promoSlides", "promoSeconds", "street", "locality", "phone", "email", "notificationEmail", "timezone", "hours", "closedDays", "allergyNotice", "doordashUrl", "googleRating", "googleReviewCount", "googleReviewUrl", "storyHeading", "story"])],
   },
   fields: [
     {
@@ -94,6 +95,47 @@ export const StoreSettings: GlobalConfig = {
               },
               validate: (value: string | null | undefined) =>
                 !value || /^https:\/\/(www\.)?doordash\.com\//.test(value) ? true : "Use the shop's https://www.doordash.com/… link",
+            },
+          ],
+        },
+        {
+          label: "Google reviews",
+          admin: {
+            description:
+              "The reviews carousel on the home page (D52). The reviews themselves are under Website → Reviews; nothing here is fetched from Google, so update the rating and count by hand now and then.",
+          },
+          fields: [
+            {
+              type: "row",
+              fields: [
+                {
+                  name: "googleRating",
+                  label: "Google rating",
+                  type: "text",
+                  defaultValue: GOOGLE_RATING_DEFAULT,
+                  validate: validateGoogleRating,
+                  admin: { description: "As Google shows it, e.g. 5.0 or 4.8. Leave empty to hide the rating line." },
+                },
+                {
+                  name: "googleReviewCount",
+                  label: "Number of Google reviews",
+                  type: "number",
+                  min: 0,
+                  defaultValue: GOOGLE_REVIEW_COUNT_DEFAULT,
+                  admin: { step: 1 },
+                },
+              ],
+            },
+            {
+              name: "googleReviewUrl",
+              label: "Google review link",
+              type: "text",
+              defaultValue: GOOGLE_REVIEW_URL_DEFAULT,
+              admin: {
+                description:
+                  "Where the “Leave us a review on Google” button goes. Best is the link from Google Business Profile → Ask for reviews (https://g.page/r/…/review), which opens the review box directly. Leave empty to hide the button.",
+              },
+              validate: (value: string | null | undefined) => (!value || /^https:\/\/\S+$/.test(value.trim()) ? true : "Paste the full https:// link from Google"),
             },
           ],
         },

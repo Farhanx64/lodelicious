@@ -1173,3 +1173,38 @@ the same time and may also claim D49; renumber one of them at merge.)
   Clover adapters (still refuse to run live), and every storefront component and page.
 - **Open for the owner:** the Cloudflare account and paid plan; when to move the domain's DNS
   (Lody's approval, as for any DNS change); whether to add Cloudflare Images for resizing.
+
+## D52 — Google reviews on the home page, copied in by hand; phone footer centred (owner's decision, 2026-11-11)
+
+- **Reviews are entered by staff, not fetched.** Lody did not want the Google Places API (a key,
+  billing and Google's display terms) and does not want customers posting reviews on the website.
+  A new **Website → Reviews** collection holds the Google reviews she chooses: reviewer (first name
+  or initials), stars (whole number 1 to 5), review text, the review's month and an optional
+  **Featured** tick. Anyone can read them; only staff can add, change or delete them (tested in
+  `tests/int/reviews.test.ts`). Changes go to the audit log. Taking a review off the site means
+  deleting it; there is no approval or hidden state because nothing comes in from the public.
+- **Home page carousel.** Between Shop favorites and the pickup/delivery panels, one review at a
+  time with its stars, name, month and a small "Google review" label, featured first then newest,
+  at most 12. It moves on every 6 s and holds still on hover, on keyboard focus inside, when the tab
+  is hidden, once touched, and never moves by itself for visitors who ask for reduced motion.
+  Previous, Pause/Play and Next buttons, plus the Left and Right arrow keys. Every review is laid
+  in the same grid cell, so the box keeps the height of the longest and the page does not jump. The
+  live region is `polite` whenever the carousel is not turning by itself and `off` while it is (the
+  WAI-ARIA carousel pattern), so screen readers are not interrupted every 6 s. With no reviews the
+  whole section is left out.
+- **Store details → Google reviews** (a new tab) holds what is shown around the carousel, all typed
+  in, none fetched: **Google rating** (default "5.0") and **Number of Google reviews** (default 34),
+  shown as "5.0 ★ on Google · 34 reviews" under the heading (hidden when the rating is empty), and
+  **Google review link**, the target of a "Leave us a review on Google" button under the carousel
+  (hidden when empty or not https). The link defaults to the shop's Google Maps listing; the
+  better link is the one from Google Business Profile → Ask for reviews (`https://g.page/r/…/review`),
+  which opens the review box directly. The migration adds these columns with the defaults, so the
+  existing Store details row gets them too.
+- **Starting reviews.** `data/google-reviews.json` holds seven five-star reviews copied from the
+  Google Maps listing on 2026-11-11, names shortened to first name and initial.
+  `npm run seed:reviews` loads them in that order, only when the Reviews collection is empty, and
+  writes nothing else; once any review exists it does nothing.
+- **Footer on phones.** Below the `sm` breakpoint (640 px) the lockup, the shop links and the shop
+  address are centred; from `sm` up the footer is unchanged.
+- Migration `20261111_211249_reviews` adds the `reviews` table and `store_settings.google_review_url`;
+  it runs on SQLite and D1 alike.

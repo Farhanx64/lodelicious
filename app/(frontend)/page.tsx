@@ -1,13 +1,17 @@
+import config from "@payload-config";
 import Link from "next/link";
+import { getPayload } from "payload";
 
 import { AwningHem } from "@/components/brand/Awning";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { FavoritesSlider } from "@/components/home/FavoritesSlider";
 import { PhotoStrip } from "@/components/home/PhotoStrip";
+import { ReviewsSection } from "@/components/home/ReviewsSection";
 import { listProducts } from "@/src/lib/catalog/queries";
 import { favoritesLayout, favoritesLimit } from "@/src/lib/home";
 import { telHref } from "@/src/lib/phone";
+import { listReviews } from "@/src/lib/reviews/service";
 import { getHomePage, getStoreSettings, isImagePublishable } from "@/src/lib/store";
 
 // Grid layouts Lody can pick in /admin → Home page (D33). Phones show two columns, or one when
@@ -17,7 +21,7 @@ const GRID = { "grid-2x2": "mx-auto max-w-[40rem]", "grid-3x2": "lg:grid-cols-3"
 const button = "caps inline-flex min-h-11 items-center px-7 text-[0.75rem] no-underline";
 
 export default async function HomePage() {
-  const [store, home] = await Promise.all([getStoreSettings(), getHomePage()]);
+  const [store, home, reviews] = await Promise.all([getStoreSettings(), getHomePage(), getPayload({ config }).then(listReviews)]);
   const layout = favoritesLayout(home.favoritesLayout);
   const featured = await listProducts({ featured: true, limit: favoritesLimit(layout) });
   const hero = typeof home.heroImage === "object" ? home.heroImage : null;
@@ -87,6 +91,9 @@ export default async function HomePage() {
           </p>
         </section>
       )}
+
+      {/* Google reviews Lody copied into the admin (D52); nothing at all when there are none. */}
+      <ReviewsSection reviews={reviews} googleReviewUrl={store.googleReviewUrl} googleRating={store.googleRating} googleReviewCount={store.googleReviewCount} />
 
       <section aria-labelledby="get-it" className="mb-4 grid gap-4 md:grid-cols-3">
         <h2 id="get-it" className="sr-only">

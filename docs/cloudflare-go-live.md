@@ -72,6 +72,13 @@ All **(not yet run for real)** unless a step says "local".
 
    Delete `d1-import.sql` afterwards: it contains customer data and password hashes.
 
+   Load the starting Google reviews for the home page (D52). This writes only to the reviews table
+   and does nothing if it already has reviews:
+
+   ```bash
+   DEPLOY_TARGET=cloudflare CLOUDFLARE_ENV=remote NODE_ENV=production npx payload run scripts/seed-google-reviews.ts
+   ```
+
 6. Move the photos (originals and their resized copies) into the bucket.
 
    ```bash

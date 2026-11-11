@@ -22,6 +22,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "seed:catalog": "npm run migrate && payload run scripts/seed-catalog.ts",
+    "seed:reviews": "npm run migrate && payload run scripts/seed-google-reviews.ts",
     "migrate:check": "payload run scripts/check-migrations.ts",
     "cf:build": "DEPLOY_TARGET=cloudflare opennextjs-cloudflare build && node scripts/cf-strip-env.mjs",
     "cf:preview": "DEPLOY_TARGET=cloudflare opennextjs-cloudflare preview --port 8799",

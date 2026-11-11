@@ -21,6 +21,7 @@ const POLICY_LINKS = [
 
 // 44 px tall so stacked links are easy to hit with a thumb (WCAG 2.2 2.5.8 asks for 24).
 const footerLink = "inline-flex min-h-11 items-center text-nav";
+// Phones (below sm) centre the lockup, shop links and address; wider screens keep them left-aligned.
 const contactLink = "inline-flex min-h-11 items-center";
 
 export function SiteFooter({ store }: { store: StoreSetting }) {
@@ -31,14 +32,14 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
     <footer className="border-t-[6px] border-coastal-deep bg-linen text-[0.95rem] text-ink">
       <div aria-hidden="true" className="h-1.5 border-b border-gold bg-coastal-pale" />
       <div className="mx-auto grid w-[min(100%-2rem,72rem)] grid-cols-[repeat(auto-fit,minmax(min(14rem,100%),1fr))] gap-6 py-10">
-        <section aria-labelledby="footer-shop">
-          <Link href="/" aria-label={store.name} className="mb-4 block w-fit no-underline">
+        <section aria-labelledby="footer-shop" className="text-center sm:text-left">
+          <Link href="/" aria-label={store.name} className="mx-auto mb-4 block w-fit no-underline sm:mx-0">
             <Lockup name={store.name} tagline={store.tagline} size="sm" />
           </Link>
           <h2 id="footer-shop" className="sr-only">
             More to shop
           </h2>
-          <ul className="caps flex flex-col gap-1 text-[0.72rem]">
+          <ul className="caps flex flex-col items-center gap-1 text-[0.72rem] sm:items-start">
             {SHOP_LINKS.map((l) => (
               <li key={l.href}>
                 <Link href={l.href} className={footerLink}>
@@ -62,7 +63,7 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
           </section>
         )}
 
-        <section aria-labelledby="footer-visit">
+        <section aria-labelledby="footer-visit" className="text-center sm:text-left">
           <h2 id="footer-visit" className="mb-3 text-base">
             Visit the shop
           </h2>
