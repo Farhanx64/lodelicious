@@ -47,6 +47,17 @@ describe.skipIf(!hasSqlite)("scripts/export-for-d1.sh", () => {
     expect(execFileSync("sqlite3", [strict, "SELECT count(*) FROM a_child;"]).toString().trim()).toBe("2");
   });
 
+  it("writes text with newlines without unistr(), which D1 refuses, and keeps it exact", () => {
+    const { db, out } = tempDb("CREATE TABLE notes (id INTEGER PRIMARY KEY, body TEXT); INSERT INTO notes VALUES (1, 'one' || char(10) || 'two' || char(13) || char(10) || 'it''s');");
+    execFileSync("sh", [script, db, out]);
+    const sql = fs.readFileSync(out, "utf8");
+    expect(sql).not.toMatch(/unistr\(/);
+    const copy = path.join(path.dirname(out), "copy.db");
+    execFileSync("sqlite3", [copy], { input: sql });
+    const hex = (file: string) => execFileSync("sqlite3", [file, "SELECT hex(body) FROM notes;"]).toString();
+    expect(hex(copy)).toBe(hex(db));
+  });
+
   it("stops on a cycle between tables instead of writing a file D1 would refuse", () => {
     const { db, out } = tempDb(`
       CREATE TABLE a (id INTEGER PRIMARY KEY, b_id INTEGER REFERENCES b(id));

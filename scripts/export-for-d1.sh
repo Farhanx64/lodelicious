@@ -50,9 +50,19 @@ order=$(echo "$ranked" | awk '{ print $1 }')
       BEGIN { n = split(ENVIRON["ORDER"], names, "\n") }
       {
         if ($0 !~ /^INSERT INTO /) { print "export-for-d1: unexpected line in the dump: " substr($0, 1, 80) > "/dev/stderr"; bad = 1; exit 1 }
+        line = $0
+        # sqlite3 3.50+ writes text that has newlines as unistr(...\u000a...), a function D1 refuses.
+        # Write it the way older sqlite3 did, with replace() and char(). Any other escape stops the export.
+        # (\047 is a single quote; this program sits inside single quotes.)
+        while (match(line, "unistr\\(\047([^\047]|\047\047)*\047\\)")) {
+          lit = substr(line, RSTART + 7, RLENGTH - 8); rest = lit
+          gsub(/\\u000[ad]/, "", rest)
+          if (rest ~ /\\/) { print "export-for-d1: cannot rewrite unistr() in: " substr(line, 1, 80) > "/dev/stderr"; bad = 1; exit 1 }
+          line = substr(line, 1, RSTART - 1) "replace(replace(" lit ",\047\\u000a\047,char(10)),\047\\u000d\047,char(13))" substr(line, RSTART + RLENGTH)
+        }
         t = $3; sub(/\(.*/, "", t); gsub(/"/, "", t)
         if (!(t in rows)) seen[++m] = t
-        rows[t] = rows[t] $0 "\n"
+        rows[t] = rows[t] line "\n"
       }
       END {
         if (bad) exit 1
