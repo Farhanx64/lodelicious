@@ -705,12 +705,13 @@ const providerOrder = (charge: ChargeResult) => (charge.providerOrderId ? { prov
 
 /** The order as the payment provider records it (a Clover order on Lody's account, D54). */
 function orderDetailsForProvider(order: Order, f: Fulfillment): ChargeOrderDetails {
-  type Line = { title: string; option?: string | null; quantity: number; lineTotalCents: number; discountCents?: number; taxCents?: number; taxClass?: { name?: string } | null };
+  type Line = { title: string; option?: string | null; quantity: number; lineTotalCents: number; discountCents?: number; taxCents?: number; taxClass?: { name?: string; rateBasisPoints?: number | null } | null };
   const lines = (order.lines as Line[]).map((l) => ({
     description: `${l.quantity} × ${l.title}${l.option ? ` (${l.option})` : ""}`,
     amountCents: l.lineTotalCents - (l.discountCents ?? 0),
     taxCents: l.taxCents ?? 0,
     taxName: l.taxClass?.name ?? "Sales Tax",
+    taxRateBasisPoints: l.taxClass?.rateBasisPoints ?? null,
   }));
   return {
     email: order.customer.email,

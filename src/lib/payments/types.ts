@@ -11,7 +11,7 @@ export type ChargeOrderDetails = {
   email: string;
   customerName: string;
   phone: string;
-  lines: { description: string; amountCents: Cents; taxCents: Cents; taxName: string }[];
+  lines: { description: string; amountCents: Cents; taxCents: Cents; taxName: string; taxRateBasisPoints?: number | null }[];
   shippingCents: Cents;
   /** "Pickup Tuesday, October 6, 11:00 AM–12:00 PM" or "Ship to …". */
   fulfillmentNote: string;
