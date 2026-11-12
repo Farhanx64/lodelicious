@@ -24,6 +24,9 @@ export async function addToBag(_prev: FormState, form: FormData): Promise<FormSt
   const result = await changeBag(payload, token, { unitId: String(form.get("unitId") ?? ""), quantity: Number(form.get("quantity") ?? 1), mode: "add" }, ctx);
   if (!result.ok) return failedWith(result.error, form);
   revalidatePath("/", "layout");
+  // With JavaScript the product page stays put and the floating receipt slides in (D58); the
+  // revalidated layout carries the new bag back in this same response. Without it, go to the bag.
+  if (form.get("stay") === "1") return { error: null, added: true };
   const next = String(form.get("next") ?? "");
   redirect(ADD_RETURNS.has(next) ? next : "/cart");
 }
