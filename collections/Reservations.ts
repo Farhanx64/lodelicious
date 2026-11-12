@@ -12,6 +12,7 @@ import {
   RECORD_DATA_NOTE,
   customerFields,
   frozen,
+  fulfillmentFields,
   identityFields,
   orderEmailFields,
   paymentAttempts,
@@ -28,7 +29,7 @@ const cents = { components: centsComponents };
 
 /**
  * Custom basket reservations (D36): Build a Basket is reserved with a deposit, then packed for
- * pickup. The basket contents, prices and assembly instructions are an immutable snapshot.
+ * pickup or shipped (D54: a shipped basket is paid in full up front). The basket contents, prices and assembly instructions are an immutable snapshot.
  */
 export const Reservations: CollectionConfig = {
   slug: "reservations",
@@ -37,7 +38,7 @@ export const Reservations: CollectionConfig = {
     useAsTitle: "number",
     group: "Orders",
     description: "Custom baskets reserved through Build a Basket. Pack from the assembly instructions. One marked TEST was placed with the test payment: never pack it.",
-    defaultColumns: ["number", "testMode", "customer.name", "pickup.label", "reservationStatus", "paymentStatus", "stockStatus", "amountPaidCents", "balanceDueCents"],
+    defaultColumns: ["number", "testMode", "customer.name", "fulfillment.method", "pickup.label", "reservationStatus", "paymentStatus", "stockStatus", "amountPaidCents", "balanceDueCents"],
     listSearchableFields: ["number", "customer.name", "customer.email"],
   },
   defaultSort: "-createdAt",
@@ -93,6 +94,7 @@ export const Reservations: CollectionConfig = {
           label: "Reservation",
           fields: [
             customerFields,
+            fulfillmentFields,
             pickupFields,
             {
               name: "assembly",
@@ -106,7 +108,7 @@ export const Reservations: CollectionConfig = {
               type: "row",
               fields: [
                 { name: "amountPaidCents", label: "Paid so far", type: "number", required: true, access: paymentStatusAccess, admin: { ...cents, description: "In cents." } },
-                { name: "balanceDueCents", label: "Balance due at pickup", type: "number", required: true, access: paymentStatusAccess, admin: { ...cents, description: "In cents. Not worked out automatically: change it together with Paid so far." } },
+                { name: "balanceDueCents", label: "Balance due", type: "number", required: true, access: paymentStatusAccess, admin: { ...cents, description: "In cents. Not worked out automatically: change it together with Paid so far." } },
               ],
             },
             staffNotesField,
@@ -121,7 +123,7 @@ export const Reservations: CollectionConfig = {
             {
               type: "row",
               fields: [
-                { name: "totalCents", label: "Basket total", type: "number", required: true, access: frozen, admin: cents },
+                { name: "totalCents", label: "Basket total", type: "number", required: true, access: frozen, admin: { ...cents, description: "Including tax and any shipping." } },
                 { name: "taxCents", label: "Tax", type: "number", required: true, access: frozen, admin: cents },
                 { name: "depositCents", label: "Charged when reserved", type: "number", required: true, access: frozen, admin: cents },
               ],

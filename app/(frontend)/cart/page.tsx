@@ -4,7 +4,7 @@ import Link from "next/link";
 import { secondaryButton, primaryButton } from "@/components/checkout/styles";
 import { Summary } from "@/components/checkout/Summary";
 import { PRICE_TO_BE_CONFIRMED } from "@/src/lib/catalog/product";
-import { priceBag } from "@/src/lib/checkout/service";
+import { priceBagForCheckout } from "@/src/lib/checkout/service";
 import { bagToken, checkoutPayload } from "@/src/lib/checkout/session";
 import { formatCents } from "@/src/lib/money";
 
@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Shopping bag", robots: { index: fals
 
 export default async function CartPage() {
   const { payload, ctx } = await checkoutPayload();
-  const bag = await priceBag(payload, await bagToken(), ctx);
+  const { bag, shipping } = await priceBagForCheckout(payload, await bagToken(), ctx);
 
   if (bag.lines.length === 0) {
     return (
@@ -76,8 +76,13 @@ export default async function CartPage() {
             taxCents={bag.taxCents}
             totalCents={bag.totalCents}
             taxApproved={bag.taxApproved}
+            shipping={{ method: "pickup", cents: 0 }}
           />
-          <p className="mt-4 text-sm text-ink-soft">Pickup in our Plymouth shop. Custom baskets are reserved separately from Build a Basket.</p>
+          <p className="mt-4 text-sm text-ink-soft">
+            Free pickup in our Plymouth shop
+            {shipping.available ? `, or shipping for ${formatCents(shipping.cents)} (one charge for the whole order)` : ""}. Choose at checkout. Custom baskets
+            are reserved separately from Build a Basket.
+          </p>
           {bag.blocking ? (
             <p className="mt-4 text-error">Remove the unavailable items to continue.</p>
           ) : (

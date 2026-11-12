@@ -96,6 +96,8 @@ export const OrderSummary: UIFieldClientComponent = () => {
   const tax = useFormFields(([fields]) => fields["totals.taxCents"]?.value);
   const total = useFormFields(([fields]) => fields["totals.totalCents"]?.value);
   const taxApproved = useFormFields(([fields]) => fields["totals.taxApproved"]?.value);
+  const shipping = useFormFields(([fields]) => fields["totals.shippingCents"]?.value);
+  const method = useFormFields(([fields]) => fields["fulfillment.method"]?.value);
 
   const rows: Row[] = list(parsed(lines)).map((line) => ({
     label: str(line.title) ?? "Item",
@@ -107,6 +109,7 @@ export const OrderSummary: UIFieldClientComponent = () => {
   const totals: Total[] = [
     { label: "Subtotal", cents: subtotal },
     { label: "Tax", cents: tax, note: taxApproved === false ? "estimate: the tax rate was not approved" : undefined },
+    ...(method === "ship" ? [{ label: "Shipping", cents: shipping }] : []),
     { label: "Total", cents: total, strong: true },
   ];
   return <Summary title="Items" rows={rows} totals={totals} empty="No items recorded." />;
@@ -122,6 +125,8 @@ export const ReservationSummary: UIFieldClientComponent = () => {
   const tax = useFormFields(([fields]) => fields.taxCents?.value);
   const deposit = useFormFields(([fields]) => fields.depositCents?.value);
   const taxApproved = useFormFields(([fields]) => fields.taxApproved?.value);
+  const shipping = useFormFields(([fields]) => fields["fulfillment.shippingCents"]?.value);
+  const method = useFormFields(([fields]) => fields["fulfillment.method"]?.value);
 
   const stored = parsed(basket);
   const snapshot = stored && typeof stored === "object" ? (stored as Record<string, unknown>) : {};
@@ -135,7 +140,8 @@ export const ReservationSummary: UIFieldClientComponent = () => {
 
   const totals: Total[] = [
     { label: "Tax", cents: tax, note: taxApproved === false ? "estimate: the tax rate was not approved" : undefined },
-    { label: "Basket total", cents: total, strong: true },
+    ...(method === "ship" ? [{ label: "Shipping", cents: shipping }] : []),
+    { label: method === "ship" ? "Total with shipping" : "Basket total", cents: total, strong: true },
     { label: "Charged when reserved", cents: deposit },
   ];
   return <Summary title={str(snapshot.title) ?? "Basket"} rows={rows} totals={totals} empty="No contents recorded." />;

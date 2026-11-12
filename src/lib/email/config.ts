@@ -14,6 +14,9 @@
  */
 import { isProductionEnv, type EnvLike } from "../app-env";
 
+/** Where staff order alerts go unless Lody changes it in Store details (D54). The double "s" is intentional. */
+export const DEFAULT_ORDER_ALERT_EMAIL = "Lodeliciousorderss@gmail.com";
+
 export class EmailConfigError extends Error {
   constructor(message: string) {
     super(message);

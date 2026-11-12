@@ -8,7 +8,7 @@ import { changeBag, placeOrder } from "@/src/lib/checkout/service";
 import { bagToken, checkoutPayload, ensureBagToken } from "@/src/lib/checkout/session";
 import { EXPIRED_FORM, verifySubmission } from "@/src/lib/checkout/submission";
 import { TOO_MANY_ATTEMPTS } from "@/src/lib/rate-limit";
-import { isRateLimited } from "@/src/lib/rate-limit-server";
+import { isRateLimited, requestIp } from "@/src/lib/rate-limit-server";
 import { currentMember } from "@/src/lib/rewards/session";
 
 export type FormState = CheckoutFormState;
@@ -41,7 +41,7 @@ export async function submitOrder(_prev: FormState, form: FormData): Promise<For
   const { payload, ctx } = await checkoutPayload();
   // The member comes from the signed session cookie only, never from the form (D47).
   const member = ctx.rewards.active ? await currentMember() : null;
-  const result = await placeOrder(payload, { cartToken: await bagToken(), form: Object.fromEntries(form), submission, memberId: member?.id ?? null }, ctx);
+  const result = await placeOrder(payload, { cartToken: await bagToken(), form: Object.fromEntries(form), submission, memberId: member?.id ?? null, clientIp: await requestIp() }, ctx);
   if (!result.ok) return failedWith(result.error, form);
   revalidatePath("/", "layout");
   redirect(`/order/${result.number}?t=${encodeURIComponent(result.token)}`);

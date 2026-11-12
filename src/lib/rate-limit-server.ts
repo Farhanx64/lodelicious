@@ -19,3 +19,10 @@ export async function isRateLimited(action: LimitedAction): Promise<boolean> {
   }
   return !withinLimit(action, clientIp(requestHeaders));
 }
+
+/** The visitor's IP for the payment provider (Clover asks for it, D54): Cloudflare's header there, the proxy's elsewhere. */
+export async function requestIp(): Promise<string | undefined> {
+  const h = await headers();
+  const ip = (process.env.DEPLOY_TARGET === "cloudflare" ? h.get("cf-connecting-ip")?.trim() : null) || clientIp(h);
+  return ip && ip !== "unknown" && /^[0-9a-fA-F:.]{3,64}$/.test(ip) ? ip : undefined;
+}

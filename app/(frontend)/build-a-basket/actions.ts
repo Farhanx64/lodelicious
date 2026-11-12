@@ -10,7 +10,7 @@ import { EXPIRED_FORM, verifySubmission } from "@/src/lib/checkout/submission";
 import { catalogOf, validateGift, type GiftValidation } from "@/src/lib/gifts";
 import { parseCustomRequest } from "@/src/lib/gifts/request";
 import { TOO_MANY_ATTEMPTS } from "@/src/lib/rate-limit";
-import { isRateLimited } from "@/src/lib/rate-limit-server";
+import { isRateLimited, requestIp } from "@/src/lib/rate-limit-server";
 import { currentMember } from "@/src/lib/rewards/session";
 
 /**
@@ -51,7 +51,7 @@ export async function submitReservation(_prev: ReserveState, form: FormData): Pr
   const { payload, ctx } = await checkoutPayload();
   // The member comes from the signed session cookie only, never from the form (D47).
   const member = ctx.rewards.active ? await currentMember() : null;
-  const result = await reserveBasket(payload, { draft, form: Object.fromEntries(form), submission, memberId: member?.id ?? null }, ctx);
+  const result = await reserveBasket(payload, { draft, form: Object.fromEntries(form), submission, memberId: member?.id ?? null, clientIp: await requestIp() }, ctx);
   if (!result.ok) return failedWith(result.error, form);
   await clearBasketDraft();
   redirect(`/reservation/${result.number}?t=${encodeURIComponent(result.token)}`);

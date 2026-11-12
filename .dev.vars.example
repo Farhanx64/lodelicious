@@ -13,3 +13,9 @@ APP_ENV=local
 
 # Empty switches the CSRF allowlist off so the admin logs in at http://localhost:8799.
 NEXT_PUBLIC_SITE_URL=
+
+# Clover payments in the local Workers preview (D54). Sandbox keys only; leave unset for the test payment.
+# CLOVER_ECOMM_ENVIRONMENT=sandbox
+# CLOVER_ECOMM_PUBLIC_KEY=
+# CLOVER_ECOMM_PRIVATE_TOKEN=
+# CLOVER_ECOMM_MERCHANT_ID=

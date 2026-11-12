@@ -11,6 +11,26 @@ import { bomOf, unitKey } from "./units";
 
 type StockFields = { stockState?: "known" | "unknown" | null; stockQuantity?: number | null; stockCountedAt?: string | null };
 
+/**
+ * What the shop sees for a unit whose stock isn't tracked but which staff have marked "Always
+ * available (stock not tracked)" (D54): plenty, so every existing limit (the bag's 20 per line, a
+ * gift's per-item maximum) still applies. Such a unit is never held or deducted at checkout.
+ */
+export const UNTRACKED_STOCK = 999;
+
+/** "Always available (stock not tracked)" for a product: its own choice, else the store default. */
+export function untrackedSellable(product: Pick<Product, "alwaysAvailable"> | undefined, storeDefault: boolean): boolean {
+  if (!product) return false;
+  if (product.alwaysAvailable === "yes") return true;
+  if (product.alwaysAvailable === "no") return false;
+  return storeDefault;
+}
+
+/** Never counted: no stock state and no count date. A stale count is not this (its count still wins). */
+export function neverCounted(stock: StockFields): boolean {
+  return stock.stockState !== "known" && !stock.stockCountedAt;
+}
+
 /** True when freshness isn't checked, or the count is recent enough. A missing date is not fresh. */
 export function isFresh(countedAt: string | null | undefined, now: Date, maxAgeMs: number | null): boolean {
   if (maxAgeMs === null) return true;
@@ -22,7 +42,8 @@ export function isFresh(countedAt: string | null | undefined, now: Date, maxAgeM
 export type StockView = { state: "known"; quantity: number } | { state: "unknown"; stale: boolean };
 
 /** One unit's counted stock after holds; unknown (or stale) stock is not sellable. */
-export function viewStock(stock: StockFields, held: number, now: Date, maxAgeMs: number | null): StockView {
+export function viewStock(stock: StockFields, held: number, now: Date, maxAgeMs: number | null, untracked = false): StockView {
+  if (untracked && neverCounted(stock)) return { state: "known", quantity: UNTRACKED_STOCK };
   if (stock.stockState !== "known" || typeof stock.stockQuantity !== "number") return { state: "unknown", stale: false };
   if (!isFresh(stock.stockCountedAt, now, maxAgeMs)) return { state: "unknown", stale: true };
   return { state: "known", quantity: Math.max(0, stock.stockQuantity - held) };
@@ -35,15 +56,20 @@ export type ViewContext = {
   holds: ReadonlyMap<string, number>;
   /** Any product by id, for the components of a basket. */
   productById: (id: string) => Product | undefined;
+  /** Store default for "Always available (stock not tracked)" (Settings → Inventory settings). */
+  untrackedDefault?: boolean;
 };
 
-export type ProductView = { product: Product; staleUnits: string[] };
+/** `untrackedUnits`: units sold without a count, so checkout neither holds nor deducts them. */
+export type ProductView = { product: Product; staleUnits: string[]; untrackedUnits: string[] };
 
 /** A copy of `product` as the shop should see it right now. */
 export function viewProduct(product: Product, ctx: ViewContext): ProductView {
   const id = String(product.id);
   const stale: string[] = [];
+  const untracked: string[] = [];
   const heldOf = (unit: string) => ctx.holds.get(unit) ?? 0;
+  const storeDefault = ctx.untrackedDefault ?? false;
 
   const components = bomOf(product);
   if (components.length > 0) {
@@ -58,7 +84,9 @@ export function viewProduct(product: Product, ctx: ViewContext): ProductView {
         unknown = true;
         continue;
       }
-      const view = viewStock(source, heldOf(unitKey(part)), ctx.now, ctx.maxAgeMs);
+      const free = untrackedSellable(comp, storeDefault) && neverCounted(source);
+      if (free) untracked.push(unitKey(part));
+      const view = viewStock(source, heldOf(unitKey(part)), ctx.now, ctx.maxAgeMs, free);
       if (view.state === "unknown") {
         unknown = true;
         anyStale ||= view.stale;
@@ -71,14 +99,19 @@ export function viewProduct(product: Product, ctx: ViewContext): ProductView {
     return {
       product: { ...product, stockState: unknown ? "unknown" : "known", stockQuantity: unknown ? null : units, onlineReserve: 0 },
       staleUnits: stale,
+      untrackedUnits: untracked,
     };
   }
 
+  const free = untrackedSellable(product, storeDefault);
   const hasVariants = (product.variants?.length ?? 0) > 0;
-  const own = viewStock(product, heldOf(id), ctx.now, ctx.maxAgeMs);
+  const own = viewStock(product, heldOf(id), ctx.now, ctx.maxAgeMs, free && !hasVariants);
+  if (free && !hasVariants && neverCounted(product)) untracked.push(id);
   if (!hasVariants && own.state === "unknown" && own.stale) stale.push(id);
   const variants = product.variants?.map((variant) => {
-    const view = viewStock(variant, heldOf(`${id}:${variant.key}`), ctx.now, ctx.maxAgeMs);
+    const freeVariant = free && neverCounted(variant);
+    if (freeVariant) untracked.push(`${id}:${variant.key}`);
+    const view = viewStock(variant, heldOf(`${id}:${variant.key}`), ctx.now, ctx.maxAgeMs, freeVariant);
     if (view.state === "unknown" && view.stale) stale.push(`${id}:${variant.key}`);
     return view.state === "known"
       ? { ...variant, stockState: "known" as const, stockQuantity: view.quantity }
@@ -91,5 +124,6 @@ export function viewProduct(product: Product, ctx: ViewContext): ProductView {
       ...(variants ? { variants } : {}),
     },
     staleUnits: stale,
+    untrackedUnits: untracked,
   };
 }

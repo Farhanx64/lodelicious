@@ -6,6 +6,7 @@ import { Bow } from "@/components/brand/Bow";
 import { secondaryButton } from "@/components/checkout/styles";
 import { Summary } from "@/components/checkout/Summary";
 import { findByToken } from "@/src/lib/checkout/service";
+import { shipToLine } from "@/src/lib/email/notify";
 import { checkoutPayload } from "@/src/lib/checkout/session";
 import { singleParam } from "@/src/lib/checkout/token-param";
 import { formatPoints } from "@/src/lib/rewards/program";
@@ -21,6 +22,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
   const order = await findByToken(payload, "orders", number, singleParam(t));
   if (!order) notFound();
   const lines = order.lines as OrderLine[];
+  const shipTo = shipToLine(order);
 
   return (
     <div className="mx-auto w-[min(100%-2rem,44rem)]">
@@ -36,13 +38,17 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
       )}
       <section aria-labelledby="pickup" className="mb-6 border border-gold bg-paper p-5">
         <h2 id="pickup" className="mb-2 text-xl">
-          Pickup
+          {shipTo ? "Shipping" : "Pickup"}
         </h2>
-        <p>
-          {order.pickup.label}
-          <br />
-          {store.name}, {store.street}, {store.locality}
-        </p>
+        {shipTo ? (
+          <p>We&rsquo;ll ship your order to {shipTo}.</p>
+        ) : (
+          <p>
+            {order.pickup.label}
+            <br />
+            {store.name}, {store.street}, {store.locality}
+          </p>
+        )}
         <p className="mt-2 text-sm text-ink-soft">Keep this page&rsquo;s link: it&rsquo;s your receipt. We&rsquo;ll contact {order.customer.email} if anything changes.</p>
       </section>
       <Summary
@@ -52,6 +58,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         taxCents={order.totals.taxCents}
         totalCents={order.totals.totalCents}
         taxApproved={Boolean(order.totals.taxApproved)}
+        shipping={{ method: shipTo ? "ship" : "pickup", cents: order.totals.shippingCents ?? 0 }}
       />
       {order.rewards?.member && (order.rewards.earnPoints ?? 0) > 0 && (
         <p className="mt-4 text-center">

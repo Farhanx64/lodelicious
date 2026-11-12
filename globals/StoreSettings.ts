@@ -3,6 +3,7 @@ import type { GlobalConfig } from "payload";
 import { anyone, isCommerceManager } from "../src/access/roles";
 import { BRAND_COLOR_DEFAULT, BUTTON_COLOR_DEFAULT, validateBrandColor, validateButtonColor } from "../src/lib/brand-color";
 import { auditGlobal } from "../src/hooks/audit";
+import { DEFAULT_ORDER_ALERT_EMAIL } from "../src/lib/email/config";
 import { GOOGLE_RATING_DEFAULT, GOOGLE_REVIEW_COUNT_DEFAULT, GOOGLE_REVIEW_URL_DEFAULT, validateGoogleRating } from "../src/lib/reviews/shared";
 
 /**
@@ -80,11 +81,12 @@ export const StoreSettings: GlobalConfig = {
             },
             {
               name: "notificationEmail",
-              label: "Staff notification email",
+              label: "Order alert email",
               type: "email",
+              defaultValue: DEFAULT_ORDER_ALERT_EMAIL,
               admin: {
                 description:
-                  "Where new orders, reservations, inquiries and anything needing attention are emailed to staff (D44). Leave empty to use the shop email above. Nothing is sent until a sending service is approved and connected.",
+                  "Where staff alerts go: every new paid order and reservation, inquiries, and anything needing attention (D44, D54). Left empty, alerts go to the default order alert address. Nothing is sent until a sending service is approved and connected.",
               },
             },
             {

@@ -88,6 +88,7 @@ export const Products: CollectionConfig = {
         "stockState",
         "stockQuantity",
         "onlineReserve",
+        "alwaysAvailable",
         "variants",
         "components",
         "premium",
@@ -171,7 +172,7 @@ export const Products: CollectionConfig = {
               fields: [
                 stockState([
                   { label: "Counted", value: "known" },
-                  { label: "Unknown — not purchasable", value: "unknown" },
+                  { label: "Unknown (see Always available below)", value: "unknown" },
                 ]),
                 countedQuantity("stockQuantity", "Quantity on hand"),
                 whole("lowStockThreshold", "Low-stock label at or below", 3),
@@ -184,6 +185,21 @@ export const Products: CollectionConfig = {
               ],
             },
             countedAt("When stock was last counted against the shelf or Clover. Stock older than the limit in Settings → Inventory settings is treated as unknown."),
+            {
+              name: "alwaysAvailable",
+              label: "Always available (stock not tracked)",
+              type: "select",
+              defaultValue: "store_default",
+              options: [
+                { label: "Use the store default (Settings → Inventory settings)", value: "store_default" },
+                { label: "Yes: can be bought while stock is not counted", value: "yes" },
+                { label: "No: only once stock is counted", value: "no" },
+              ],
+              admin: {
+                description:
+                  "For products you don't count. While this product (or option) has never been counted, \"Yes\" lets customers buy it with no stock limit. Once a count exists, from Clover or Stock adjustments, the count decides.",
+              },
+            },
             {
               name: "variants",
               type: "array",

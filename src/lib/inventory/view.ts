@@ -11,7 +11,8 @@ import { viewProduct } from "./sellable";
 import { DEFAULT_HOLD_MINUTES } from "./types";
 import { bomOf } from "./units";
 
-export type InventoryConfig = { holdMinutes: number; maxAgeMs: number | null };
+/** `untrackedDefault`: the store-wide "Always available (stock not tracked)" (D54), on unless staff turn it off. */
+export type InventoryConfig = { holdMinutes: number; maxAgeMs: number | null; untrackedDefault: boolean };
 
 export function configFrom(settings: Partial<InventorySetting> | null | undefined): InventoryConfig {
   const hold = settings?.holdMinutes;
@@ -19,6 +20,7 @@ export function configFrom(settings: Partial<InventorySetting> | null | undefine
   return {
     holdMinutes: typeof hold === "number" && hold >= 1 ? hold : DEFAULT_HOLD_MINUTES,
     maxAgeMs: typeof age === "number" && age >= 1 ? age * 3600_000 : null,
+    untrackedDefault: settings?.untrackedAvailable !== false,
   };
 }
 
@@ -43,10 +45,15 @@ export type ViewOptions = { now?: Date; exceptOwner?: string | null; config?: In
 /**
  * Copies of `products` as the shop should see them now: stock minus other customers' holds,
  * stale stock unknown, and a curated basket with a bill of materials as many as its components
- * allow. `staleUnits` lists units hidden only because their count is too old.
+ * allow. `staleUnits` lists units hidden only because their count is too old; `untrackedUnits` those
+ * sold without a count ("Always available", D54), which checkout must not hold or deduct.
  */
-export async function applyInventoryView(payload: Payload, products: readonly Product[], opts: ViewOptions = {}): Promise<{ products: Product[]; staleUnits: Set<string> }> {
-  if (products.length === 0) return { products: [], staleUnits: new Set() };
+export async function applyInventoryView(
+  payload: Payload,
+  products: readonly Product[],
+  opts: ViewOptions = {},
+): Promise<{ products: Product[]; staleUnits: Set<string>; untrackedUnits: Set<string> }> {
+  if (products.length === 0) return { products: [], staleUnits: new Set(), untrackedUnits: new Set() };
   const now = opts.now ?? new Date();
   const config = opts.config ?? (await loadInventoryConfig(payload));
   const holds = await activeHolds(payload, now, opts.exceptOwner);
@@ -60,10 +67,12 @@ export async function applyInventoryView(payload: Payload, products: readonly Pr
   }
 
   const staleUnits = new Set<string>();
+  const untrackedUnits = new Set<string>();
   const out = products.map((product) => {
-    const view = viewProduct(product, { now, maxAgeMs: config.maxAgeMs, holds, productById: (id) => byId.get(id) });
+    const view = viewProduct(product, { now, maxAgeMs: config.maxAgeMs, holds, productById: (id) => byId.get(id), untrackedDefault: config.untrackedDefault });
     for (const unit of view.staleUnits) staleUnits.add(unit);
+    for (const unit of view.untrackedUnits) untrackedUnits.add(unit);
     return view.product;
   });
-  return { products: out, staleUnits };
+  return { products: out, staleUnits, untrackedUnits };
 }

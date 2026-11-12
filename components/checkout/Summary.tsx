@@ -10,6 +10,7 @@ export function Summary({
   taxCents,
   totalCents,
   taxApproved,
+  shipping,
   extra,
 }: {
   lines: SummaryLine[];
@@ -19,6 +20,8 @@ export function Summary({
   taxCents: number;
   totalCents: number;
   taxApproved: boolean;
+  /** The shipping line (D54): pickup is free; shipping is one charge, the highest rate that applies. Text overrides the amount. */
+  shipping?: { method: "pickup" | "ship"; cents: number; text?: string } | null;
   extra?: React.ReactNode;
 }) {
   return (
@@ -45,6 +48,12 @@ export function Summary({
         )}
         <dt>{taxApproved ? "Tax" : "Estimated tax (to be confirmed)"}</dt>
         <dd className="text-right">{formatCents(taxCents)}</dd>
+        {shipping && (
+          <>
+            <dt>{shipping.method === "ship" ? "Shipping" : "Pickup in store"}</dt>
+            <dd className="text-right">{shipping.text ?? (shipping.method === "ship" ? formatCents(shipping.cents) : "Free")}</dd>
+          </>
+        )}
         <dt className="font-semibold">Total</dt>
         <dd className="text-right font-semibold">{formatCents(totalCents)}</dd>
         {extra}

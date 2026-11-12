@@ -32,6 +32,7 @@ import { HomePage } from "./globals/HomePage";
 import { InventorySettings } from "./globals/InventorySettings";
 import { Policies } from "./globals/Policies";
 import { RewardsSettings } from "./globals/RewardsSettings";
+import { ShippingSettings } from "./globals/ShippingSettings";
 import { StoreSettings } from "./globals/StoreSettings";
 import { emailAdapterFromEnv } from "./src/lib/email/adapter";
 import { csrfOrigins } from "./src/lib/security";
@@ -83,7 +84,7 @@ export default buildConfig({
     // Website (then the Store details, Home page and Policies globals)
     Media,
     Reviews,
-    // Settings (then the Checkout, Gift builder, Events and Inventory globals)
+    // Settings (then the Checkout, Shipping, Gift builder, Events and Inventory globals)
     TaxClasses,
     // Staff
     Users,
@@ -95,7 +96,7 @@ export default buildConfig({
     // Hidden from the admin
     Carts,
   ],
-  globals: [StoreSettings, HomePage, Policies, CheckoutSettings, GiftBuilderSettings, EventSettings, InventorySettings, RewardsSettings, ColorPalette],
+  globals: [StoreSettings, HomePage, Policies, CheckoutSettings, ShippingSettings, GiftBuilderSettings, EventSettings, InventorySettings, RewardsSettings, ColorPalette],
   // Transactional email (D44): the console by default; SMTP only with complete settings (and EMAIL_SEND_LIVE=1 on the live store).
   email: emailAdapterFromEnv(process.env),
   editor: lexicalEditor(),
