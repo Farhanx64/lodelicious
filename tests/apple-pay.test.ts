@@ -19,7 +19,6 @@ import {
   APPLE_PAY_ELEMENT,
   applePayAvailable,
   applePayConfigured,
-  labelled,
   MESSAGES,
   mountApplePay,
   readPaymentMethod,
@@ -106,12 +105,6 @@ describe("the amount on Apple's sheet", () => {
     expect(amountFor({ cents: 1958 }, "five")).toBe(1958);
   });
 
-  it("is labelled Lodelicious", () => {
-    expect(labelled({ countryCode: "US", total: { label: "Amount to be charged", type: "final", amount: "25.50" } })).toEqual({
-      countryCode: "US",
-      total: { label: "Lodelicious", type: "final", amount: "25.50" },
-    });
-  });
 });
 
 describe("Clover's paymentMethod event", () => {
@@ -158,7 +151,7 @@ describe("paying with the button", () => {
     const { clover, create, mount } = fakes();
     expect(clover.createApplePaymentRequest).toHaveBeenCalledWith({ amount: 2550, countryCode: "US", currencyCode: "USD" });
     expect(create).toHaveBeenCalledWith(APPLE_PAY_ELEMENT, {
-      applePaymentRequest: { countryCode: "US", currencyCode: "USD", total: { label: "Lodelicious", type: "final", amount: "25.50" } },
+      applePaymentRequest: { countryCode: "US", currencyCode: "USD", total: { label: "Amount to be charged", type: "final", amount: "25.50" } },
       sessionIdentifier: "ABCDEF123456",
     });
     expect(mount).toHaveBeenCalledWith("#apple-pay-button");

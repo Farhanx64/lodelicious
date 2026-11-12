@@ -19,8 +19,6 @@
 import { CARD_TOKEN } from "./clover";
 
 export const APPLE_PAY_ELEMENT = "PAYMENT_REQUEST_BUTTON_APPLE_PAY";
-/** The name on Apple's sheet, above the amount. */
-export const APPLE_PAY_LABEL = "Lodelicious";
 const REGION = { countryCode: "US", currencyCode: "USD" } as const;
 
 /** The parts of a Clover instance Apple Pay uses. */
@@ -74,13 +72,6 @@ export function amountFor(spec: ApplePayAmount, chosen: string | null | undefine
   return Number.isSafeInteger(pick) && (pick as number) > 0 ? (pick as number) : spec.cents;
 }
 
-/** The Apple Pay request with our name on the total line instead of Clover's "Amount to be charged". */
-export function labelled(request: unknown): unknown {
-  if (!request || typeof request !== "object") return request;
-  const r = request as { total?: Record<string, unknown> };
-  return { ...r, total: { ...(r.total ?? {}), label: APPLE_PAY_LABEL } };
-}
-
 /** The token and email from Clover's `paymentMethod` event, or null if it isn't one we can charge. */
 export function readPaymentMethod(detail: unknown): { token: string; email: string | null } | null {
   if (!detail || typeof detail !== "object") return null;
@@ -120,7 +111,8 @@ export function mountApplePay(deps: ApplePayDeps): { setAmount(cents: number): v
   const { win, clover } = deps;
   let amount = deps.amountCents;
   let busy = false;
-  const request = labelled(clover.createApplePaymentRequest({ amount, ...REGION }));
+  // Clover's request goes to Apple untouched: an edited copy is not what Clover validates the session against.
+  const request = clover.createApplePaymentRequest({ amount, ...REGION });
   clover.elements().create(APPLE_PAY_ELEMENT, { applePaymentRequest: request, sessionIdentifier: deps.sessionIdentifier }).mount(deps.mountSelector);
 
   const status = (s: "success" | "failed") => {
