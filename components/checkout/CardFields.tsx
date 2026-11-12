@@ -27,7 +27,11 @@ const FIELDS = [
 
 const box = "min-h-11 w-full rounded-lg border border-ink-soft bg-paper px-3 py-2";
 // Inside Clover's frames: our ink colour, and a system font (the frames can't load the site's).
-const frameStyles = { input: { fontSize: "16px", color: "#3b2f25", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif" } };
+// Clover's iframes default to 150 px tall; the field box below fixes them to one input line.
+const frameStyles = {
+  body: { margin: "0", padding: "0" },
+  input: { fontSize: "16px", height: "46px", padding: "0 12px", margin: "0", color: "#3b2f25", fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif" },
+};
 
 /** Small card-brand marks beside "Card number". Decorative: Clover's field checks the card itself. */
 function CardBrands() {
@@ -168,7 +172,7 @@ function CloverCard({ config }: { config: Extract<BrowserPaymentConfig, { kind: 
         {FIELDS.map((f) => (
           <div key={f.id} className={f.span || undefined}>
             <FieldLabel id={`${f.id}-label`} type={f.type} text={f.text} />
-            <div id={f.id} role="group" aria-labelledby={`${f.id}-label`} aria-busy={status === "loading" || undefined} className={`${box} p-0`} />
+            <div id={f.id} role="group" aria-labelledby={`${f.id}-label`} aria-busy={status === "loading" || undefined} className="clover-field h-12 w-full overflow-hidden rounded-lg border border-ink-soft bg-paper p-0" />
             {errors[f.type] && <p className="mt-1 text-sm text-error">{errors[f.type]}</p>}
           </div>
         ))}

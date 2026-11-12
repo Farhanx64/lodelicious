@@ -130,3 +130,12 @@
     animation-play-state: paused !important;
   }
 }
+
+/* Clover's hosted card fields (D54/D56): one input line tall, not the iframe default of 150px. */
+.clover-field iframe {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  border: 0 !important;
+}
