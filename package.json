@@ -29,9 +29,11 @@
     "cf:migrate": "DEPLOY_TARGET=cloudflare npm run migrate",
     "cf:migrate:remote": "DEPLOY_TARGET=cloudflare CLOUDFLARE_ENV=remote NODE_ENV=production npm run migrate",
     "cf:deploy": "APP_ENV=production npm run cf:build && DEPLOY_TARGET=cloudflare opennextjs-cloudflare deploy",
-    "cf:size": "wrangler deploy --dry-run --outdir .wrangler/size-check"
+    "cf:size": "wrangler deploy --dry-run --outdir .wrangler/size-check",
+    "postinstall": "patch-package"
   },
   "dependencies": {
+    "@noble/hashes": "^1.8.0",
     "@opennextjs/cloudflare": "1.20.7",
     "@payloadcms/db-d1-sqlite": "3.90.2",
     "@payloadcms/db-sqlite": "3.90.2",
@@ -54,6 +56,7 @@
     "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "patch-package": "^8.0.1",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.8",

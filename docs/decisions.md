@@ -1208,3 +1208,7 @@ the same time and may also claim D49; renumber one of them at merge.)
   address are centred; from `sm` up the footer is unchanged.
 - Migration `20261111_211249_reviews` adds the `reviews` table and `store_settings.google_review_url`;
   it runs on SQLite and D1 alike.
+
+## D53 — Staff passwords work on Cloudflare Workers (2026-11-11)
+
+Payload 3.90 hashes passwords with PBKDF2-SHA256 at 600,000 iterations. Cloudflare Workers refuse native PBKDF2 above 100,000, so on the live site every login failed as "incorrect" (locking the owners out) and password resets returned 500. `patches/payload+3.90.2.patch` (applied by `patch-package` on install) makes Payload's local strategy fall back to `@noble/hashes` pure-JS PBKDF2 when the native call is refused. The hash format is unchanged, so hashes made on Node and on Workers verify on both. A login costs about a second or two of Worker CPU, well inside the paid plan's limit. Re-check the patch whenever Payload is upgraded.
