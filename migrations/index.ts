@@ -20,6 +20,7 @@ import * as migration_20261111_120000_brand_color from './20261111_120000_brand_
 import * as migration_20261111_130000_button_color from './20261111_130000_button_color';
 import * as migration_20261111_140000_media_object_key from './20261111_140000_media_object_key';
 import * as migration_20261111_211711_reviews from './20261111_211711_reviews';
+import * as migration_20261112_013115_color_palette from './20261112_013115_color_palette';
 
 export const migrations = [
   {
@@ -130,6 +131,11 @@ export const migrations = [
   {
     up: migration_20261111_211711_reviews.up,
     down: migration_20261111_211711_reviews.down,
-    name: '20261111_211711_reviews'
+    name: '20261111_211711_reviews',
+  },
+  {
+    up: migration_20261112_013115_color_palette.up,
+    down: migration_20261112_013115_color_palette.down,
+    name: '20261112_013115_color_palette'
   },
 ];

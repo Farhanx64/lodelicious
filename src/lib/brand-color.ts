@@ -6,8 +6,8 @@
  */
 export const BRAND_COLOR_DEFAULT = "#9c4459";
 export const BUTTON_COLOR_DEFAULT = "#c8a467";
-const LIGHT_TEXT = "#fdf8f7";
-const DARK_TEXT = "#3a2a2e";
+export const LIGHT_TEXT = "#fdf8f7";
+export const DARK_TEXT = "#3a2a2e";
 const HEX = /^#[0-9a-f]{6}$/i;
 
 function luminance(hex: string): number {
