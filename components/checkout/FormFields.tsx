@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormValues } from "./ActionForm";
-import { field, label } from "./styles";
+import { label, roundField } from "./styles";
 
 /** The optional "Notes for the shop" box on checkout. Keeps its text after an error. */
 export function NotesField({ id }: { id: string }) {
@@ -11,7 +11,7 @@ export function NotesField({ id }: { id: string }) {
       <label htmlFor={id} className={label}>
         Notes for the shop (optional)
       </label>
-      <textarea id={id} name="notes" maxLength={500} rows={3} defaultValue={values.notes} className={field} />
+      <textarea id={id} name="notes" maxLength={500} rows={3} defaultValue={values.notes} className={roundField} />
     </>
   );
 }
@@ -36,17 +36,17 @@ export function PaymentChoice({
   const full = values.payment === "full" && fullText !== undefined;
   return (
     <fieldset className="mb-4">
-      <legend className="mb-3 font-display text-xl text-gold-text">Payment</legend>
-      <label className="mb-2 flex gap-3">
-        <input type="radio" name="payment" value="deposit" defaultChecked={!full} className="mt-1 size-5 accent-gold-text" />
+      <legend className="mb-3 text-base font-semibold text-ink">How much to pay now</legend>
+      <label className="mb-2 flex min-h-11 gap-3 rounded-lg border border-ink-soft p-3 has-checked:border-coastal-deep has-checked:bg-coastal-pale">
+        <input type="radio" name="payment" value="deposit" defaultChecked={!full} className="mt-1 size-5 accent-coastal-deep" />
         <span>
           Pay the {depositLabel.toLowerCase()} now: <strong>{chargeNowText}</strong>
           <span className="block text-sm text-ink-soft">{balanceDueText} due at pickup</span>
         </span>
       </label>
       {fullText !== undefined && (
-        <label className="flex gap-3">
-          <input type="radio" name="payment" value="full" defaultChecked={full} className="mt-1 size-5 accent-gold-text" />
+        <label className="flex min-h-11 gap-3 rounded-lg border border-ink-soft p-3 has-checked:border-coastal-deep has-checked:bg-coastal-pale">
+          <input type="radio" name="payment" value="full" defaultChecked={full} className="mt-1 size-5 accent-coastal-deep" />
           <span>
             Pay in full now: <strong>{fullText}</strong>
           </span>

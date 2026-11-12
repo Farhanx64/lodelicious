@@ -3,3 +3,5 @@ export const primaryButton =
 export const secondaryButton = "caps inline-flex min-h-11 items-center justify-center border border-gold-text px-7 text-[0.75rem] text-gold-text no-underline";
 export const field = "min-h-11 w-full border border-ink-soft bg-paper px-3 py-2";
 export const label = "mb-1 block text-sm font-semibold";
+/** The checkout and reserve form fields (D56): the same field, with soft corners to match the panel's cards. */
+export const roundField = `${field} rounded-lg`;

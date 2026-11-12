@@ -97,3 +97,10 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Checkout's Pay button sticks to the bottom of a phone screen (D56): keep focused fields clear of it (WCAG 2.4.11). */
+@media (width < 48rem) {
+  html:has([data-sticky-submit]) {
+    scroll-padding-bottom: 6rem;
+  }
+}

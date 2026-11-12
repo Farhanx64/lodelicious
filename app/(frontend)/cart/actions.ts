@@ -13,6 +13,9 @@ import { currentMember } from "@/src/lib/rewards/session";
 
 export type FormState = CheckoutFormState;
 
+/** Where adding to the bag may return to: the bag, or checkout's "+ Add to your order" (D56). Anything else goes to the bag. */
+const ADD_RETURNS = new Set(["/checkout", "/checkout?method=ship"]);
+
 /** Public actions answer with the customer's entries kept (A13) and are rate limited per visitor (A15). */
 export async function addToBag(_prev: FormState, form: FormData): Promise<FormState> {
   if (await isRateLimited("addToBag")) return failedWith(TOO_MANY_ATTEMPTS, form);
@@ -21,7 +24,8 @@ export async function addToBag(_prev: FormState, form: FormData): Promise<FormSt
   const result = await changeBag(payload, token, { unitId: String(form.get("unitId") ?? ""), quantity: Number(form.get("quantity") ?? 1), mode: "add" }, ctx);
   if (!result.ok) return failedWith(result.error, form);
   revalidatePath("/", "layout");
-  redirect("/cart");
+  const next = String(form.get("next") ?? "");
+  redirect(ADD_RETURNS.has(next) ? next : "/cart");
 }
 
 export async function updateBagLine(form: FormData): Promise<void> {

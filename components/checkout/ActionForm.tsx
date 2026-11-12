@@ -46,12 +46,39 @@ export function ActionForm({
   pendingLabel,
   disabled,
   children,
+  id,
+  aside,
+  wrapperClassName,
+  formClassName,
+  beforeSubmit,
+  afterSubmit,
+  submitIcon,
+  stickySubmit = false,
 }: {
   action: (prev: State, form: FormData) => Promise<State>;
   submitLabel: string;
   pendingLabel: string;
   disabled?: boolean;
   children: React.ReactNode;
+  /** The form's id, for inputs outside it that join it with `form="…"` (the reward choice in the order summary). */
+  id?: string;
+  /**
+   * Content placed before the form, outside it but inside its state, so fields there (joined to the
+   * form by `form="…"`) still get the customer's entries back after an error. Holds the checkout's
+   * order summary, whose own small forms (quantity, remove) can't be nested in this one (D56).
+   */
+  aside?: React.ReactNode;
+  /** Class of the element around `aside` and the form; only used with `aside`. */
+  wrapperClassName?: string;
+  formClassName?: string;
+  /** Shown just above the error and the button (the checkout's repeated totals). */
+  beforeSubmit?: React.ReactNode;
+  /** Shown under the button (policy links). */
+  afterSubmit?: React.ReactNode;
+  /** A decorative icon after the button text (the lock on "Pay"). */
+  submitIcon?: React.ReactNode;
+  /** On a phone, keep the button stuck to the bottom of the screen while the form is in view. */
+  stickySubmit?: boolean;
 }) {
   const [state, run, pending] = useActionState<State, FormData>(action, { error: null });
   const errorRef = useRef<HTMLParagraphElement>(null);
@@ -91,29 +118,51 @@ export function ActionForm({
     startTransition(() => run(form));
   }
 
+  const button = (
+    <button
+      type="submit"
+      disabled={disabled}
+      aria-disabled={busy || undefined}
+      onClick={(event) => {
+        if (busy) event.preventDefault();
+      }}
+      className={`${primaryButton} w-full gap-2`}
+    >
+      {busy ? pendingLabel : submitLabel}
+      {submitIcon}
+    </button>
+  );
+  const form = (
+    <form id={id} action={run} onSubmit={onSubmit} className={formClassName}>
+      {children}
+      {beforeSubmit}
+      {shown.error && (
+        <p ref={errorRef} tabIndex={-1} role="alert" className="mb-4 border border-error p-3 text-error outline-offset-2">
+          {shown.error}
+        </p>
+      )}
+      {stickySubmit ? (
+        // Stuck to the bottom of a phone screen while the form is in view; in place from the tablet width up.
+        <div data-sticky-submit className="sticky bottom-0 z-20 -mx-4 border-t border-line bg-paper px-4 py-3 sm:-mx-6 sm:px-6 md:static md:mx-0 md:border-0 md:p-0">{button}</div>
+      ) : (
+        button
+      )}
+      {afterSubmit}
+    </form>
+  );
+
   return (
     <PreparerContext value={register}>
-    <FormValuesContext value={state.values ?? NO_VALUES}>
-      <form action={run} onSubmit={onSubmit}>
-        {children}
-        {shown.error && (
-          <p ref={errorRef} tabIndex={-1} role="alert" className="mb-4 border border-error p-3 text-error outline-offset-2">
-            {shown.error}
-          </p>
+      <FormValuesContext value={state.values ?? NO_VALUES}>
+        {aside ? (
+          <div className={wrapperClassName}>
+            {aside}
+            {form}
+          </div>
+        ) : (
+          form
         )}
-        <button
-          type="submit"
-          disabled={disabled}
-          aria-disabled={busy || undefined}
-          onClick={(event) => {
-            if (busy) event.preventDefault();
-          }}
-          className={`${primaryButton} w-full`}
-        >
-          {busy ? pendingLabel : submitLabel}
-        </button>
-      </form>
-    </FormValuesContext>
+      </FormValuesContext>
     </PreparerContext>
   );
 }

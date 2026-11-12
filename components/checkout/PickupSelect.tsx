@@ -3,7 +3,7 @@
 import { formatSlot, type Slot } from "@/src/lib/checkout/pickup";
 
 import { useFormValues } from "./ActionForm";
-import { field, label } from "./styles";
+import { label, roundField } from "./styles";
 
 /**
  * Pickup times grouped by day; the server re-checks the choice on submit. After an error the
@@ -23,7 +23,7 @@ export function PickupSelect({ slots, id }: { slots: Slot[]; id: string }) {
       {slots.length === 0 ? (
         <p className="text-error">No pickup times are open right now. Please call us.</p>
       ) : (
-        <select id={id} name="pickup" required defaultValue={chosen} className={field}>
+        <select id={id} name="pickup" required defaultValue={chosen} className={roundField}>
           {[...byDate].map(([date, daySlots]) => (
             <optgroup key={date} label={formatSlot(daySlots[0]).split(",").slice(0, 2).join(",")}>
               {daySlots.map((s) => (

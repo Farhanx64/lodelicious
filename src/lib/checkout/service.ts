@@ -762,6 +762,8 @@ export type PricedBasket = {
   taxCents: number;
   totalCents: number;
   taxApproved: boolean;
+  /** The tax class of each line (contents, then packaging), for the rate shown at reserve (D56). */
+  taxClasses: (TaxClass | null)[];
   /** Shipping for this basket (D54): the basket rate for its size, or why it can't ship. */
   shipping: ShippingQuote;
   /** Units sold without a stock count, which are neither held nor deducted (D54). */
@@ -812,10 +814,11 @@ export async function priceBasket(
   );
   const classOf = new Map(productDocs.map((p) => [String(p.id), resolveTaxClass(relId(p.taxClass), ctx.taxClasses, ctx.defaultTaxClassId)]));
   const packagingClass = resolveTaxClass(ctx.packagingTaxClassId, ctx.taxClasses, ctx.defaultTaxClassId);
-  const tax = computeTax([
+  const taxLines = [
     ...components.map((c) => ({ amountCents: c.unitPriceCents * c.quantity, taxClass: classOf.get(c.productId.split(":")[0]) ?? null })),
     { amountCents: validation.totals.packagingCents, taxClass: packagingClass },
-  ]);
+  ];
+  const tax = computeTax(taxLines);
   const size = settings.sizes.find((s) => s.code === draft.request.size);
   const giftLabel = { sweet: "Sweet", savory: "Savory", sweet_savory: "Sweet & savory", sympathy: "Sympathy" }[draft.request.giftType];
   return {
@@ -830,6 +833,7 @@ export async function priceBasket(
     taxCents: tax.taxCents,
     totalCents: validation.totals.totalCents + tax.taxCents,
     taxApproved: tax.approved,
+    taxClasses: taxLines.map((l) => l.taxClass),
     shipping,
     untracked,
   };
