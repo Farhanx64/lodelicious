@@ -102,6 +102,8 @@
 @media (width < 48rem) {
   html:has([data-sticky-submit]) {
     scroll-padding-bottom: 6rem;
+  }
+}
 
 /* Promo ticker (D57): continuous loop; the track holds two identical runs and moves by half. */
 @keyframes promo-ticker {
