@@ -157,6 +157,11 @@ export class CloverPaymentProvider implements PaymentProvider {
     throw new CloverCallError(cleanMessage(err.message) || `HTTP ${res.status}`, res.status, str(err.type), str(err.code) || str(err.decline_code));
   }
 
+  /** The name of the merchant's tax rate in Clover (CLOVER_TAX_RATE_NAME, default "Sales Tax"). */
+  private get taxRateName() {
+    return (process.env.CLOVER_TAX_RATE_NAME || "Sales Tax").slice(0, 60);
+  }
+
   /** The Clover order body: one line per bag line (quantity folded into the description so discounts stay exact). */
   private orderBody(input: ChargeInput) {
     const o = input.order;
@@ -178,7 +183,9 @@ export class CloverPaymentProvider implements PaymentProvider {
           currency: "usd",
           quantity: 1,
           description: l.description.slice(0, 1000),
-          ...(l.taxCents > 0 ? { tax_rates: [{ name: (l.taxName || "Sales Tax").slice(0, 60), tax_amount: l.taxCents }] } : {}),
+          // Clover matches each line's tax to one of the merchant's own tax rates by name and rate
+          // (rate in Clover units: 6.25% = 625000), not by amount. Lody's Clover rate is "Sales Tax".
+          ...(l.taxCents > 0 ? { tax_rates: [{ name: this.taxRateName, rate: cloverTaxRate(l.taxRateBasisPoints, l.amountCents, l.taxCents) }] } : {}),
         })),
         ...(o.shippingCents > 0 ? [{ type: "shipping", amount: o.shippingCents, currency: "usd", quantity: 1, description: "Shipping" }] : []),
       ],
@@ -285,4 +292,10 @@ function declineMessage(err: CloverCallError): string {
     default:
       return err.type === "card_error" ? "Your card was declined. Please try another card." : "The payment didn't go through. Please check your card details and try again.";
   }
+}
+
+/** A tax rate in Clover's units (percent × 100000, so 6.25% = 625000). Falls back to the line's own ratio. */
+export function cloverTaxRate(basisPoints: number | null | undefined, amountCents: number, taxCents: number): number {
+  if (typeof basisPoints === "number" && basisPoints > 0) return Math.round(basisPoints * 1000);
+  return amountCents > 0 ? Math.round(((taxCents / amountCents) * 10_000_000) / 1000) * 1000 : 0;
 }

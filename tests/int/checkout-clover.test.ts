@@ -75,7 +75,7 @@ describe("checkout with the Clover adapter (fixtures)", () => {
     const order = (await findByToken(w.payload, "orders", result.number, result.token)) as Order;
     expect(order).toMatchObject({ paymentStatus: "paid", testMode: true, payment: { provider: "clover", reference: "CHGPICKUP01", providerOrderId: "ORDPICKUP01" }, stockStatus: "committed" });
     const body = calls[0].body as { items: unknown[]; metadata: Record<string, string>; email: string };
-    expect(body.items).toEqual([{ type: "sku", amount: 2400, currency: "usd", quantity: 1, description: "2 × Fudge box", tax_rates: [{ name: "Sales tax 6.25%", tax_amount: 150 }] }]);
+    expect(body.items).toEqual([{ type: "sku", amount: 2400, currency: "usd", quantity: 1, description: "2 × Fudge box", tax_rates: [{ name: "Sales Tax", rate: 625000 }] }]);
     expect(body.email).toBe(FORM.email);
     expect(body.metadata).toMatchObject({ website_number: order.number, customer_name: FORM.name, fulfillment: `${order.number}: Pickup Tuesday, October 6, 1:00 PM–2:00 PM` });
     expect(calls[1].body).toEqual({ source: CARD, email: FORM.email, ecomind: "ecom" });

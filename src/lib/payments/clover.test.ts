@@ -22,7 +22,7 @@ function input(patch: Partial<ChargeInput> = {}): ChargeInput {
       customerName: "Pat Customer",
       phone: "(508) 555-0100",
       lines: [
-        { description: "2 × Phillips Dark Chocolate Bar", amountCents: 850, taxCents: 53, taxName: "Sales Tax" },
+        { description: "2 × Phillips Dark Chocolate Bar", amountCents: 850, taxCents: 53, taxName: "Sales Tax", taxRateBasisPoints: 625 },
         { description: "1 × Small gift basket", amountCents: 1000, taxCents: 63, taxName: "Sales Tax" },
       ],
       shippingCents: 895,
@@ -92,8 +92,8 @@ describe("a Clover charge: order, then pay", () => {
       currency: "usd",
       email: "pat@example.test",
       items: [
-        { type: "sku", amount: 850, currency: "usd", quantity: 1, description: "2 × Phillips Dark Chocolate Bar", tax_rates: [{ name: "Sales Tax", tax_amount: 53 }] },
-        { type: "sku", amount: 1000, currency: "usd", quantity: 1, description: "1 × Small gift basket", tax_rates: [{ name: "Sales Tax", tax_amount: 63 }] },
+        { type: "sku", amount: 850, currency: "usd", quantity: 1, description: "2 × Phillips Dark Chocolate Bar", tax_rates: [{ name: "Sales Tax", rate: 625000 }] },
+        { type: "sku", amount: 1000, currency: "usd", quantity: 1, description: "1 × Small gift basket", tax_rates: [{ name: "Sales Tax", rate: 630000 }] },
         { type: "shipping", amount: 895, currency: "usd", quantity: 1, description: "Shipping" },
       ],
       shipping: { name: "Pat", phone: "(508) 555-0100", address: { line1: "1 Main St", city: "Boston", state: "MA", postal_code: "02108", country: "US" } },
@@ -184,5 +184,13 @@ describe("looking a Clover order up (reconciling an unknown payment)", () => {
     expect(await provider.lookup("../../v1/charges", 1)).toEqual({ status: "unknown" });
     expect(answers.calls.map((c) => c.method)).toEqual(["GET", "GET", "GET", "GET"]);
     expect(answers.calls[0].url).toBe("https://scl-sandbox.dev.clover.com/v1/orders/ORD123ABC456");
+  });
+});
+
+describe("Clover tax rates (live 400: Could not find tax rate for line item)", () => {
+  it("sends the merchant's tax rate by name and Clover rate units, not an amount", async () => {
+    const { cloverTaxRate } = await import("./clover");
+    expect(cloverTaxRate(625, 850, 53)).toBe(625000);
+    expect(cloverTaxRate(null, 1000, 63)).toBe(630000);
   });
 });
