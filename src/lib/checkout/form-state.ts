@@ -8,6 +8,8 @@ export type FormState = {
   error: string | null;
   /** The customer's own entries, echoed back after an error so they don't have to type them again. */
   values?: Record<string, string>;
+  /** Add to bag succeeded and the page stays where it is (D58). */
+  added?: boolean;
 };
 
 /** Fields the checkout, reservation and add-to-bag forms send. */

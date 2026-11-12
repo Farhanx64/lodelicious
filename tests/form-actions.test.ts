@@ -95,6 +95,14 @@ describe("addToBag return path (D56)", () => {
     await expect(to("https://evil.example/")).rejects.toThrow("REDIRECT /cart");
     await expect(to("//evil.example")).rejects.toThrow("REDIRECT /cart");
   });
+
+  it("stays on the page when the interactive form asks to, so the floating receipt slides in (D58)", async () => {
+    mocks.changeBag.mockResolvedValue({ ok: true });
+    expect(await addToBag({ error: null }, form({ unitId: "7", quantity: "1", stay: "1" }))).toEqual({ error: null, added: true });
+    // An error still comes back with the entries, not as "added".
+    mocks.changeBag.mockResolvedValue({ ok: false, error: "Only 2 left." });
+    expect(await addToBag({ error: null }, form({ unitId: "7", quantity: "5", stay: "1" }))).toEqual({ error: "Only 2 left.", values: { unitId: "7", quantity: "5" } });
+  });
 });
 
 describe("one submission, one order (A11)", () => {

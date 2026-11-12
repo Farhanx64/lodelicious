@@ -4,6 +4,7 @@ import localFont from "next/font/local";
 import "../globals.css";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
+import { ReceiptBar } from "@/components/receipt/ReceiptBar";
 import { isPreviewEnv } from "@/src/lib/app-env";
 import { bagCount } from "@/src/lib/checkout/session";
 import { brandColor } from "@/src/lib/brand-color";
@@ -61,6 +62,7 @@ export default async function FrontendLayout({ children }: Readonly<{ children: 
           {children}
         </main>
         <SiteFooter store={store} />
+        <ReceiptBar />
       </body>
     </html>
   );
