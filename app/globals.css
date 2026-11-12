@@ -102,5 +102,29 @@
 @media (width < 48rem) {
   html:has([data-sticky-submit]) {
     scroll-padding-bottom: 6rem;
+
+/* Promo ticker (D57): continuous loop; the track holds two identical runs and moves by half. */
+@keyframes promo-ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.promo-ticker-track {
+  animation: promo-ticker linear infinite;
+}
+.promo-ticker:hover .promo-ticker-track,
+.promo-ticker:focus-within .promo-ticker-track,
+.promo-ticker[data-paused] .promo-ticker-track {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The owner wants the banner to keep moving; it slows to a third of the speed instead. */
+  .promo-ticker-track {
+    animation: promo-ticker linear infinite !important;
+    animation-duration: 180s !important;
+  }
+  .promo-ticker:hover .promo-ticker-track,
+  .promo-ticker:focus-within .promo-ticker-track,
+  .promo-ticker[data-paused] .promo-ticker-track {
+    animation-play-state: paused !important;
   }
 }

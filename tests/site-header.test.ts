@@ -49,12 +49,11 @@ describe("Promo banner", () => {
   it("replaces the staging note at the top with a labelled, pausable carousel", () => {
     const withPromo = renderToStaticMarkup(createElement(SiteHeader, { staging: true, storeName: "Souset-Pink", promo: { slides, seconds: 5 } }));
     expect(withPromo).not.toContain("Staging preview");
-    expect(withPromo).toContain('aria-roledescription="carousel"');
     expect(withPromo).toContain('aria-label="Promotions"');
     expect(withPromo).toContain("November fall deals");
     expect(withPromo).toMatch(/href="\/shop"[^>]*>Shop fall</);
     expect(withPromo).toMatch(/href="\/build-a-basket"[^>]*>Shop now</);
-    expect(withPromo).toContain('aria-label="Pause promotions"');
+    expect(withPromo).not.toContain("Pause promotions");
     expect(withPromo.indexOf("data-promo-banner")).toBeLessThan(withPromo.indexOf("<header"));
   });
 
@@ -62,6 +61,8 @@ describe("Promo banner", () => {
     const one = renderToStaticMarkup(createElement(SiteHeader, { staging: false, storeName: "Souset-Pink", promo: { slides: slides.slice(0, 1) } }));
     expect(one).toContain("data-promo-banner");
     expect(one).not.toContain("Next promotion");
+    expect(one).not.toContain("Previous promotion");
+    expect(one).toContain("promo-ticker-track");
   });
 
   it("falls back to the staging note when the promo is switched off or empty", () => {
