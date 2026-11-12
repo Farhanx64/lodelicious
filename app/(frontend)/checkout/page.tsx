@@ -66,8 +66,15 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     ? affordableOptions(ctx.rewards.config.options, member.pointsBalance, bag.subtotalCents).map((o) => ({
         id: o.id,
         label: `${formatCents(o.discountCents)} off for ${formatPoints(o.pointsRequired)} (total ${formatCents(totalsWithDiscount(lines, o.discountCents).totalCents)})`,
+        // What checkout will charge with this reward: the discounted total plus any shipping.
+        chargeCents: totalsWithDiscount(lines, o.discountCents).totalCents + shippingCents,
       }))
     : [];
+  // What Apple's sheet shows (D59): the order total, following the reward radio when there is one.
+  const applePayAmount = {
+    cents: totalCents,
+    ...(rewardOptions.length ? { byChoice: { field: "reward", cents: { none: totalCents, ...Object.fromEntries(rewardOptions.map((o) => [o.id, o.chargeCents])) } } } : {}),
+  };
   const earn = member ? pointsFor(bag.subtotalCents, ctx.rewards.config.pointsPerDollar) : 0;
   const returnPath = method === "ship" ? "/checkout?method=ship" : "/checkout";
 
@@ -135,7 +142,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
             {member ? (
               <RewardChoice
                 formId={FORM_ID}
-                options={rewardOptions}
+                options={rewardOptions.map(({ id, label }) => ({ id, label }))}
                 balanceLabel={formatPoints(member.pointsBalance)}
                 earnLabel={earn > 0 ? `This order earns about ${formatPoints(earn)} once it's paid (fewer if you use a reward).` : null}
               />
@@ -205,7 +212,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
               </p>
             )}
           </div>
-          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} />
+          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} applePay={applePayAmount} />
         </ActionForm>
       ) : (
         <div className={panelGrid}>

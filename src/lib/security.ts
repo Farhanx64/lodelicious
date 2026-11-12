@@ -37,8 +37,18 @@ export function securityHeaders({ hsts }: { hsts: boolean }): HeaderRule[] {
       source: "/reservation/:path*",
       headers: [{ key: "Referrer-Policy", value: "no-referrer" }],
     },
+    {
+      // Apple Pay domain verification (D59): a file with no extension, which Apple expects as text.
+      // `next start` serves it from public/; on Workers the static assets answer first, so
+      // public/_headers sets the same type there.
+      source: APPLE_PAY_DOMAIN_FILE,
+      headers: [{ key: "Content-Type", value: "text/plain; charset=utf-8" }],
+    },
   ];
 }
+
+/** Where Apple fetches the merchant domain association file (no extension, 200, no redirect). */
+export const APPLE_PAY_DOMAIN_FILE = "/.well-known/apple-developer-merchantid-domain-association";
 
 /**
  * The origins Payload accepts cookie-authenticated API requests from, taken from

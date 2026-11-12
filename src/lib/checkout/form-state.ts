@@ -10,7 +10,17 @@ export type FormState = {
   values?: Record<string, string>;
   /** Add to bag succeeded and the page stays where it is (D58). */
   added?: boolean;
+  /**
+   * Where the browser goes next, instead of a server redirect. Only for a wallet payment (Apple Pay,
+   * D59): the page must tell Apple's sheet it worked before it leaves.
+   */
+  next?: string;
 };
+
+/** The form was paid with a wallet (Apple Pay) rather than the card fields; see `next` above. */
+export function paidWithWallet(form: FormData): boolean {
+  return form.get("wallet") === "apple_pay";
+}
 
 /** Fields the checkout, reservation and add-to-bag forms send. */
 export const CHECKOUT_FIELDS = ["name", "email", "phone", "pickup", "notes", "payment", "reward", "unitId", "quantity"] as const;

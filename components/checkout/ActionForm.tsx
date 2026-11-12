@@ -1,10 +1,13 @@
 "use client";
 
-import { createContext, startTransition, useActionState, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, startTransition, useActionState, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+
+import type { WalletOutcome } from "@/src/lib/payments/apple-pay";
 
 import { primaryButton } from "./styles";
 
-type State = { error: string | null; values?: Record<string, string> };
+/** `next`: where to go after a wallet payment (D59), which can't follow a server redirect before Apple's sheet is told it worked. */
+type State = { error: string | null; values?: Record<string, string>; next?: string };
 
 const NO_VALUES: Record<string, string> = {};
 export const FormValuesContext = createContext<Record<string, string>>(NO_VALUES);
@@ -25,6 +28,19 @@ export function useFormValues(): Record<string, string> {
  */
 export type Preparer = (form: FormData) => Promise<string | null>;
 const PreparerContext = createContext<((p: Preparer | null) => void) | null>(null);
+
+/**
+ * Pays with a wallet token instead of the card fields (Apple Pay, D59): checks the form like a normal
+ * submit, then sends it with `cardToken` set to the wallet's token and `wallet` set, skipping the
+ * card step. Resolves with the server's answer, before the page moves on to the receipt.
+ */
+export type WalletSubmit = (payment: { token: string; email: string | null; wallet: "apple_pay" }) => Promise<WalletOutcome>;
+const WalletContext = createContext<{ submit: WalletSubmit; showError(message: string): void } | null>(null);
+
+/** The surrounding ActionForm's wallet submit, or null outside one. */
+export function useWalletSubmit() {
+  return useContext(WalletContext);
+}
 
 /** Registers a {@link Preparer} with the surrounding ActionForm while the component is mounted. */
 export function usePreparer(preparer: Preparer | null) {
@@ -82,6 +98,9 @@ export function ActionForm({
 }) {
   const [state, run, pending] = useActionState<State, FormData>(action, { error: null });
   const errorRef = useRef<HTMLParagraphElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  // A wallet payment waiting for the server's answer.
+  const wallet = useRef<{ token: string; kind: string; settle(outcome: WalletOutcome): void } | null>(null);
   const preparer = useRef<Preparer | null>(null);
   const register = useCallback((p: Preparer | null) => {
     preparer.current = p;
@@ -97,7 +116,50 @@ export function ActionForm({
   }, [shown]);
   const busy = pending || preparing;
 
+  // The server answered: tell a waiting wallet first (Apple's sheet shows the tick or the failure), then go on to the receipt.
+  useEffect(() => {
+    if (state.next || state.error) {
+      const waiting = wallet.current;
+      wallet.current = null;
+      waiting?.settle(state.next ? { kind: "paid" } : { kind: "error", message: state.error ?? "" });
+    }
+    // A full page load: Apple's sheet has its answer, and the receipt and bag count are fresh.
+    if (state.next?.startsWith("/")) window.location.assign(state.next);
+  }, [state]);
+
+  const showError = useCallback((message: string) => setLocal({ error: message, after: state }), [state]);
+  const submitWallet = useCallback<WalletSubmit>(
+    (payment) =>
+      new Promise<WalletOutcome>((resolve) => {
+        const form = formRef.current;
+        const button = form?.querySelector<HTMLButtonElement>('button[type="submit"]');
+        if (!form || busy || wallet.current || button?.disabled) return resolve({ kind: "invalid" });
+        const email = form.elements.namedItem("email");
+        if (payment.email && email instanceof HTMLInputElement && !email.value.trim()) email.value = payment.email;
+        // The browser's own checks, as for the Pay button: the highlighted fields say what's missing.
+        if (!form.checkValidity()) {
+          form.reportValidity();
+          return resolve({ kind: "invalid" });
+        }
+        wallet.current = { token: payment.token, kind: payment.wallet, settle: resolve };
+        form.requestSubmit();
+      }),
+    [busy],
+  );
+  const walletApi = useMemo(() => ({ submit: submitWallet, showError }), [submitWallet, showError]);
+
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    const paying = wallet.current;
+    if (paying) {
+      // Apple Pay already gave a token: the card fields are skipped, the server charges it like a card token.
+      event.preventDefault();
+      const form = new FormData(event.currentTarget);
+      form.set("cardToken", paying.token);
+      form.set("wallet", paying.kind);
+      setLocal(null);
+      startTransition(() => run(form));
+      return;
+    }
     if (!preparer.current) return; // nothing to do in the browser: the form posts to the action as usual
     event.preventDefault();
     if (busy) return;
@@ -133,7 +195,7 @@ export function ActionForm({
     </button>
   );
   const form = (
-    <form id={id} action={run} onSubmit={onSubmit} className={formClassName}>
+    <form ref={formRef} id={id} action={run} onSubmit={onSubmit} className={formClassName}>
       {children}
       {beforeSubmit}
       {shown.error && (
@@ -152,6 +214,7 @@ export function ActionForm({
   );
 
   return (
+    <WalletContext value={walletApi}>
     <PreparerContext value={register}>
       <FormValuesContext value={state.values ?? NO_VALUES}>
         {aside ? (
@@ -164,5 +227,6 @@ export function ActionForm({
         )}
       </FormValuesContext>
     </PreparerContext>
+    </WalletContext>
   );
 }

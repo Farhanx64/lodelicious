@@ -61,6 +61,15 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
   const deposit = paymentPlan(basket.totalCents, ctx.deposit, false);
   const slots = availableSlots(ctx.pickup, new Date(), ctx.reservationLeadHours);
   const state = orderingState(ctx.provider, basket.taxApproved);
+  // What Apple's sheet shows (D59): what is charged now. A shipped basket is paid in full; for pickup it
+  // follows the deposit / pay-in-full choice.
+  const applePayAmount =
+    method === "ship"
+      ? { cents: grandTotal }
+      : {
+          cents: deposit.chargeNowCents,
+          byChoice: { field: "payment", cents: { deposit: deposit.chargeNowCents, ...(ctx.allowPayInFull ? { full: basket.totalCents } : {}) } },
+        };
   const depositLabel = ctx.deposit.type === "percent" ? `${ctx.deposit.percentBasisPoints / 100}% deposit` : "Deposit";
   const looks = await bagLineLooks(
     payload,
@@ -176,7 +185,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
               />
             </>
           )}
-          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} />
+          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} applePay={applePayAmount} />
         </ActionForm>
       ) : (
         <div className={panelGrid}>

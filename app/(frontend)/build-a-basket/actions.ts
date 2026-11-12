@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 
 import { loadBuilderCatalog } from "@/src/lib/catalog/builder-data";
-import { failedWith, type FormState } from "@/src/lib/checkout/form-state";
+import { failedWith, paidWithWallet, type FormState } from "@/src/lib/checkout/form-state";
 import { reserveBasket } from "@/src/lib/checkout/service";
 import { checkoutPayload, clearBasketDraft, readBasketDraft, saveBasketDraft } from "@/src/lib/checkout/session";
 import { EXPIRED_FORM, verifySubmission } from "@/src/lib/checkout/submission";
@@ -54,5 +54,8 @@ export async function submitReservation(_prev: ReserveState, form: FormData): Pr
   const result = await reserveBasket(payload, { draft, form: Object.fromEntries(form), submission, memberId: member?.id ?? null, clientIp: await requestIp() }, ctx);
   if (!result.ok) return failedWith(result.error, form);
   await clearBasketDraft();
-  redirect(`/reservation/${result.number}?t=${encodeURIComponent(result.token)}`);
+  const receipt = `/reservation/${result.number}?t=${encodeURIComponent(result.token)}`;
+  // Apple Pay (D59): the browser tells Apple's sheet it worked, then opens the receipt itself.
+  if (paidWithWallet(form)) return { error: null, next: receipt };
+  redirect(receipt);
 }

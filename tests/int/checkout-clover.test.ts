@@ -8,7 +8,8 @@ import type { Order } from "@/payload-types";
 import { findByToken, loadCheckoutContext, placeOrder, type CheckoutContext } from "@/src/lib/checkout/service";
 import { reconcilePaidHeld } from "@/src/lib/inventory/settle";
 import { CloverPaymentProvider, cloverConfigFrom } from "@/src/lib/payments/clover";
-import { createdOrder, FAKE_CLOVER_ENV, paidOrder, scriptedFetch, serverError } from "@/src/lib/payments/clover-fixtures";
+import { readPaymentMethod } from "@/src/lib/payments/apple-pay";
+import { applePayPaymentMethod, createdOrder, FAKE_CLOVER_ENV, paidOrder, scriptedFetch, serverError } from "@/src/lib/payments/clover-fixtures";
 import { reconcileUnknownPayments } from "@/src/lib/payments/reconcile";
 
 import { bagWith, FORM, liveStock, makeProduct, movementsFor, NOW, setupWorld, type World } from "./inventory-fixtures";
@@ -146,5 +147,46 @@ describe("checkout with the Clover adapter (fixtures)", () => {
     expect(body.items.at(-1)).toEqual({ type: "shipping", amount: 895, currency: "usd", quantity: 1, description: "Shipping" });
     expect(body.shipping).toEqual({ name: FORM.name, phone: FORM.phone, address: { line1: "9 Ocean Ave", city: "Plymouth", state: "MA", postal_code: "02360", country: "US" } });
     expect(body.metadata.fulfillment).toMatch(/Ship to Pat Customer, 9 Ocean Ave, Plymouth, MA 02360$/);
+  });
+});
+
+describe("Apple Pay pays through the card path (D59, fixtures)", () => {
+  // What the browser sends: the form, with Apple Pay's token where the card token goes, and `wallet`.
+  const applePayForm = (pickup: string) => {
+    const payment = readPaymentMethod(applePayPaymentMethod());
+    if (!payment) throw new Error("fixture token refused");
+    return { ...FORM, pickup, cardToken: payment.token, wallet: "apple_pay" };
+  };
+
+  it("charges Apple Pay's token as the source, with the same order, total check and idempotency keys", async () => {
+    const product = await makeProduct(w, { stock: 5, priceCents: 1000 });
+    const token = await bagWith(w, product.id, 1);
+    const { fetch, calls } = scriptedFetch({ status: 200, body: createdOrder(1063, "ORDAPPLE01") }, { status: 200, body: paidOrder(1063, "ORDAPPLE01", "CHGAPPLE01") });
+    const result = await placeOrder(w.payload, { cartToken: token, form: applePayForm("2026-10-07|11:00"), now: NOW }, withClover(clover(fetch)));
+    if (!result.ok) throw new Error(result.error);
+    const order = (await findByToken(w.payload, "orders", result.number, result.token)) as Order;
+    expect(order).toMatchObject({ paymentStatus: "paid", payment: { provider: "clover", reference: "CHGAPPLE01", providerOrderId: "ORDAPPLE01" }, stockStatus: "committed" });
+    expect(calls.map((c) => c.url.replace(/^https:\/\/[^/]+/, ""))).toEqual(["/v1/orders", "/v1/orders/ORDAPPLE01/pay"]);
+    expect(calls[1].body).toEqual({ source: "clv_1TSTapplepaytoken", email: FORM.email, ecomind: "ecom" });
+    expect(calls[0].headers["idempotency-key"]).toBe(`${order.idempotencyKey}:1:order`);
+    expect(calls.every((c) => c.headers["idempotency-key"]?.startsWith(order.idempotencyKey))).toBe(true);
+  });
+
+  it("charges nothing when Clover's total differs from ours, and releases the hold", async () => {
+    const product = await makeProduct(w, { stock: 5, priceCents: 1000 });
+    const token = await bagWith(w, product.id, 1);
+    const { fetch, calls } = scriptedFetch({ status: 200, body: createdOrder(9999, "ORDAPPLE02") });
+    expect(await placeOrder(w.payload, { cartToken: token, form: applePayForm("2026-10-07|12:00"), now: NOW }, withClover(clover(fetch)))).toMatchObject({ ok: false });
+    expect(calls).toHaveLength(1); // the order only; no pay call
+    expect(await liveStock(w.payload, product.id)).toBe(5);
+  });
+
+  it("refuses a wallet token that isn't a Clover token before holding stock or calling Clover", async () => {
+    const product = await makeProduct(w, { stock: 5 });
+    const token = await bagWith(w, product.id, 1);
+    const { fetch, calls } = scriptedFetch();
+    const form = { ...FORM, pickup: "2026-10-07|13:00", cardToken: "tok_not_clover", wallet: "apple_pay" };
+    expect(await placeOrder(w.payload, { cartToken: token, form, now: NOW }, withClover(clover(fetch)))).toEqual({ ok: false, error: "Please enter your card details." });
+    expect(calls).toHaveLength(0);
   });
 });

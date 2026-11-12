@@ -43,7 +43,16 @@ export type ChargeResult = { status: "paid" | "failed" | "unknown"; reference: s
 export type LookupResult = { status: "paid"; reference: string } | { status: "not_paid" } | { status: "unknown" };
 
 /** What the checkout page needs in the browser to show the card fields. Never a secret. */
-export type BrowserPaymentConfig = { kind: "test" } | { kind: "clover"; sdkUrl: string; publicKey: string; merchantId: string | null };
+export type BrowserPaymentConfig =
+  | { kind: "test" }
+  | {
+      kind: "clover";
+      sdkUrl: string;
+      publicKey: string;
+      merchantId: string | null;
+      /** Offer Clover's Apple Pay button (D59), where the device has Apple Pay. */
+      applePay?: boolean;
+    };
 
 export type PaymentProvider = {
   id: string;

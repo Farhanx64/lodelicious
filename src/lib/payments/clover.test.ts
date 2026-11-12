@@ -52,7 +52,7 @@ describe("Clover payments configuration", () => {
   it("uses Clover on staging (sandbox), refuses sandbox keys on the live store, and falls back to the test payment otherwise", () => {
     const staging = resolvePayments({ APP_ENV: "staging", ...FAKE_CLOVER_ENV });
     expect(staging.provider).toMatchObject({ id: "clover", test: true, needsCardToken: true });
-    expect(staging.provider?.browser).toEqual({ kind: "clover", sdkUrl: CLOVER_HOSTS.sandbox.sdk, publicKey: FAKE_CLOVER_ENV.CLOVER_ECOMM_PUBLIC_KEY, merchantId: null });
+    expect(staging.provider?.browser).toEqual({ kind: "clover", sdkUrl: CLOVER_HOSTS.sandbox.sdk, publicKey: FAKE_CLOVER_ENV.CLOVER_ECOMM_PUBLIC_KEY, merchantId: null, applePay: false });
 
     expect(resolvePayments({ APP_ENV: "production", ...FAKE_CLOVER_ENV })).toMatchObject({ provider: null, problem: expect.stringMatching(/sandbox keys are refused/) });
     expect(resolvePayments({ ...FAKE_CLOVER_ENV })).toMatchObject({ provider: null }); // unset APP_ENV is live

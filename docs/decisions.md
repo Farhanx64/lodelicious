@@ -1313,7 +1313,7 @@ The checkout (`/checkout`) and the Build a Basket reserve page (`/reserve`) foll
 - **"You might also like":** one featured product that isn't in the bag, has a single option, an approved price, stock and can ship (so adding it never takes shipping away), from one extra query (`suggestAddOn` in `src/lib/checkout/presentation.ts`). "+ Add to your order" uses the existing add-to-bag action, which now accepts `next` = `/checkout` or `/checkout?method=ship` (an allowlist; anything else still goes to the bag). Shown only while checkout is open.
 - **Right, on white:** a Pickup / Ship switch at the top (two links, as before, so the summary is priced on the server for the method shown, with or without JavaScript); Contact (email, name, phone); the ship-to address as one bordered box (Country fixed to the United States, recipient, street, apartment, state, town + ZIP; every row keeps a visible label, the focus ring is drawn around the row) for Ship, or the pickup time for Pickup; notes and the allergy notice; the Clover card fields restyled (rounded boxes, decorative Visa / MC / Amex / Discover marks, "Secure payment by Clover" with a lock); Subtotal and Total repeated; a full-width "Pay $X.XX" button with a lock ("Place test order · $X.XX" with the test provider); Pickup & delivery · Cancellations & refunds · Privacy (there is no Terms page; these are the existing policies).
 - **Phone (390 px):** one column; the order summary folds behind "Show order summary · $X" (a disclosure button, `aria-expanded`), the rewards card stays visible, then the form; the Pay button sticks to the bottom of the screen while the form is in view, and the page gets `scroll-padding-bottom` so a focused field is never hidden behind it (WCAG 2.4.11). The chevron's rotation is motion-safe only.
-- **No Apple Pay or Google Pay.** Clover's iframe has wallet buttons (`PAYMENT_REQUEST_BUTTON`, `PAYMENT_REQUEST_BUTTON_APPLE_PAY`), but Apple Pay needs the merchant's web domain validated with Clover first, and Google Pay needs Google's terms accepted and a different token flow (amount-bound button, its own event) that hasn't been tried in the sandbox (D54 still lists the card flow as unverified). Both are merchant setup Lody hasn't done, so they are left out, as are PayPal and Alipay.
+- **No Apple Pay or Google Pay** (Apple Pay since added, D59). Clover's iframe has wallet buttons (`PAYMENT_REQUEST_BUTTON`, `PAYMENT_REQUEST_BUTTON_APPLE_PAY`), but Apple Pay needs the merchant's web domain validated with Clover first, and Google Pay needs Google's terms accepted and a different token flow (amount-bound button, its own event) that hasn't been tried in the sandbox (D54 still lists the card flow as unverified). Both are merchant setup Lody hasn't done, so they are left out, as are PayPal and Alipay.
 - **To confirm with Clover:** the card marks show the four US networks Clover ecommerce normally accepts; if Lody's account accepts fewer, take them out of `CardFields.tsx`.
 - Screenshots: `docs/screenshots/d56-*.png` (fake payment provider, local data with a few chocolates ticked "Can ship" so the Ship view shows).
 
@@ -1333,3 +1333,58 @@ Once the bag has something in it, a slim bar is fixed to the bottom of every sto
 - **Motion.** The slide-in is a CSS animation; under reduced motion the site-wide rule switches it off and the bar simply appears.
 - **Phone first.** Full width on a phone; from the tablet width up it floats as a rounded card, centred, at most 36 rem wide.
 - Screenshots: `docs/screenshots/d58-*.png` (two items, 390 px collapsed and open, 1280 px collapsed and open).
+
+## D59 — Apple Pay through Clover's iframe, above the card fields (2026-11-12)
+
+The owner asked for Apple Pay at checkout. It uses Clover's own Apple Pay button from the same
+iframe SDK as the card fields (D54), and pays through the same server path as a card. **Nothing here
+has run against Clover or on an iPhone**: it is written from Clover's public docs ("Clover iframe
+features: Apple Pay", read 2026-11-12) and tested with fakes and fixtures only.
+
+- **Where it shows.** Above "Card details" on `/checkout` and `/reserve`, followed by "or pay by
+  card", only when all of these hold: Clover is the provider; `CLOVER_ECOMM_APPLE_PAY=on`;
+  `CLOVER_ECOMM_MERCHANT_ID` is set (Clover's button takes it as `sessionIdentifier`); and the
+  browser has `ApplePaySession` with `canMakePayments()` true over HTTPS (Safari on an Apple device
+  with Apple Pay set up). Anywhere else nothing renders, not even the divider, and the card form is
+  unchanged. The check runs after the page loads (server markup never has the button). Apple's
+  `canMakePayments()` doesn't ask about a specific card; only Clover knows the Apple merchant
+  identifier, so `canMakePaymentsWithActiveCard` isn't possible, and Apple's guidance is to show the
+  button whenever `canMakePayments()` is true.
+- **Switched off by default.** `CLOVER_ECOMM_APPLE_PAY` stays unset until the domain shows
+  *Verified* in Clover, so Safari never shows a button that can't work.
+- **Flow** (`src/lib/payments/apple-pay.ts`, `components/checkout/ApplePayButton.tsx`). The page
+  builds `clover.createApplePaymentRequest({ amount, countryCode: "US", currencyCode: "USD" })`, sets
+  the total's label to **Lodelicious**, and mounts `PAYMENT_REQUEST_BUTTON_APPLE_PAY` on the same
+  Clover instance as the card fields. When the customer approves the sheet, Clover fires
+  `paymentMethod` on `window` with `detail.tokenRecieved.id` (Clover's spelling). The form is checked
+  the way the Pay button checks it (missing email, name, phone, pickup time or address: the sheet is
+  told "failed", the browser highlights the field, and the page says nothing was charged; the
+  wallet's email fills an empty email box). Then the checkout form is submitted with that token as
+  `cardToken` plus `wallet=apple_pay`, skipping the card fields.
+- **Same server path.** The token goes through `cardSource` (same `clv_…` check), `placeOrder` /
+  `reserveBasket`, the Clover order, the to-the-cent total check, `/pay` with `source` = the token,
+  the D42 idempotency keys, stock holds and `unknown` handling, all unchanged. The only server
+  difference: with `wallet=apple_pay` a successful order answers `{ next: receipt URL }` instead of
+  redirecting, so the browser can call `clover.updateApplePaymentStatus("success")` before it loads
+  the receipt (a server redirect would leave Apple's sheet without an answer). Any error answer
+  calls `updateApplePaymentStatus("failed")` and shows the server's message as for a card.
+- **Amount.** Exactly what will be charged, worked out on the server page: on `/checkout` the order
+  total with tax and shipping, following the member's reward radio (each option's discounted total
+  plus shipping); on `/reserve` the deposit or pay-in-full choice for pickup, the full total for a
+  shipped basket. Pickup / Ship and bag changes reload the page's figures from the server, and the
+  button calls `clover.updateApplePaymentRequest` with the new amount. The server still decides the
+  real charge; Apple's sheet only displays it.
+- **Domain verification.** Apple's file, from Clover's dashboard, is committed at
+  `public/.well-known/apple-developer-merchantid-domain-association` (public content). Both hosts
+  serve it with 200, `text/plain`, no redirect: `next start` from `public/` with a `Content-Type`
+  rule in `securityHeaders`; on Workers the static assets answer before the app, so
+  `public/_headers` sets the type there (checked with `cf:preview` and `curl -i`). The same path
+  with a trailing slash redirects to the exact path; Apple asks for the exact one.
+- **Unknown until live.** The token prefix (`clv_` assumed; anything else is refused as "Please
+  enter your card details", charging nothing), whether `total.label` survives
+  `createApplePaymentRequest`, and timing: Apple gives about 30 seconds after approval, while
+  checkout waits up to `PAYMENT_TIMEOUT_MS` (default 30 s) for Clover. A slow Clover can leave the sheet
+  showing a failure while the page shows the usual "don't pay again" message for an `unknown`
+  payment.
+- Screenshot: `docs/screenshots/d59-checkout-no-apple-pay.png` (headless Chrome, which has no Apple
+  Pay, with Clover sandbox and the switch on: the page is as before).

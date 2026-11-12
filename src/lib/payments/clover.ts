@@ -39,6 +39,12 @@ export type CloverConfig = {
   privateToken: string;
   /** Clover's merchant id (not secret). The iframe SDK asks for it for some features; optional. */
   merchantId: string | null;
+  /**
+   * Offer Apple Pay through Clover's iframe (D59): `CLOVER_ECOMM_APPLE_PAY=on`, and only with a
+   * merchant id, which Clover's Apple Pay button needs as its session identifier. Off until the
+   * domain is verified with Clover, so Safari never shows a button that can't work.
+   */
+  applePay?: boolean;
 };
 
 export class CloverConfigError extends Error {
@@ -71,7 +77,8 @@ export function cloverConfigFrom(env: EnvLike): CloverConfig {
   if (publicKey === privateToken) throw new CloverConfigError("CLOVER_ECOMM_PUBLIC_KEY and CLOVER_ECOMM_PRIVATE_TOKEN are the same value");
   const merchantId = get("CLOVER_ECOMM_MERCHANT_ID");
   if (merchantId && !/^[A-Z0-9]{8,20}$/.test(merchantId)) throw new CloverConfigError("CLOVER_ECOMM_MERCHANT_ID does not look like a Clover merchant id");
-  return { environment, publicKey, privateToken, merchantId: merchantId || null };
+  const applePay = ["on", "true", "1", "yes"].includes(get("CLOVER_ECOMM_APPLE_PAY").toLowerCase()) && merchantId !== "";
+  return { environment, publicKey, privateToken, merchantId: merchantId || null, applePay };
 }
 
 /** A single-use card token from Clover's iframe. */
@@ -124,7 +131,13 @@ export class CloverPaymentProvider implements PaymentProvider {
   private readonly userAgent: string;
 
   get browser() {
-    return { kind: "clover" as const, sdkUrl: CLOVER_HOSTS[this.config.environment].sdk, publicKey: this.config.publicKey, merchantId: this.config.merchantId };
+    return {
+      kind: "clover" as const,
+      sdkUrl: CLOVER_HOSTS[this.config.environment].sdk,
+      publicKey: this.config.publicKey,
+      merchantId: this.config.merchantId,
+      applePay: this.config.applePay ?? false,
+    };
   }
 
   private async call(method: "GET" | "POST", path: string, body: unknown, extra: { idempotencyKey?: string; clientIp?: string }): Promise<Record<string, unknown>> {
