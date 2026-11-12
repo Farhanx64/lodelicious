@@ -2,14 +2,19 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
+import { applePayConfigured, type ApplePayAmount, type CloverApplePay } from "@/src/lib/payments/apple-pay";
 import type { BrowserPaymentConfig } from "@/src/lib/payments/types";
 
 import { usePreparer } from "./ActionForm";
+import { ApplePayButton } from "./ApplePayButton";
 
-/** The parts of Clover's iframe SDK this page uses (D54). The card is typed into Clover's frames, never ours. */
-type CloverElement = { mount(selector: string): void; addEventListener(event: "change" | "blur", fn: (e: Record<string, { error?: string; touched?: boolean }>) => void): void };
-type CloverInstance = {
-  elements(): { create(type: string, styles?: Record<string, unknown>): CloverElement };
+/** The parts of Clover's iframe SDK this page uses (D54, D59). The card is typed into Clover's frames, never ours. */
+type CloverElement = {
+  mount(selector: string): void;
+  addEventListener(event: "change" | "blur", fn: (e: Record<string, { error?: string; touched?: boolean }>) => void): void;
+};
+type CloverInstance = Omit<CloverApplePay, "elements"> & {
+  elements(): { create(type: string, options?: Record<string, unknown>): CloverElement };
   createToken(): Promise<{ token?: string; errors?: Record<string, string> }>;
 };
 declare global {
@@ -65,8 +70,7 @@ function SecureLine() {
         <path d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1.5 1.5 0 0 0-1.5 1.5v6A1.5 1.5 0 0 0 4 15h8a1.5 1.5 0 0 0 1.5-1.5v-6A1.5 1.5 0 0 0 12 6h-.5V4.5A3.5 3.5 0 0 0 8 1Zm2 5H6V4.5a2 2 0 1 1 4 0V6Z" />
       </svg>
       <span>
-        <strong className="font-semibold text-ink">Secure payment by Clover.</strong> Your card goes straight to Clover; we never see or store the card
-        number.
+        <strong className="font-semibold text-ink">Secure payment by Clover.</strong> Your card goes straight to Clover; we never see or store the card number.
       </span>
     </p>
   );
@@ -84,14 +88,29 @@ function loadSdk(url: string): Promise<void> {
   });
 }
 
-/** The card form: Clover's hosted iframes, or a labelled placeholder with the test provider. */
-export function CardFields({ config }: { config: BrowserPaymentConfig }) {
+function CardFieldset({ children }: { children: React.ReactNode }) {
   return (
     <fieldset className="mb-2">
       <legend className="mb-3 text-base font-semibold text-ink">Card details</legend>
-      {config.kind === "clover" ? <CloverCard config={config} /> : <TestCard />}
+      {children}
     </fieldset>
   );
+}
+
+/**
+ * The card form: Clover's hosted iframes, or a labelled placeholder with the test provider. With
+ * Clover and `applePay` (the amount Apple's sheet shows), Clover's Apple Pay button goes above the
+ * card fields on devices that have Apple Pay (D59); everywhere else nothing extra renders.
+ */
+export function CardFields({ config, applePay }: { config: BrowserPaymentConfig; applePay?: ApplePayAmount }) {
+  if (config.kind !== "clover") {
+    return (
+      <CardFieldset>
+        <TestCard />
+      </CardFieldset>
+    );
+  }
+  return <CloverCard config={config} applePay={applePayConfigured(config) ? applePay : undefined} />;
 }
 
 function Grid({ children }: { children: React.ReactNode }) {
@@ -120,8 +139,10 @@ function TestCard() {
   );
 }
 
-function CloverCard({ config }: { config: Extract<BrowserPaymentConfig, { kind: "clover" }> }) {
+function CloverCard({ config, applePay }: { config: Extract<BrowserPaymentConfig, { kind: "clover" }>; applePay?: ApplePayAmount }) {
   const clover = useRef<CloverInstance | null>(null);
+  // The same Clover instance drives the card fields and the Apple Pay button.
+  const [instance, setInstance] = useState<CloverInstance | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -141,6 +162,7 @@ function CloverCard({ config }: { config: Extract<BrowserPaymentConfig, { kind: 
           });
         }
         clover.current = instance;
+        setInstance(instance);
         setStatus("ready");
       })
       .catch(() => !cancelled && setStatus("failed"));
@@ -163,21 +185,30 @@ function CloverCard({ config }: { config: Extract<BrowserPaymentConfig, { kind: 
 
   return (
     <>
-      {status === "failed" && (
-        <p role="alert" className="mb-3 border border-error p-3 text-error">
-          The card form couldn&rsquo;t load. Please check your connection and reload the page.
-        </p>
-      )}
-      <Grid>
-        {FIELDS.map((f) => (
-          <div key={f.id} className={f.span || undefined}>
-            <FieldLabel id={`${f.id}-label`} type={f.type} text={f.text} />
-            <div id={f.id} role="group" aria-labelledby={`${f.id}-label`} aria-busy={status === "loading" || undefined} className="clover-field h-12 w-full overflow-hidden rounded-lg border border-ink-soft bg-paper p-0" />
-            {errors[f.type] && <p className="mt-1 text-sm text-error">{errors[f.type]}</p>}
-          </div>
-        ))}
-      </Grid>
-      <SecureLine />
+      {applePay && instance && config.merchantId && <ApplePayButton clover={instance} sessionIdentifier={config.merchantId} amount={applePay} />}
+      <CardFieldset>
+        {status === "failed" && (
+          <p role="alert" className="mb-3 border border-error p-3 text-error">
+            The card form couldn&rsquo;t load. Please check your connection and reload the page.
+          </p>
+        )}
+        <Grid>
+          {FIELDS.map((f) => (
+            <div key={f.id} className={f.span || undefined}>
+              <FieldLabel id={`${f.id}-label`} type={f.type} text={f.text} />
+              <div
+                id={f.id}
+                role="group"
+                aria-labelledby={`${f.id}-label`}
+                aria-busy={status === "loading" || undefined}
+                className="clover-field h-12 w-full overflow-hidden rounded-lg border border-ink-soft bg-paper p-0"
+              />
+              {errors[f.type] && <p className="mt-1 text-sm text-error">{errors[f.type]}</p>}
+            </div>
+          ))}
+        </Grid>
+        <SecureLine />
+      </CardFieldset>
     </>
   );
 }

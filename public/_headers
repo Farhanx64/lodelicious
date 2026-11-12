@@ -1,0 +1,4 @@
+# Cloudflare Workers static assets (D59). OpenNext copies public/ into .open-next/assets, which the
+# Worker serves before the app, so next.config.ts headers don't reach these files.
+/.well-known/apple-developer-merchantid-domain-association
+  Content-Type: text/plain; charset=utf-8

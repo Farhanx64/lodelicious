@@ -55,3 +55,17 @@ export function scriptedFetch(...answers: ({ status: number; body: unknown } | "
   };
   return { fetch, calls };
 }
+
+/**
+ * The `detail` of the `paymentMethod` event Clover's Apple Pay button fires on `window` (D59),
+ * shaped after the example on Clover's "Clover iframe features: Apple Pay" page (Clover spells it
+ * `tokenRecieved`). Made up; the token's `clv_` prefix is assumed and must be confirmed live.
+ */
+export const applePayPaymentMethod = (id = "clv_1TSTapplepaytoken") => ({
+  tokenRecieved: {
+    id,
+    wallet: { address_zip: "02703", address_country: "US", exp_month: "12", exp_year: "2030", last4: "4242", first6: "424242" },
+  },
+  customerEmail: "ann@example.test",
+  status: "success",
+});
