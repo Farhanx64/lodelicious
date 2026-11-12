@@ -1,0 +1,247 @@
+/* Admin colour picker (D55). Payload's theme variables, so it follows the light and dark admin themes. */
+.lp-color__row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.lp-color__swatch {
+  flex: 0 0 auto;
+  width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--theme-elevation-250);
+  border-radius: var(--style-radius-s);
+  cursor: pointer;
+  font: 600 13px/1 var(--font-body, inherit);
+  padding: 0;
+  box-shadow: inset 0 0 0 2px var(--theme-input-bg, var(--theme-elevation-0));
+}
+
+.lp-color__format,
+.lp-color__input {
+  min-height: 44px;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-input-bg, var(--theme-elevation-0));
+  color: var(--theme-elevation-800);
+  font-size: 1rem;
+  padding: 0 12px;
+}
+
+.lp-color__format {
+  flex: 0 0 auto;
+  width: 84px;
+  padding-right: 4px;
+}
+
+.lp-color__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+}
+
+.lp-color__format:hover,
+.lp-color__input:hover {
+  border-color: var(--theme-elevation-250);
+}
+
+.lp-color :is(button, select, input):focus-visible,
+.lp-color .react-colorful__interactive:focus-visible {
+  outline: 2px solid var(--theme-success-500, #2563eb);
+  outline-offset: 2px;
+}
+
+.lp-color.error .lp-color__input,
+.lp-color__input[aria-invalid="true"] {
+  border-color: var(--theme-error-400, #d33);
+}
+
+.lp-color__panel {
+  margin-top: 8px;
+  padding: 12px;
+  width: 100%;
+  max-width: 340px;
+  box-sizing: border-box;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: var(--style-radius-m);
+  background: var(--theme-elevation-50);
+}
+
+.lp-color .lp-color__picker.react-colorful {
+  width: 100%;
+  height: 220px;
+  gap: 12px;
+}
+
+.lp-color .react-colorful__saturation {
+  border-radius: var(--style-radius-s);
+  border-bottom: 0;
+}
+
+.lp-color .react-colorful__hue {
+  height: 20px;
+  flex: 0 0 20px;
+  border-radius: 10px;
+}
+
+.lp-color .react-colorful__pointer {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+}
+
+/* Fingers: a taller hue slider and larger handles on touch screens. */
+@media (pointer: coarse) {
+  .lp-color .react-colorful__hue {
+    height: 28px;
+    flex-basis: 28px;
+    border-radius: 14px;
+  }
+  .lp-color .react-colorful__pointer {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.lp-color .react-colorful__interactive:focus .react-colorful__pointer {
+  box-shadow: 0 0 0 2px var(--theme-elevation-1000), 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.lp-color__tools {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lp-color__preview {
+  flex: 1 1 auto;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--style-radius-s);
+  border: 1px solid var(--theme-elevation-150);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.lp-color__btn {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--theme-elevation-200);
+  border-radius: var(--style-radius-s);
+  background: var(--theme-elevation-0);
+  color: var(--theme-elevation-800);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.lp-color__btn:hover {
+  background: var(--theme-elevation-100);
+}
+
+.lp-color__saved {
+  margin-top: 12px;
+}
+
+.lp-color__saved-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 32px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--theme-elevation-800);
+}
+
+.lp-color__link {
+  border: 0;
+  background: none;
+  color: var(--theme-elevation-800);
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+  min-height: 32px;
+  padding: 0 4px;
+}
+
+.lp-color__link:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.lp-color__swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-color__chip {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--theme-elevation-250);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.lp-color__chip[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--theme-elevation-0), 0 0 0 4px var(--theme-elevation-800);
+}
+
+/* A colour that fails this field's contrast rule gets a diagonal line through it. */
+.lp-color__chip--fails::after {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, transparent calc(50% - 1px), var(--theme-error-500, #c00) calc(50% - 1px), var(--theme-error-500, #c00) calc(50% + 1px), transparent calc(50% + 1px));
+}
+
+.lp-color__note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--theme-error-500, #c00);
+}
+
+.lp-color__message p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.lp-color__bad {
+  color: var(--theme-error-500, #c00);
+}
+
+.lp-color__good {
+  color: var(--theme-elevation-650, var(--theme-elevation-800));
+}
+
+.lp-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .lp-color__panel {
+    max-width: none;
+  }
+}
+
+.lp-color__saved-actions {
+  display: inline-flex;
+  gap: 8px;
+}

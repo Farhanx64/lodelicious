@@ -46,6 +46,7 @@ export const StoreSettings: GlobalConfig = {
               validate: validateBrandColor,
               admin: {
                 placeholder: BRAND_COLOR_DEFAULT,
+                components: { Field: { path: "@/components/admin/ColorPickerField#ColorPickerField", clientProps: { kind: "brand" } } },
                 description:
                   "The main pink on the website: the announcement bar, buttons and coloured panels. A colour code like #9c4459. It must be deep enough for white text on it to stay readable; leave empty for the default.",
               },
@@ -58,6 +59,7 @@ export const StoreSettings: GlobalConfig = {
               validate: validateButtonColor,
               admin: {
                 placeholder: BUTTON_COLOR_DEFAULT,
+                components: { Field: { path: "@/components/admin/ColorPickerField#ColorPickerField", clientProps: { kind: "button" } } },
                 description:
                   "The filled buttons (gold by default), such as Shop sweets and Add to bag. A colour code like #c8a467. It must be light enough for the dark button text to stay readable; leave empty for the default.",
               },

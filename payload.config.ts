@@ -25,6 +25,7 @@ import { SyncJobs } from "./collections/SyncJobs";
 import { TaxClasses } from "./collections/TaxClasses";
 import { Users } from "./collections/Users";
 import { CheckoutSettings } from "./globals/CheckoutSettings";
+import { ColorPalette } from "./globals/ColorPalette";
 import { EventSettings } from "./globals/EventSettings";
 import { GiftBuilderSettings } from "./globals/GiftBuilderSettings";
 import { HomePage } from "./globals/HomePage";
@@ -94,7 +95,7 @@ export default buildConfig({
     // Hidden from the admin
     Carts,
   ],
-  globals: [StoreSettings, HomePage, Policies, CheckoutSettings, GiftBuilderSettings, EventSettings, InventorySettings, RewardsSettings],
+  globals: [StoreSettings, HomePage, Policies, CheckoutSettings, GiftBuilderSettings, EventSettings, InventorySettings, RewardsSettings, ColorPalette],
   // Transactional email (D44): the console by default; SMTP only with complete settings (and EMAIL_SEND_LIVE=1 on the live store).
   email: emailAdapterFromEnv(process.env),
   editor: lexicalEditor(),

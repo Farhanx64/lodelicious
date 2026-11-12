@@ -1212,3 +1212,15 @@ the same time and may also claim D49; renumber one of them at merge.)
 ## D53 — Staff passwords work on Cloudflare Workers (2026-11-11)
 
 Payload 3.90 hashes passwords with PBKDF2-SHA256 at 600,000 iterations. Cloudflare Workers refuse native PBKDF2 above 100,000, so on the live site every login failed as "incorrect" (locking the owners out) and password resets returned 500. `patches/payload+3.90.2.patch` (applied by `patch-package` on install) makes Payload's local strategy fall back to `@noble/hashes` pure-JS PBKDF2 when the native call is refused. The hash format is unchanged, so hashes made on Node and on Workers verify on both. A login costs about a second or two of Worker CPU, well inside the paid plan's limit. Re-check the patch whenever Payload is upgraded.
+
+## D55 — A colour picker for the brand and button colours (2026-11-11)
+
+(D54 is reserved for the checkout work in progress on another branch.)
+
+Store details → *Brand colour* and *Button colour* (D49/D50) were plain text boxes that needed a colour code. They now use a picker built for the admin, `components/admin/ColorPickerField.tsx`, wired in with `admin.components.Field` and a `kind` client prop (`brand` or `button`); nothing else in `globals/StoreSettings.ts` changed.
+
+- **Controls.** A swatch button opens a panel with a saturation/brightness square and a hue slider from `react-colorful` 5.8.1 (MIT, ~2.8 kB gzipped, no dependencies; arrow keys move both, and they are labelled sliders). There is an eyedropper button using the browser's EyeDropper API, hidden where the browser lacks it (Safari, Firefox, phones). A Hex / RGB / HSL select sits next to a text box that accepts any of those (`#c45`, `156 68 89`, `hsl(346, 39%, 44%)`; `src/lib/color-format.ts`). A "Shop sweets" sample shows the field's own text colour on the chosen colour.
+- **No alpha.** The value is still stored as opaque `#rrggbb`, so the WCAG AA check in `src/lib/brand-color.ts` stays meaningful. Eight-digit hex and `rgba()` are refused.
+- **Live check.** The same rule the server applies on save runs as staff pick, under the picker: "Too light for white text: 2.0:1, and it needs at least 4.5:1", or the passing ratio. Swatches that would fail for that field get a red diagonal line. Server validation is unchanged.
+- **Saved swatches.** The shop's colours come first (`src/lib/color-palette.ts`: the pinks, blush, gold, gold text, ink and cream from `app/globals.css` plus both defaults; `tests/color-picker.test.ts` keeps them in step with the CSS). After them come colours staff add with *+ Add* (and take away with *Remove*). Those live in a new hidden global, **Colour palette** (`color-palette`, a JSON list, migration `color_palette`), so they show on every device. Staff can read it; owners and managers can change it. Changes are audited.
+- Payload theme variables, so it follows the light and dark admin themes. 44 px controls, and the panel goes full width on a phone.
