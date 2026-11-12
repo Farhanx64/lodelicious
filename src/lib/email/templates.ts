@@ -114,6 +114,9 @@ export type OrderEmail = {
   totalCents: number;
   taxApproved: boolean;
   pickupLabel: string;
+  /** Set when the order ships (D54): the address, on one line. Pickup rows are then replaced by it. */
+  shipTo?: string | null;
+  shippingCents?: number;
   /** The customer's own notes. A non-empty note means a person checks the order before it is packed. */
   notes: string;
   staffReview: boolean;
@@ -138,6 +141,9 @@ export type ReservationEmail = {
   balanceDueCents: number;
   paidInFull: boolean;
   pickupLabel: string;
+  /** Set when the basket ships (D54). */
+  shipTo?: string | null;
+  shippingCents?: number;
   requests: string;
   staffReview: boolean;
   testMode: boolean;
@@ -161,6 +167,11 @@ export type InquiryEmail = {
   store: StoreInfo;
 };
 
+/** "Pickup: …" or "Ship to: …" (D54). */
+const whereRow = (d: { pickupLabel: string; shipTo?: string | null }): [string, string] => (d.shipTo ? ["Ship to", d.shipTo] : ["Pickup", d.pickupLabel]);
+const whereSubject = (d: { pickupLabel: string; shipTo?: string | null }): string => (d.shipTo ? "shipping" : `pickup ${oneLine(d.pickupLabel)}`);
+const shippingRows = (d: { shippingCents?: number; shipTo?: string | null }): [string, string][] => (d.shipTo ? [["Shipping", money(d.shippingCents ?? 0)]] : []);
+
 const testPrefix = (test: boolean): string => (test ? "[TEST] " : "");
 const testNote = (test: boolean): Block[] => (test ? [{ kind: "p", text: "This was a test order. No money moved, and nothing will be prepared." }] : []);
 
@@ -181,7 +192,7 @@ export function customerOrderConfirmation(d: OrderEmail): Rendered {
         : `Thank you for your order. We have your payment, and order ${d.number} is being prepared.`,
     },
     ...testNote(d.testMode),
-    { kind: "rows", rows: [["Order", d.number], ["Pickup", d.pickupLabel]] },
+    { kind: "rows", rows: [["Order", d.number], whereRow(d)] },
     { kind: "heading", text: "What you ordered" },
     { kind: "items", items: d.lines.map(lineBlock) },
     {
@@ -190,13 +201,14 @@ export function customerOrderConfirmation(d: OrderEmail): Rendered {
         ["Subtotal", money(d.subtotalCents)],
         ...(d.discountCents ? ([["Reward", `-${money(d.discountCents)}`]] as [string, string][]) : []),
         ["Tax", money(d.taxCents)],
+        ...shippingRows(d),
         ["Total paid", money(d.totalCents)],
         ...(d.earnPoints ? ([["Points earned", d.earnPoints.toLocaleString("en-US")]] as [string, string][]) : []),
       ],
     },
   ];
   if (d.notes.trim()) blocks.push({ kind: "quote", label: "Your note", text: d.notes });
-  blocks.push({ kind: "heading", text: "Pick up at" }, { kind: "p", text: storeFooter(d.store).join("\n") });
+  blocks.push({ kind: "heading", text: d.shipTo ? "Our shop" : "Pick up at" }, { kind: "p", text: storeFooter(d.store).join("\n") });
   if (d.link) blocks.push({ kind: "p", text: "You can see your order at any time here. Keep this link private; anyone who has it can see the order." }, { kind: "link", label: "View your order", url: d.link });
   blocks.push({ kind: "p", text: "Questions? Just reply to this email or call us." });
   return build(`${testPrefix(d.testMode)}Your order ${d.number}${d.staffReview ? ": we are checking your note" : " is confirmed"}`, blocks, storeFooter(d.store));
@@ -212,21 +224,22 @@ export function customerReservationConfirmation(d: ReservationEmail): Rendered {
         : `Thank you. We have your ${d.paidInFull ? "payment" : "deposit"}, and basket reservation ${d.number} is confirmed.`,
     },
     ...testNote(d.testMode),
-    { kind: "rows", rows: [["Reservation", d.number], ["Pickup", d.pickupLabel]] },
+    { kind: "rows", rows: [["Reservation", d.number], whereRow(d)] },
     { kind: "heading", text: oneLine(d.basketTitle) || "Your basket" },
     { kind: "items", items: d.components.map((c) => ({ left: `${c.quantity} × ${oneLine(c.name)}`, right: "" })) },
     {
       kind: "rows",
       rows: [
-        ["Basket total (with tax)", money(d.totalCents)],
+        [d.shipTo ? "Total (with tax and shipping)" : "Basket total (with tax)", money(d.totalCents)],
         ["Tax included", money(d.taxCents)],
+        ...shippingRows(d),
         [d.paidInFull ? "Paid in full" : "Deposit paid", money(d.paidCents)],
         ["Balance due at pickup", money(d.balanceDueCents)],
       ],
     },
   ];
   if (d.requests.trim()) blocks.push({ kind: "quote", label: "Your requests", text: d.requests });
-  blocks.push({ kind: "heading", text: "Pick up at" }, { kind: "p", text: storeFooter(d.store).join("\n") });
+  blocks.push({ kind: "heading", text: d.shipTo ? "Our shop" : "Pick up at" }, { kind: "p", text: storeFooter(d.store).join("\n") });
   if (d.link) blocks.push({ kind: "p", text: "You can see your reservation at any time here. Keep this link private; anyone who has it can see it." }, { kind: "link", label: "View your reservation", url: d.link });
   blocks.push({ kind: "p", text: "Questions? Just reply to this email or call us." });
   return build(`${testPrefix(d.testMode)}Your basket reservation ${d.number}${d.staffReview ? ": we are checking your requests" : " is confirmed"}`, blocks, storeFooter(d.store));
@@ -256,25 +269,25 @@ export function staffNewOrder(d: OrderEmail): Rendered {
   const blocks: Block[] = [
     { kind: "p", text: d.staffReview ? `New PAID order ${d.number} needs STAFF REVIEW: the customer left a note. Read it before packing.` : `New paid order ${d.number}. It is ready to prepare.` },
     ...testNote(d.testMode),
-    { kind: "rows", rows: [...contactRows(d), ["Pickup", d.pickupLabel], ["Total paid", money(d.totalCents)], ["Tax", money(d.taxCents) + (d.taxApproved ? "" : " (estimate: tax class not approved)")]] },
+    { kind: "rows", rows: [...contactRows(d), whereRow(d), ...shippingRows(d), ["Total paid", money(d.totalCents)], ["Tax", money(d.taxCents) + (d.taxApproved ? "" : " (estimate: tax class not approved)")]] },
     { kind: "items", items: d.lines.map(lineBlock) },
   ];
   if (d.notes.trim()) blocks.push({ kind: "quote", label: "Customer note", text: d.notes });
   blocks.push(...adminBlock(d.adminLink));
-  return build(`${testPrefix(d.testMode)}New order ${d.number}${d.staffReview ? " (needs staff review)" : ""}: ${money(d.totalCents)}, pickup ${oneLine(d.pickupLabel)}`, blocks, [oneLine(d.store.name)]);
+  return build(`${testPrefix(d.testMode)}New order ${d.number}${d.staffReview ? " (needs staff review)" : ""}: ${money(d.totalCents)}, ${whereSubject(d)}`, blocks, [oneLine(d.store.name)]);
 }
 
 export function staffNewReservation(d: ReservationEmail): Rendered {
   const blocks: Block[] = [
     { kind: "p", text: d.staffReview ? `New basket reservation ${d.number} needs STAFF REVIEW: the customer added requests. Read them before making the basket.` : `New basket reservation ${d.number}, ${d.paidInFull ? "paid in full" : "deposit paid"}.` },
     ...testNote(d.testMode),
-    { kind: "rows", rows: [...contactRows(d), ["Pickup", d.pickupLabel], ["Basket total", money(d.totalCents)], [d.paidInFull ? "Paid" : "Deposit paid", money(d.paidCents)], ["Balance due at pickup", money(d.balanceDueCents)]] },
+    { kind: "rows", rows: [...contactRows(d), whereRow(d), ...shippingRows(d), ["Basket total", money(d.totalCents)], [d.paidInFull ? "Paid" : "Deposit paid", money(d.paidCents)], ["Balance due at pickup", money(d.balanceDueCents)]] },
     { kind: "heading", text: oneLine(d.basketTitle) || "Basket" },
     { kind: "items", items: d.components.map((c) => ({ left: `${c.quantity} × ${oneLine(c.name)}`, right: "" })) },
   ];
   if (d.requests.trim()) blocks.push({ kind: "quote", label: "Customer requests", text: d.requests });
   blocks.push(...adminBlock(d.adminLink));
-  return build(`${testPrefix(d.testMode)}New reservation ${d.number}${d.staffReview ? " (needs staff review)" : ""}: ${money(d.paidCents)} paid, pickup ${oneLine(d.pickupLabel)}`, blocks, [oneLine(d.store.name)]);
+  return build(`${testPrefix(d.testMode)}New reservation ${d.number}${d.staffReview ? " (needs staff review)" : ""}: ${money(d.paidCents)} paid, ${whereSubject(d)}`, blocks, [oneLine(d.store.name)]);
 }
 
 export function staffNewInquiry(d: InquiryEmail): Rendered {

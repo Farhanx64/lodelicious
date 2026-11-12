@@ -1213,6 +1213,85 @@ the same time and may also claim D49; renumber one of them at merge.)
 
 Payload 3.90 hashes passwords with PBKDF2-SHA256 at 600,000 iterations. Cloudflare Workers refuse native PBKDF2 above 100,000, so on the live site every login failed as "incorrect" (locking the owners out) and password resets returned 500. `patches/payload+3.90.2.patch` (applied by `patch-package` on install) makes Payload's local strategy fall back to `@noble/hashes` pure-JS PBKDF2 when the native call is refused. The hash format is unchanged, so hashes made on Node and on Workers verify on both. A login costs about a second or two of Worker CPU, well inside the paid plan's limit. Re-check the patch whenever Payload is upgraded.
 
+## D54 — Paying on the site with Clover, shipping, untracked stock, order alerts (2026-11-11)
+
+Customers can now order and pay on the website, for pickup or shipping, including Build a Basket.
+Lody approved Clover's online card fees on 2026-11-11. **Nothing here has talked to Clover:** the
+adapter is written from Clover's public docs and tested against recorded-style fixtures only; no
+live or sandbox key was used. One migration, `checkout_shipping_payments`.
+
+- **Payments: Clover's embedded card form.** The card is typed into Clover's hosted iframes on our
+  own checkout and reserve pages (`components/checkout/CardFields.tsx`, Clover's `sdk.js`); Clover
+  turns it into a one-time token (`clv_…`) in the browser, and only the token is posted. Card data
+  never reaches our servers and the customer never leaves the site. On the server
+  (`src/lib/payments/clover.ts`) checkout:
+  1. creates a Clover ecommerce order, `POST /v1/orders`, with one line per bag line ("2 × Fudge box",
+     net of any reward, its own tax as `tax_rates[].tax_amount` so the cents are exactly ours), a
+     `shipping` line and address when shipped, the customer's email, and metadata with our order number,
+     name, phone, the pickup time or ship-to address and the customer's note;
+  2. checks Clover's order total equals ours to the cent, or charges nothing;
+  3. pays it, `POST /v1/orders/{id}/pay`, with the token. A reservation deposit pays only the deposit
+     (`amount`), so the Clover order shows the balance still due.
+  Every POST carries an `idempotency-key` built from the record's key and attempt number (D42): a
+  crash-and-retry is the same Clover order and payment. The Clover order id is saved on the record
+  (`payment.providerOrderId`) **before** paying.
+- **Outcomes.** Anything before the pay call (Clover down, refused, total mismatch, no token) is
+  `failed` and nothing was charged. A clear decline is `failed` with a plain message (never Clover's
+  text). No clear answer from the pay call (timeout, 5xx, 429, a 200 that doesn't say paid) is
+  `unknown`: the D42 rules apply (no second charge from that bag, staff told). `order_already_paid` on
+  a retried attempt is `paid`.
+- **Reconciliation.** There is no Clover webhook for ecommerce orders we could confirm, so the
+  `release-expired-holds` job (every 5 minutes) now first looks up each `unknown` Clover payment
+  (`GET /v1/orders/{id}`, read only) and marks it paid when Clover says so; the existing
+  `reconcilePaidHeld` then takes the stock, and the paid hooks send emails and points. It never marks
+  anything failed: that stays a staff decision.
+- **Which provider.** `CLOVER_ECOMM_PUBLIC_KEY`, `CLOVER_ECOMM_PRIVATE_TOKEN` and
+  `CLOVER_ECOMM_ENVIRONMENT` (`sandbox` | `production`) switch Clover on; `CLOVER_ECOMM_MERCHANT_ID`
+  (not secret) is optional, for the iframe's extra features. On the live store only `production` is
+  accepted. A half-set configuration closes checkout and says why on `/ops/system-check` (new
+  "Payments" line) rather than falling back to the test payment. Without Clover: the test payment on
+  local/staging (still the e2e path in tests), "call to order" live, as before. A Clover sandbox order
+  counts as a test order.
+- **Shipping** (Settings → **Shipping**, a new global, owner/manager edit, audited): on/off; regular
+  products a flat **$8.95** per order; gift baskets by size, **Small $10, Medium $15, Large $20, any
+  larger $25**; pickup free. An order pays **one** charge, the highest single rate that applies to
+  anything in it, never a sum (`src/lib/shipping/rates.ts`). Build a Basket uses its size code
+  (`extra_large` and anything new is "larger"); ready-made baskets in the Gift baskets category read
+  the size from their name, defaulting to the larger rate. The existing product rules decide what can
+  ship: "Can ship" ticked and not "Perishable / prepared"; one item that can't ship keeps the order to
+  pickup, and checkout names it. US addresses only. Shipping is not taxed (D34 unchanged). A shipped
+  Build a Basket is **paid in full** (there is no pickup to pay a balance at). The bag says what
+  shipping would cost; checkout and reserve show the shipping line.
+- **Records.** Orders and reservations gain `fulfillment` (method, shipping charged, ship-to address)
+  and orders `totals.shippingCents`; a reservation's `totalCents` includes shipping. A shipped record
+  still fills the required pickup columns (the day it was placed, label "Ships by mail (no pickup)"),
+  because changing them would rebuild the tables. Emails and the confirmation pages show "Ship to"
+  instead of the pickup.
+- **Always available (stock not tracked).** Most products have never been counted, so nothing could
+  be bought. Settings → Inventory settings has a store-wide default, **on**, and each product a
+  choice: use the store default, yes or no (Availability & stock). While a product or option has
+  **never** been counted it is sold with no stock limit (the bag's 20 per line and a gift's per-item
+  maximum still apply) and is neither held nor deducted at checkout. Any count, from Clover or Stock
+  adjustments, wins; a stale count is not revived. **Consequence for go-live:** with payments
+  configured, every published, online product with an approved price becomes buyable.
+- **Order alerts.** Store details → **Order alert email** (the D44 field, renamed) defaults to
+  `Lodeliciousorderss@gmail.com` (double "s", Lody's address). Every staff email goes there; if it is
+  cleared, to that default, never the shop email. The migration fills it in on the existing row.
+  Email is still console-only (D44).
+- **Migration notes.** Payload proposed rebuilding `store_settings` to store the new default; on D1
+  that drop would cascade-delete its hours and promo rows, so the migration is hand-trimmed to an
+  `UPDATE` (as in D42). The snapshot is the generated one, so the CI drift check is clean.
+- **To verify in the Clover sandbox, then live (needs Lody's keys and a person):**
+  - whether `merchantId` is required by the iframe SDK for this account;
+  - that `/v1/orders` `amount` includes the tax and shipping lines (if not, the total check refuses
+    every payment and must be adjusted), and that per-line `tax_amount` is accepted;
+  - that `/pay` honours `idempotency-key`, and `amount` for a partial (deposit) payment;
+  - that `GET /v1/orders/{id}` exists for ecommerce orders (reconciliation);
+  - **whether ecommerce orders appear on Lody's Clover device / Orders app** with their lines and
+    metadata. If they don't, the counter learns of web orders from the alert email and /admin; a
+    `/v3` order on the device would need an extra token scope (not required for this change);
+  - that ecommerce orders don't change Clover stock (Clover says they don't; the D43 sync does that).
+
 ## D55 — A colour picker for the brand and button colours (2026-11-11)
 
 (D54 is reserved for the checkout work in progress on another branch.)

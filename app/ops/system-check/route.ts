@@ -5,6 +5,7 @@ import { getPayload } from "payload";
 import { canManageCommerce } from "@/src/access/roles";
 import { cloverConfigured } from "@/src/lib/clover/get-adapter";
 import { cloverHealthChecks, getCloverSyncHealth } from "@/src/lib/clover/health";
+import { paymentsCheck } from "@/src/lib/payments";
 import { evaluate, evaluateCloudflare, type CheckResult } from "@/src/lib/system-check";
 
 export const runtime = "nodejs";
@@ -31,6 +32,7 @@ export async function GET() {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
   const results = await runtimeChecks();
+  results.push(paymentsCheck());
   try {
     results.push(...cloverHealthChecks(await getCloverSyncHealth(payload, new Date()), cloverConfigured()));
   } catch (e) {

@@ -3,6 +3,9 @@ import Link from "next/link";
 
 import { submitReservation } from "@/app/(frontend)/build-a-basket/actions";
 import { ActionForm } from "@/components/checkout/ActionForm";
+import { CardFields } from "@/components/checkout/CardFields";
+import { FulfillmentChoice } from "@/components/checkout/FulfillmentChoice";
+import { ShippingAddressFields } from "@/components/checkout/ShippingFields";
 import { ContactFields } from "@/components/checkout/ContactFields";
 import { PaymentChoice } from "@/components/checkout/FormFields";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
@@ -21,8 +24,8 @@ import { getStoreSettings } from "@/src/lib/store";
 
 export const metadata: Metadata = { title: "Reserve your basket", robots: { index: false } };
 
-export default async function ReservePage() {
-  const [draft, { payload, ctx }, store] = await Promise.all([readBasketDraft(), checkoutPayload(), getStoreSettings()]);
+export default async function ReservePage({ searchParams }: { searchParams: Promise<{ method?: string | string[] }> }) {
+  const [draft, { payload, ctx }, store, query] = await Promise.all([readBasketDraft(), checkoutPayload(), getStoreSettings(), searchParams]);
   const basket = draft ? await priceBasket(payload, draft, ctx) : null;
 
   if (!draft || !basket || !basket.ok) {
@@ -37,6 +40,10 @@ export default async function ReservePage() {
     );
   }
 
+  // Pickup unless the customer chose shipping and every item in the basket can ship (D54). A shipped basket is paid in full.
+  const method = query.method === "ship" && basket.shipping.available ? "ship" : "pickup";
+  const shippingCents = method === "ship" && basket.shipping.available ? basket.shipping.cents : 0;
+  const grandTotal = basket.totalCents + shippingCents;
   const deposit = paymentPlan(basket.totalCents, ctx.deposit, false);
   const slots = availableSlots(ctx.pickup, new Date(), ctx.reservationLeadHours);
   const state = orderingState(ctx.provider, basket.taxApproved);
@@ -53,22 +60,39 @@ export default async function ReservePage() {
       <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div>
           {state.open ? (
-            <ActionForm action={submitReservation} submitLabel={ctx.provider?.test ? "Reserve with test payment" : "Reserve and pay"} pendingLabel="Reserving…" disabled={slots.length === 0}>
+            <ActionForm
+              action={submitReservation}
+              submitLabel={ctx.provider?.test ? "Reserve with test payment" : "Reserve and pay"}
+              pendingLabel="Reserving…"
+              disabled={method === "pickup" && slots.length === 0}
+            >
               <SubmissionField kind="reservation" />
               <ContactFields prefix="reserve" />
-              <fieldset className="mb-4">
-                <legend className="mb-3 font-display text-xl text-gold-text">Pickup</legend>
-                <p className="mb-3 text-sm">
-                  Baskets need at least {ctx.reservationLeadHours} hours&rsquo; notice. Pickup at {store.street}, {store.locality}.
-                </p>
-                <PickupSelect slots={slots} id="reserve-pickup" />
-              </fieldset>
-              <PaymentChoice
-                depositLabel={depositLabel}
-                chargeNowText={formatCents(deposit.chargeNowCents)}
-                balanceDueText={formatCents(deposit.balanceDueCents)}
-                fullText={ctx.allowPayInFull ? formatCents(basket.totalCents) : undefined}
-              />
+              <FulfillmentChoice path="/reserve" method={method} shipping={basket.shipping} />
+              {method === "ship" ? (
+                <fieldset className="mb-4">
+                  <legend className="mb-3 font-display text-xl text-gold-text">Ship to</legend>
+                  <p className="mb-3 text-sm">We make your basket, then ship it. A shipped basket is paid in full now: {formatCents(grandTotal)}.</p>
+                  <ShippingAddressFields prefix="reserve" />
+                </fieldset>
+              ) : (
+                <>
+                  <fieldset className="mb-4">
+                    <legend className="mb-3 font-display text-xl text-gold-text">Pickup</legend>
+                    <p className="mb-3 text-sm">
+                      Baskets need at least {ctx.reservationLeadHours} hours&rsquo; notice. Pickup at {store.street}, {store.locality}.
+                    </p>
+                    <PickupSelect slots={slots} id="reserve-pickup" />
+                  </fieldset>
+                  <PaymentChoice
+                    depositLabel={depositLabel}
+                    chargeNowText={formatCents(deposit.chargeNowCents)}
+                    balanceDueText={formatCents(deposit.balanceDueCents)}
+                    fullText={ctx.allowPayInFull ? formatCents(basket.totalCents) : undefined}
+                  />
+                </>
+              )}
+              <CardFields config={ctx.provider?.browser ?? { kind: "test" }} />
             </ActionForm>
           ) : (
             <p className="border-l-4 border-gold bg-paper p-4">
@@ -85,8 +109,9 @@ export default async function ReservePage() {
             ]}
             subtotalCents={basket.subtotalCents}
             taxCents={basket.taxCents}
-            totalCents={basket.totalCents}
+            totalCents={grandTotal}
             taxApproved={basket.taxApproved}
+            shipping={{ method, cents: shippingCents }}
           />
           {draft.message && <p className="mt-4 text-sm">Gift message: &ldquo;{draft.message}&rdquo;</p>}
           {draft.requests && <p className="mt-2 text-sm">Requests: {draft.requests} (we&rsquo;ll confirm these with you)</p>}

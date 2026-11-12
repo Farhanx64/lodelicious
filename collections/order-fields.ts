@@ -1,6 +1,7 @@
 import type { Field, FieldAccess } from "payload";
 
 import { commerceField } from "../src/access/roles";
+import { centsComponents } from "../src/fields/money";
 
 /** Snapshot fields: written once by checkout, never editable afterwards (PRD OPS 02). */
 export const frozen: { update: FieldAccess } = { update: () => false };
@@ -35,6 +36,45 @@ export const pickupFields: Field = {
       ],
     },
     { name: "label", label: "Time slot", type: "text" },
+  ],
+};
+
+/**
+ * Pickup or shipping (D54). A shipped record has no pickup time: its `pickup` group holds the day
+ * it was placed with "Ships by mail" as the label, because those columns are required.
+ */
+export const fulfillmentFields: Field = {
+  name: "fulfillment",
+  label: "Pickup or shipping",
+  type: "group",
+  access: frozen,
+  fields: [
+    {
+      type: "row",
+      fields: [
+        {
+          name: "method",
+          type: "select",
+          defaultValue: "pickup",
+          index: true,
+          options: [
+            { label: "Pickup in the shop", value: "pickup" },
+            { label: "Ship by mail", value: "ship" },
+          ],
+        },
+        { name: "shippingCents", label: "Shipping charged", type: "number", defaultValue: 0, min: 0, admin: { components: centsComponents } },
+      ],
+    },
+    {
+      name: "shipTo",
+      label: "Ship to",
+      type: "group",
+      admin: { condition: (data) => data?.fulfillment?.method === "ship" },
+      fields: [
+        { type: "row", fields: [{ name: "name", type: "text" }, { name: "line1", label: "Street address", type: "text" }, { name: "line2", label: "Apt, suite (optional)", type: "text" }] },
+        { type: "row", fields: [{ name: "city", type: "text" }, { name: "state", type: "text" }, { name: "zip", label: "ZIP", type: "text" }] },
+      ],
+    },
   ],
 };
 
@@ -80,6 +120,12 @@ export const paymentReference: Field = {
   fields: [
     { name: "provider", type: "text" },
     { name: "reference", type: "text" },
+    {
+      name: "providerOrderId",
+      label: "Clover order",
+      type: "text",
+      admin: { description: "The order on Lody's Clover account (D54). Look it up there before marking an unknown payment paid or failed." },
+    },
   ],
 };
 

@@ -34,6 +34,8 @@ const logged: string[] = [];
 
 const SITE = "https://shop.example.test";
 const STORE_EMAIL = "lodelicious1@gmail.com";
+/** Staff alerts go to the Store details "Order alert email", seeded to this address (D54). */
+const ALERTS = "Lodeliciousorderss@gmail.com";
 
 function scripted(...script: (ChargeResult | "throw")[]): PaymentProvider {
   let n = 0;
@@ -107,7 +109,7 @@ describe("a paid order", () => {
     expect(customer.from).toBe(`Souset-Pink <${STORE_EMAIL}>`);
     expect(customer.replyTo).toBe(STORE_EMAIL);
 
-    const staff = to(STORE_EMAIL);
+    const staff = to(ALERTS);
     expect(staff).toHaveLength(1);
     expect(staff[0].subject).toContain(`New order ${result.number}`);
     expect(staff[0].text).toContain("pat@example.test");
@@ -136,18 +138,22 @@ describe("a paid order", () => {
     const [customer] = to("pat@example.test");
     expect(customer.subject).toContain("we are checking your note");
     expect(customer.html).toContain("Nut allergy &lt;b&gt;please&lt;/b&gt;");
-    expect(to(STORE_EMAIL)[0].subject).toContain("needs staff review");
+    expect(to(ALERTS)[0].subject).toContain("needs staff review");
   });
 
-  it("sends staff to the notification email from Store settings, then back to the shop email when it is cleared", async () => {
+  it("sends staff alerts to the Order alert email from Store details, and to the default alert address when it is cleared (D54)", async () => {
+    const store = await payload.findGlobal({ slug: "store-settings", overrideAccess: true });
+    expect(store.notificationEmail).toBe(ALERTS);
     await payload.updateGlobal({ slug: "store-settings", data: { notificationEmail: "faisal@example.test" }, overrideAccess: true });
     await order();
     expect(to("faisal@example.test")).toHaveLength(1);
-    expect(to(STORE_EMAIL)).toHaveLength(0);
+    expect(to(ALERTS)).toHaveLength(0);
     await payload.updateGlobal({ slug: "store-settings", data: { notificationEmail: null }, overrideAccess: true });
     sent.length = 0;
     await order();
-    expect(to(STORE_EMAIL)).toHaveLength(1);
+    expect(to(ALERTS)).toHaveLength(1);
+    expect(to(STORE_EMAIL)).toHaveLength(0);
+    await payload.updateGlobal({ slug: "store-settings", data: { notificationEmail: ALERTS }, overrideAccess: true });
   });
 
   it("puts nothing secret in any message", async () => {
@@ -175,7 +181,7 @@ describe("states that must not send", () => {
     const number = (result as { error: string }).error.match(/SP-\d+/)![0];
     expect(to("pat@example.test")).toHaveLength(0);
     expect(sent).toHaveLength(1);
-    expect(sent[0].to).toBe(STORE_EMAIL);
+    expect(sent[0].to).toBe(ALERTS);
     expect(sent[0].subject).toMatch(/Needs attention: order .* \(payment unknown\)/);
     expect(sent[0].subject).not.toMatch(/New order/);
 
@@ -194,8 +200,8 @@ describe("states that must not send", () => {
     await payload.update({ collection: "orders", id: saved.id, data: { paymentStatus: "paid" }, user: w.owner, overrideAccess: false });
     expect(to("later@example.test")).toHaveLength(1);
     expect(to("later@example.test")[0].text).toContain(`${SITE}/order/${number}?t=`);
-    expect(to(STORE_EMAIL)).toHaveLength(1);
-    expect(to(STORE_EMAIL)[0].subject).toContain(`New order ${number}`);
+    expect(to(ALERTS)).toHaveLength(1);
+    expect(to(ALERTS)[0].subject).toContain(`New order ${number}`);
     sent.length = 0;
     await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "ready" }, user: w.owner, overrideAccess: false });
     expect(sent).toHaveLength(0);
@@ -232,7 +238,7 @@ describe("reservations", () => {
     expect(customer.text).toContain(`Deposit paid: $${(saved.amountPaidCents / 100).toFixed(2)}`);
     expect(customer.text).toContain(`Balance due at pickup: $${(saved.balanceDueCents / 100).toFixed(2)}`);
     expect(customer.text).toContain(`${SITE}/reservation/${result.number}?t=${result.token}`);
-    expect(to(STORE_EMAIL)[0].subject).toContain(`New reservation ${result.number}`);
+    expect(to(ALERTS)[0].subject).toContain(`New reservation ${result.number}`);
     expect(saved.emails?.confirmationSentAt).toBeTruthy();
 
     sent.length = 0;
@@ -251,7 +257,7 @@ describe("inquiries", () => {
     const [receipt] = to("ina@example.test");
     expect(receipt.subject).toContain(result.number);
     expect(receipt.text).toMatch(/Nothing has been booked, reserved or charged/);
-    expect(to(STORE_EMAIL)[0].subject).toContain(`New inquiry ${result.number}`);
+    expect(to(ALERTS)[0].subject).toContain(`New inquiry ${result.number}`);
 
     // The same submission again is the same inquiry and sends nothing.
     sent.length = 0;

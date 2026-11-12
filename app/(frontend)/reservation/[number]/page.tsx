@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Bow } from "@/components/brand/Bow";
 import { secondaryButton } from "@/components/checkout/styles";
 import { findByToken } from "@/src/lib/checkout/service";
+import { shipToLine } from "@/src/lib/email/notify";
 import { checkoutPayload } from "@/src/lib/checkout/session";
 import { singleParam } from "@/src/lib/checkout/token-param";
 import { formatCents } from "@/src/lib/money";
@@ -20,6 +21,7 @@ export default async function ReservationPage({ params, searchParams }: { params
   const r = await findByToken(payload, "reservations", number, singleParam(t));
   if (!r) notFound();
   const basket = r.basket as Snapshot;
+  const shipTo = shipToLine(r);
 
   return (
     <div className="mx-auto w-[min(100%-2rem,44rem)]">
@@ -38,13 +40,17 @@ export default async function ReservationPage({ params, searchParams }: { params
       )}
       <section aria-labelledby="pickup" className="mb-6 border border-gold bg-paper p-5">
         <h2 id="pickup" className="mb-2 text-xl">
-          Pickup
+          {shipTo ? "Shipping" : "Pickup"}
         </h2>
-        <p>
-          {r.pickup.label}
-          <br />
-          {store.name}, {store.street}, {store.locality}
-        </p>
+        {shipTo ? (
+          <p>We&rsquo;ll ship your basket to {shipTo} once it&rsquo;s made.</p>
+        ) : (
+          <p>
+            {r.pickup.label}
+            <br />
+            {store.name}, {store.street}, {store.locality}
+          </p>
+        )}
       </section>
       <section aria-labelledby="basket" className="mb-6 border border-gold bg-paper p-5">
         <h2 id="basket" className="mb-2 text-xl">
@@ -59,11 +65,17 @@ export default async function ReservationPage({ params, searchParams }: { params
         </ul>
         {basket.message && <p className="text-sm">Gift message: &ldquo;{basket.message}&rdquo;</p>}
         <dl className="mt-4 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 border-t border-line pt-3">
-          <dt>Basket total{r.taxApproved ? "" : " (tax estimated)"}</dt>
+          {shipTo && (
+            <>
+              <dt>Shipping</dt>
+              <dd className="text-right">{formatCents(r.fulfillment?.shippingCents ?? 0)}</dd>
+            </>
+          )}
+          <dt>{shipTo ? "Total, with shipping" : "Basket total"}{r.taxApproved ? "" : " (tax estimated)"}</dt>
           <dd className="text-right">{formatCents(r.totalCents)}</dd>
           <dt>Paid now</dt>
           <dd className="text-right">{formatCents(r.amountPaidCents)}</dd>
-          <dt className="font-semibold">Due at pickup</dt>
+          <dt className="font-semibold">{shipTo ? "Still to pay" : "Due at pickup"}</dt>
           <dd className="text-right font-semibold">{formatCents(r.balanceDueCents)}</dd>
         </dl>
       </section>

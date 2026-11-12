@@ -22,10 +22,20 @@ const whole = (name: string, label: string, description: string, extra: Record<s
 export const InventorySettings: GlobalConfig = {
   slug: "inventory-settings",
   label: "Inventory settings",
-  admin: { group: "Settings", description: "How long checkout holds stock, and how old a stock count may be before it stops sales." },
+  admin: { group: "Settings", description: "Whether uncounted products can be bought, how long checkout holds stock, and how old a stock count may be before it stops sales." },
   access: { read: isStaff, update: isCommerceManager },
-  hooks: { afterChange: [auditGlobal(["holdMinutes", "maxStockAgeHours"])] },
+  hooks: { afterChange: [auditGlobal(["holdMinutes", "maxStockAgeHours", "untrackedAvailable"])] },
   fields: [
+    {
+      name: "untrackedAvailable",
+      label: "Always available (stock not tracked): store default",
+      type: "checkbox",
+      defaultValue: true,
+      admin: {
+        description:
+          "Ticked: a product whose stock has never been counted can still be bought online, without a limit from stock (the bag's 20-per-line limit still applies). A counted stock number, from Clover or a staff count, always wins. Each product can override this under Availability & stock. Untick to make uncounted products \"Currently unavailable\" again.",
+      },
+    },
     whole("holdMinutes", "Checkout hold (minutes)", "How long stock is set aside while a customer pays. After this the hold is ignored and released.", {
       required: true,
       defaultValue: DEFAULT_HOLD_MINUTES,

@@ -18,7 +18,7 @@ import type { EnvLike } from "../app-env";
 import { accessUrlToken } from "../checkout/order";
 import { runBatch, query } from "../inventory/db";
 import { TOPIC_LABELS } from "../inquiries/shared";
-import { cleanAddress, senderFor } from "./config";
+import { cleanAddress, DEFAULT_ORDER_ALERT_EMAIL, senderFor } from "./config";
 import { dueEmails, MARKER_COLUMN, TABLE, type EmailKind, type RecordKind } from "./due";
 import { redact, sendEmail, type OutgoingEmail } from "./send";
 import {
@@ -53,6 +53,14 @@ function storeInfo(s: StoreSetting): StoreInfo {
   return { name: s.name, street: s.street, locality: s.locality, phone: s.phone, email: s.email };
 }
 
+/** The one-line ship-to address of a shipped record (D54), or null for pickup. */
+export function shipToLine(r: Pick<Order, "fulfillment">): string | null {
+  const f = r.fulfillment;
+  if (f?.method !== "ship" || !f.shipTo) return null;
+  const a = f.shipTo;
+  return [str(a.name), str(a.line1), str(a.line2), `${str(a.city)}, ${str(a.state)} ${str(a.zip)}`.trim()].filter((x) => x && x !== ",").join(", ");
+}
+
 function orderData(o: Order, forStaff: boolean, env: EnvLike, store: StoreSetting): OrderEmail {
   const base = siteUrl(env);
   const notes = str(o.notes);
@@ -68,6 +76,8 @@ function orderData(o: Order, forStaff: boolean, env: EnvLike, store: StoreSettin
     totalCents: num(o.totals?.totalCents),
     taxApproved: Boolean(o.totals?.taxApproved),
     pickupLabel: str(o.pickup?.label) || `${str(o.pickup?.date)} ${str(o.pickup?.start)}`.trim(),
+    shipTo: shipToLine(o),
+    shippingCents: num(o.fulfillment?.shippingCents),
     notes,
     staffReview: forStaff ? o.fulfillmentStatus === "staff_review" || Boolean(notes.trim()) : Boolean(notes.trim()),
     testMode: Boolean(o.testMode),
@@ -94,6 +104,8 @@ function reservationData(r: Reservation, forStaff: boolean, env: EnvLike, store:
     balanceDueCents: num(r.balanceDueCents),
     paidInFull: r.paymentStatus === "paid_in_full",
     pickupLabel: str(r.pickup?.label) || `${str(r.pickup?.date)} ${str(r.pickup?.start)}`.trim(),
+    shipTo: shipToLine(r),
+    shippingCents: num(r.fulfillment?.shippingCents),
     requests,
     staffReview: forStaff ? r.reservationStatus === "staff_review" || Boolean(requests.trim()) : Boolean(requests.trim()),
     testMode: Boolean(r.testMode),
@@ -123,9 +135,12 @@ function inquiryData(i: Inquiry, env: EnvLike, store: StoreSetting): InquiryEmai
   };
 }
 
-/** The staff address: the Store settings notification email, else the shop email. */
-export function staffRecipient(store: Pick<StoreSetting, "notificationEmail" | "email">): string | null {
-  return cleanAddress(store.notificationEmail) ?? cleanAddress(store.email);
+/**
+ * The staff address: the Store details "Order alert email", else the default order alert address
+ * (D54). The shop email is never used for alerts any more: Lody asked for them in one inbox.
+ */
+export function staffRecipient(store: Pick<StoreSetting, "notificationEmail">): string {
+  return cleanAddress(store.notificationEmail) ?? DEFAULT_ORDER_ALERT_EMAIL;
 }
 
 function compose(collection: RecordKind, kind: EmailKind, doc: AnyRecord, env: EnvLike, store: StoreSetting): { rendered: Rendered; to: string | null; label: string } {

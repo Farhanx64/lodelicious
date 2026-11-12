@@ -20,9 +20,10 @@ import crypto from "node:crypto";
 
 import type { Payload } from "payload";
 
-import type { CheckoutSetting, Order, Product, Reservation } from "@/payload-types";
+import type { Category, CheckoutSetting, Order, Product, Reservation, ShippingSetting } from "@/payload-types";
 
 import { loadBuilderCatalogFrom } from "../catalog/builder-catalog";
+import { GIFT_BASKET_CATEGORY } from "../catalog/gift-baskets";
 import { previewStockEnabled } from "../catalog/preview";
 import { catalogOf, resolveBasketSize, validateGift } from "../gifts";
 import type { GiftRequest, Selection } from "../gifts/types";
@@ -33,15 +34,32 @@ import { settleStock } from "../inventory/settle";
 import type { PlanLine } from "../inventory/types";
 import { bomOf, planFor } from "../inventory/units";
 import { applyInventoryView, loadInventoryConfig, type InventoryConfig } from "../inventory/view";
-import { getPaymentProvider, orderingState, type ChargeInput, type ChargeResult, type PaymentProvider } from "../payments";
+import { getPaymentProvider, orderingState, type ChargeInput, type ChargeOrderDetails, type ChargeResult, type PaymentProvider } from "../payments";
+import { CARD_TOKEN } from "../payments/clover";
+import {
+  basketSizeFromCode,
+  basketSizeFromName,
+  formatAddress,
+  parseAddress,
+  productShips,
+  quoteShipping,
+  ratesFrom,
+  whyNoShipping,
+  type FulfillmentMethod,
+  type ShipItem,
+  type ShippingAddress,
+  type ShippingQuote,
+  type ShippingRates,
+} from "../shipping/rates";
 import { balanceOf, entryKey, NotEnoughPoints, postEntry, postedPoints } from "../rewards/ledger";
 import { loadRewardsConfig } from "../rewards/members";
+import { formatCents } from "../money";
 import { pointsFor, rewardsState, totalsWithDiscount, type RewardOption, type RewardsConfig } from "../rewards/program";
 import { priceCart, MAX_LINE_QUANTITY, type CartLine, type PricedCart } from "./cart";
 import { paymentPlan, type DepositRule } from "./deposit";
 import { nextSequence } from "./numbering";
 import { accessUrlToken, assemblyInstructions, formatNumber, hashToken, idempotencyKey, type BasketComponent } from "./order";
-import { formatSlot, isAvailableSlot, type PickupSettings, type Slot } from "./pickup";
+import { formatSlot, isAvailableSlot, SHOP_TZ, type PickupSettings, type Slot } from "./pickup";
 import { computeTax, resolveTaxClass, type TaxClass } from "./tax";
 
 export type CheckoutContext = {
@@ -59,6 +77,10 @@ export type CheckoutContext = {
   inventory: InventoryConfig & { assumeUnknown: boolean };
   /** The rewards program (D47): members earn and spend points only while it is active. */
   rewards: { config: RewardsConfig; active: boolean };
+  /** Shipping rates (Settings → Shipping, D54). */
+  shipping: ShippingRates;
+  /** The id of the Gift baskets category: its products ship at the basket rate for their size. */
+  basketCategoryId: string | null;
 };
 
 const relId = (v: unknown): string | null => (v === null || v === undefined ? null : typeof v === "object" ? String((v as { id: unknown }).id) : String(v));
@@ -66,11 +88,13 @@ const relId = (v: unknown): string | null => (v === null || v === undefined ? nu
 const SOLD_OUT = "Some items in your bag aren't available any more. Please review your bag.";
 
 export async function loadCheckoutContext(payload: Payload, env: Record<string, string | undefined> = process.env): Promise<CheckoutContext> {
-  const [settings, classes, inventory, rewards] = await Promise.all([
+  const [settings, classes, inventory, rewards, shipping, basketCategory] = await Promise.all([
     payload.findGlobal({ slug: "checkout-settings", depth: 0, overrideAccess: true }) as Promise<CheckoutSetting>,
     payload.find({ collection: "tax-classes", limit: 100, depth: 0, overrideAccess: true }),
     loadInventoryConfig(payload),
     loadRewardsConfig(payload),
+    payload.findGlobal({ slug: "shipping-settings", depth: 0, overrideAccess: true }) as Promise<ShippingSetting>,
+    payload.find({ collection: "categories", where: { slug: { equals: GIFT_BASKET_CATEGORY } }, limit: 1, depth: 0, overrideAccess: true }),
   ]);
   return {
     taxClasses: classes.docs.map((c) => ({ id: String(c.id), name: c.name, rateBasisPoints: c.rateBasisPoints, approved: Boolean(c.approved) })),
@@ -94,6 +118,8 @@ export async function loadCheckoutContext(payload: Payload, env: Record<string, 
     chargeTimeoutMs: Number(env.PAYMENT_TIMEOUT_MS) > 0 ? Number(env.PAYMENT_TIMEOUT_MS) : 30_000,
     inventory: { ...inventory, assumeUnknown: previewStockEnabled(env) },
     rewards: { config: rewards, active: rewardsState(rewards, env).active },
+    shipping: ratesFrom(shipping),
+    basketCategoryId: basketCategory.docs[0] ? String((basketCategory.docs[0] as Category).id) : null,
   };
 }
 
@@ -125,7 +151,12 @@ async function writeCartLines(payload: Payload, token: string, lines: CartLine[]
 type StockView = { config: InventoryConfig; now: Date; exceptOwner: string | null };
 
 async function loadProducts(payload: Payload, ids: string[], view: StockView): Promise<Product[]> {
-  if (!ids.length) return [];
+  return (await loadProductsWithStock(payload, ids, view)).products;
+}
+
+/** The products as the shop sees them, and which of their units are sold without a stock count (D54). */
+async function loadProductsWithStock(payload: Payload, ids: string[], view: StockView): Promise<{ products: Product[]; untracked: Set<string> }> {
+  if (!ids.length) return { products: [], untracked: new Set() };
   const { docs } = await payload.find({
     collection: "products",
     // Products are staff-only over REST (A04, D42): the rules are stated here and the read overrides access.
@@ -135,16 +166,104 @@ async function loadProducts(payload: Payload, ids: string[], view: StockView): P
     overrideAccess: true,
   });
   const seen = await applyInventoryView(payload, docs as Product[], { now: view.now, exceptOwner: view.exceptOwner, config: view.config });
-  return seen.products;
+  return { products: seen.products, untracked: seen.untrackedUnits };
 }
 
-async function priceBagWith(payload: Payload, token: string | undefined, ctx: CheckoutContext, now: Date): Promise<{ bag: PricedCart; products: Product[] }> {
+async function priceBagWith(payload: Payload, token: string | undefined, ctx: CheckoutContext, now: Date): Promise<{ bag: PricedCart; products: Product[]; untracked: Set<string> }> {
   const lines = await readCartLines(payload, token);
   const view: StockView = { config: ctx.inventory, now, exceptOwner: token ? bagOwner(hashToken(token)) : null };
-  const products = await loadProducts(payload, [...new Set(lines.map((l) => l.unitId.split(":")[0]))], view);
+  const { products, untracked } = await loadProductsWithStock(payload, [...new Set(lines.map((l) => l.unitId.split(":")[0]))], view);
   const bag = priceCart(lines, products, { previewStock: previewStockEnabled(), taxClasses: ctx.taxClasses, defaultTaxClassId: ctx.defaultTaxClassId });
-  return { bag, products };
+  return { bag, products, untracked };
 }
+
+// ---------------------------------------------------------------- shipping (D54)
+
+const relCategory = (p: Product) => relId(p.category);
+
+/** What each bag line is for shipping: a gift basket at its size's rate, or a regular product at the flat rate. */
+export function shipItemsOfBag(bag: Pick<PricedCart, "payable">, products: readonly Product[], basketCategoryId: string | null): ShipItem[] {
+  const byId = new Map(products.map((p) => [String(p.id), p]));
+  return bag.payable.flatMap((line): ShipItem[] => {
+    const product = byId.get(line.productId);
+    if (!product) return [];
+    const shippable = productShips(product);
+    if (basketCategoryId && relCategory(product) === basketCategoryId) {
+      return [{ title: line.title, shippable, kind: "basket" as const, size: basketSizeFromName(product.slug || product.title) }];
+    }
+    return [{ title: line.title, shippable, kind: "regular" as const }];
+  });
+}
+
+/** The bag, priced, with what shipping would cost (the highest single rate, never a sum). */
+export async function priceBagForCheckout(
+  payload: Payload,
+  token: string | undefined,
+  ctx: CheckoutContext,
+  now: Date = new Date(),
+): Promise<{ bag: PricedCart; shipping: ShippingQuote }> {
+  const { bag, products } = await priceBagWith(payload, token, ctx, now);
+  return { bag, shipping: quoteShipping(shipItemsOfBag(bag, products, ctx.basketCategoryId), ctx.shipping) };
+}
+
+/** How the customer gets it: a pickup slot, or a checked address with the shipping charge. */
+type Fulfillment =
+  | { method: "pickup"; slot: Slot; shippingCents: 0; address: null }
+  | { method: "ship"; slot: Slot; shippingCents: number; address: ShippingAddress };
+
+/** A shipped record still fills the required pickup columns: the day it was placed, labelled as shipped. */
+function shippedPlaceholder(now: Date): Slot {
+  const date = new Intl.DateTimeFormat("en-CA", { timeZone: SHOP_TZ, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  return { date, start: "00:00", end: "00:00" };
+}
+
+function chooseFulfillment(
+  ctx: CheckoutContext,
+  now: Date,
+  form: Record<string, unknown>,
+  leadHours: number,
+  shipping: ShippingQuote,
+  customerName: string,
+): { ok: true; value: Fulfillment } | { ok: false; error: string } {
+  const method: FulfillmentMethod = form.method === "ship" ? "ship" : "pickup";
+  if (method === "ship") {
+    if (!shipping.available) return { ok: false, error: `${whyNoShipping(shipping)} Please choose pickup.` };
+    const address = parseAddress(form, customerName);
+    if (!address.ok) return address;
+    return { ok: true, value: { method: "ship", slot: shippedPlaceholder(now), shippingCents: shipping.cents, address: address.address } };
+  }
+  const slot = pickSlot(ctx, now, form.pickup, leadHours);
+  if (!slot) return { ok: false, error: "That pickup time is no longer available. Please choose another." };
+  return { ok: true, value: { method: "pickup", slot, shippingCents: 0, address: null } };
+}
+
+const SHIPPED_LABEL = "Ships by mail (no pickup)";
+
+function fulfillmentData(f: Fulfillment) {
+  return {
+    fulfillment: { method: f.method, shippingCents: f.shippingCents, shipTo: f.address ? { ...f.address } : {} },
+    pickup: { date: f.slot.date, start: f.slot.start, end: f.slot.end, label: f.method === "ship" ? SHIPPED_LABEL : formatSlot(f.slot) },
+  };
+}
+
+function fulfillmentNote(f: Fulfillment): string {
+  return f.method === "ship" ? `Ship to ${formatAddress(f.address)}` : `Pickup ${formatSlot(f.slot)}`;
+}
+
+// ---------------------------------------------------------------- card token (D54)
+
+/** The card token from the provider's browser fields, when the provider needs one. */
+function cardSource(provider: PaymentProvider, form: Record<string, unknown>): { ok: true; source: string | undefined } | { ok: false; error: string } {
+  if (!provider.needsCardToken) return { ok: true, source: undefined };
+  const token = String(form.cardToken ?? "").trim();
+  if (!CARD_TOKEN.test(token)) return { ok: false, error: "Please enter your card details." };
+  return { ok: true, source: token };
+}
+
+/** Saves the provider's order id on the record as soon as it exists, so an unknown payment can be looked up. */
+const rememberProviderOrder = (payload: Payload, collection: "orders" | "reservations", id: number | string, providerId: string) => async (providerOrderId: string) => {
+  await payload.update({ collection, id, data: { payment: { provider: providerId, providerOrderId } } as never, overrideAccess: true });
+};
 
 export async function priceBag(payload: Payload, token: string | undefined, ctx: CheckoutContext, now: Date = new Date()): Promise<PricedCart> {
   return (await priceBagWith(payload, token, ctx, now)).bag;
@@ -264,11 +383,18 @@ function planOfBag(payable: readonly { unitId: string; quantity: number }[], pro
   return planFor(payable, (id) => bomOf(byId.get(id)));
 }
 
-/** Staging only: stock that was never counted is assumed to exist, so it has nothing to hold or deduct. */
-async function trackedOnly(payload: Payload, plan: PlanLine[], ctx: CheckoutContext, now: Date): Promise<PlanLine[]> {
-  if (!ctx.inventory.assumeUnknown) return plan;
+/**
+ * Stock that was never counted has nothing to hold or deduct: units marked "Always available (stock
+ * not tracked)" (D54), and on staging everything uncounted. Any other uncounted unit stays in the
+ * plan, so holding it fails and the customer is told it sold out.
+ */
+async function trackedOnly(payload: Payload, plan: PlanLine[], ctx: CheckoutContext, now: Date, untracked: ReadonlySet<string> = new Set()): Promise<PlanLine[]> {
   const kept: PlanLine[] = [];
-  for (const line of plan) if ((await readUnit(payload, line, { now, maxAgeMs: null }))?.known) kept.push(line);
+  for (const line of plan) {
+    const key = line.variantKey ? `${line.productId}:${line.variantKey}` : line.productId;
+    const canSkip = ctx.inventory.assumeUnknown || untracked.has(key);
+    if (!canSkip || (await readUnit(payload, line, { now, maxAgeMs: null }))?.known) kept.push(line);
+  }
   return kept;
 }
 
@@ -379,6 +505,8 @@ export async function placeOrder(
     submission?: string;
     /** The signed-in rewards member, from the verified session cookie (D47). Never from the form. */
     memberId?: number | null;
+    /** The customer's IP, passed to the payment provider (Clover asks for it). */
+    clientIp?: string;
     now?: Date;
   },
   ctx: CheckoutContext,
@@ -387,7 +515,7 @@ export async function placeOrder(
   const provider = ctx.provider;
   if (!provider) return { ok: false, error: ORDER_SOON };
 
-  const { bag, products } = await priceBagWith(payload, input.cartToken, ctx, now);
+  const { bag, products, untracked } = await priceBagWith(payload, input.cartToken, ctx, now);
   // The real tax answer, after pricing: a live provider only opens once the tax rates are approved (A05a).
   if (!orderingState(provider, bag.taxApproved).open) return { ok: false, error: ORDER_SOON };
   if (!bag.payable.length) return { ok: false, error: "Your bag is empty." };
@@ -395,9 +523,14 @@ export async function placeOrder(
 
   const contact = parseContact(input.form);
   if (!contact.ok) return contact;
-  const slot = pickSlot(ctx, now, input.form.pickup, ctx.pickup.leadTimeHours);
-  if (!slot) return { ok: false, error: "That pickup time is no longer available. Please choose another." };
+  const shippingQuote = quoteShipping(shipItemsOfBag(bag, products, ctx.basketCategoryId), ctx.shipping);
+  const how = chooseFulfillment(ctx, now, input.form, ctx.pickup.leadTimeHours, shippingQuote, contact.contact.name);
+  if (!how.ok) return how;
+  const fulfillment = how.value;
+  const slot = fulfillment.slot;
   const notes = String(input.form.notes ?? "").trim().slice(0, 500);
+  const card = cardSource(provider, input.form);
+  if (!card.ok) return card;
 
   const reward = await chooseReward(payload, ctx, input.memberId, input.form.reward, bag.subtotalCents);
   if (!reward.ok) return reward;
@@ -420,7 +553,10 @@ export async function placeOrder(
     notes,
     ...(input.submission ? [input.submission] : []),
     ...(reward.memberId === null ? [] : [["member", reward.memberId, reward.option?.id ?? "", redeemedPoints, priced.discountCents]]),
+    // Shipping is part of what was agreed (D54). Pickup orders keep their earlier keys.
+    ...(fulfillment.method === "ship" ? [["ship", fulfillment.address, fulfillment.shippingCents]] : []),
   );
+  const totalCents = priced.totalCents + fulfillment.shippingCents;
   const token = urlToken("order", key);
 
   // A payment from this bag whose result is unknown must be reconciled before anything is charged again.
@@ -436,7 +572,7 @@ export async function placeOrder(
     return { ok: true, number: finished.number, token };
   }
 
-  const plan = await trackedOnly(payload, planOfBag(bag.payable, products), ctx, now);
+  const plan = await trackedOnly(payload, planOfBag(bag.payable, products), ctx, now, untracked);
   const held = await holdStock(payload, { owner, plan, ...holdFor(ctx, now) });
   if (!held.ok) return { ok: false, error: SOLD_OUT };
 
@@ -453,7 +589,7 @@ export async function placeOrder(
       // Nothing is packed until the payment is paid (A14).
       fulfillmentStatus: "awaiting_payment",
       customer: contact.contact,
-      pickup: { ...slot, label: formatSlot(slot) },
+      ...fulfillmentData(fulfillment),
       notes,
       lines: bag.payable.map((l, i) => ({
         unitId: l.unitId,
@@ -468,7 +604,14 @@ export async function placeOrder(
         ...(priced.discountCents ? { discountCents: priced.perLineDiscount[i] } : {}),
         taxCents: priced.perLineTax[i],
       })),
-      totals: { subtotalCents: priced.subtotalCents, discountCents: priced.discountCents, taxCents: priced.taxCents, totalCents: priced.totalCents, taxApproved: priced.taxApproved },
+      totals: {
+        subtotalCents: priced.subtotalCents,
+        discountCents: priced.discountCents,
+        taxCents: priced.taxCents,
+        shippingCents: fulfillment.shippingCents,
+        totalCents,
+        taxApproved: priced.taxApproved,
+      },
       rewards: { member: reward.memberId, redeemedPoints, earnPoints },
       stockOwner: owner,
       stockPlan: serializePlan(plan),
@@ -502,13 +645,25 @@ export async function placeOrder(
         redeemedAttempt = attempt;
       }
       charging = true;
-      const charge = await chargeSafely(provider, { reference: order.number, amountCents: order.totals.totalCents, idempotencyKey: `${key}:${attempt}` }, ctx.chargeTimeoutMs);
+      const charge = await chargeSafely(
+        provider,
+        {
+          reference: order.number,
+          amountCents: order.totals.totalCents,
+          idempotencyKey: `${key}:${attempt}`,
+          source: card.source,
+          clientIp: input.clientIp,
+          order: orderDetailsForProvider(order, fulfillment),
+          onProviderOrder: rememberProviderOrder(payload, "orders", order.id, provider.id),
+        },
+        ctx.chargeTimeoutMs,
+      );
       if (charge.status === "unknown") {
         // Keep the record, the hold and the bag. Staff reconcile it in the admin; no second charge until they do.
         await payload.update({
           collection: "orders",
           id: order.id,
-          data: { paymentStatus: "unknown", payment: { provider: provider.id, reference: charge.reference }, stockNote: UNKNOWN_NOTE },
+          data: { paymentStatus: "unknown", payment: { provider: provider.id, reference: charge.reference, ...providerOrder(charge) }, stockNote: UNKNOWN_NOTE },
           overrideAccess: true,
         });
         return { ok: false, error: unknownPayment(order.number) };
@@ -518,7 +673,7 @@ export async function placeOrder(
         id: order.id,
         data: {
           paymentStatus: charge.status,
-          payment: { provider: provider.id, reference: charge.reference },
+          payment: { provider: provider.id, reference: charge.reference, ...providerOrder(charge) },
           // On "paid" the `advanceWhenPaid` hook moves an order that is still awaiting payment to
           // preparing, or to staff review when the customer left notes (A12, A14). It reads the
           // record as saved, so an order staff cancelled while the charge was in flight stays cancelled.
@@ -528,7 +683,7 @@ export async function placeOrder(
       });
       if (charge.status !== "paid") {
         await releaseHolds(payload, owner, now);
-        return { ok: false, error: "The payment didn't go through. Your bag is saved — please try again." };
+        return { ok: false, error: provider.needsCardToken && charge.message ? `${charge.message} Your bag is saved.` : "The payment didn't go through. Your bag is saved — please try again." };
       }
       console.info(`[order] ${order.number} placed${order.testMode ? " (test)" : ""}`);
     }
@@ -544,6 +699,30 @@ export async function placeOrder(
   await releaseHolds(payload, owner, now);
   if (input.cartToken) await writeCartLines(payload, input.cartToken, []);
   return { ok: true, number: order.number, token };
+}
+
+const providerOrder = (charge: ChargeResult) => (charge.providerOrderId ? { providerOrderId: charge.providerOrderId } : {});
+
+/** The order as the payment provider records it (a Clover order on Lody's account, D54). */
+function orderDetailsForProvider(order: Order, f: Fulfillment): ChargeOrderDetails {
+  type Line = { title: string; option?: string | null; quantity: number; lineTotalCents: number; discountCents?: number; taxCents?: number; taxClass?: { name?: string } | null };
+  const lines = (order.lines as Line[]).map((l) => ({
+    description: `${l.quantity} × ${l.title}${l.option ? ` (${l.option})` : ""}`,
+    amountCents: l.lineTotalCents - (l.discountCents ?? 0),
+    taxCents: l.taxCents ?? 0,
+    taxName: l.taxClass?.name ?? "Sales Tax",
+  }));
+  return {
+    email: order.customer.email,
+    customerName: order.customer.name,
+    phone: order.customer.phone,
+    lines,
+    shippingCents: f.shippingCents,
+    fulfillmentNote: `${order.number}: ${fulfillmentNote(f)}`,
+    customerNote: order.notes ?? undefined,
+    shipTo: f.address,
+    orderTotalCents: order.totals.totalCents,
+  };
 }
 
 /** Gives back the points an attempt spent when it never reached the payment provider. */
@@ -583,6 +762,10 @@ export type PricedBasket = {
   taxCents: number;
   totalCents: number;
   taxApproved: boolean;
+  /** Shipping for this basket (D54): the basket rate for its size, or why it can't ship. */
+  shipping: ShippingQuote;
+  /** Units sold without a stock count, which are neither held nor deducted (D54). */
+  untracked: Set<string>;
 };
 
 /** One line per product with quantities added up, exactly as `validateGift` counts them. */
@@ -616,7 +799,17 @@ export async function priceBasket(
     unitPriceCents: priceOf.get(s.productId) ?? 0,
   }));
 
-  const productDocs = await loadProducts(payload, [...new Set(components.map((c) => c.productId.split(":")[0]))], { config: ctx.inventory, now, exceptOwner: opts.exceptOwner ?? null });
+  const { products: productDocs, untracked } = await loadProductsWithStock(payload, [...new Set(components.map((c) => c.productId.split(":")[0]))], {
+    config: ctx.inventory,
+    now,
+    exceptOwner: opts.exceptOwner ?? null,
+  });
+  // A custom basket ships at its size's basket rate, and only if every item in it can ship (D54).
+  const shipsById = new Map(productDocs.map((p) => [String(p.id), productShips(p)]));
+  const shipping = quoteShipping(
+    components.map((c) => ({ title: c.name, shippable: shipsById.get(c.productId.split(":")[0]) ?? false, kind: "basket" as const, size: basketSizeFromCode(draft.request.size) })),
+    ctx.shipping,
+  );
   const classOf = new Map(productDocs.map((p) => [String(p.id), resolveTaxClass(relId(p.taxClass), ctx.taxClasses, ctx.defaultTaxClassId)]));
   const packagingClass = resolveTaxClass(ctx.packagingTaxClassId, ctx.taxClasses, ctx.defaultTaxClassId);
   const tax = computeTax([
@@ -637,6 +830,8 @@ export async function priceBasket(
     taxCents: tax.taxCents,
     totalCents: validation.totals.totalCents + tax.taxCents,
     taxApproved: tax.approved,
+    shipping,
+    untracked,
   };
 }
 
@@ -649,6 +844,8 @@ export async function reserveBasket(
     submission?: string;
     /** The signed-in rewards member (D47): a basket earns points once paid in full. */
     memberId?: number | null;
+    /** The customer's IP, passed to the payment provider. */
+    clientIp?: string;
     now?: Date;
   },
   ctx: CheckoutContext,
@@ -659,19 +856,29 @@ export async function reserveBasket(
 
   const contact = parseContact(input.form);
   if (!contact.ok) return contact;
-  const slot = pickSlot(ctx, now, input.form.pickup, ctx.reservationLeadHours);
-  if (!slot) return { ok: false, error: "That pickup time is no longer available. Please choose another." };
-  const payInFull = input.form.payment === "full";
-  if (payInFull && !ctx.allowPayInFull) return { ok: false, error: "Please choose the deposit option." };
+  const shipRequested = input.form.method === "ship";
+  // The pickup slot is checked first for pickup; a shipped basket is checked once the basket is priced.
+  const pickupSlot = shipRequested ? null : pickSlot(ctx, now, input.form.pickup, ctx.reservationLeadHours);
+  if (!shipRequested && !pickupSlot) return { ok: false, error: "That pickup time is no longer available. Please choose another." };
+  // A shipped basket is paid in full: there is no pickup to pay the balance at (D54).
+  const payInFull = shipRequested || input.form.payment === "full";
+  if (payInFull && !shipRequested && !ctx.allowPayInFull) return { ok: false, error: "Please choose the deposit option." };
+  const card = cardSource(provider, input.form);
+  if (!card.ok) return card;
 
   // The owner is known before pricing so this customer's own earlier hold never blocks their retry.
-  const owner = basketOwner(input.draft.request, contact.contact.email, slot);
+  const owner = basketOwner(input.draft.request, contact.contact.email, pickupSlot ?? shippedPlaceholder(now));
   const basket = await priceBasket(payload, input.draft, ctx, { now, exceptOwner: owner });
   if (!basket.ok) return basket;
   // The real tax answer, after pricing (A05a).
   if (!orderingState(provider, basket.taxApproved).open) return { ok: false, error: RESERVE_SOON };
+  const how = chooseFulfillment(ctx, now, input.form, ctx.reservationLeadHours, basket.shipping, contact.contact.name);
+  if (!how.ok) return how;
+  const fulfillment = how.value;
+  const slot = fulfillment.slot;
+  const grandTotalCents = basket.totalCents + fulfillment.shippingCents;
 
-  const pay = paymentPlan(basket.totalCents, ctx.deposit, payInFull);
+  const pay = paymentPlan(grandTotalCents, ctx.deposit, payInFull);
   const memberId = ctx.rewards.active && typeof input.memberId === "number" && Number.isSafeInteger(input.memberId) ? input.memberId : null;
   const earnPoints = memberId === null ? 0 : pointsFor(basket.subtotalCents, ctx.rewards.config.pointsPerDollar);
   const key = idempotencyKey(
@@ -683,6 +890,7 @@ export async function reserveBasket(
     basket.totalCents,
     ...(input.submission ? [input.submission] : []),
     ...(memberId === null ? [] : [["member", memberId]]),
+    ...(fulfillment.method === "ship" ? [["ship", fulfillment.address, fulfillment.shippingCents]] : []),
   );
   const token = urlToken("reservation", key);
 
@@ -695,7 +903,7 @@ export async function reserveBasket(
     return { ok: true, number: finished.number, token };
   }
 
-  const plan = await trackedOnly(payload, basket.plan, ctx, now);
+  const plan = await trackedOnly(payload, basket.plan, ctx, now, basket.untracked);
   const held = await holdStock(payload, { owner, plan, ...holdFor(ctx, now) });
   if (!held.ok) return { ok: false, error: "Some items in this basket have just sold out. Please go back and choose again." };
 
@@ -709,15 +917,15 @@ export async function reserveBasket(
       paymentStatus: "deposit_pending",
       paymentAttempts: 0,
       customer: contact.contact,
-      pickup: { ...slot, label: formatSlot(slot) },
+      ...fulfillmentData(fulfillment),
       assembly: assemblyInstructions({ title: basket.title, basketSizeIn: basket.basketSizeIn, components: basket.components, message: input.draft.message, requests: input.draft.requests }),
       basket: { request: input.draft.request, title: basket.title, components: basket.components, packagingCents: basket.packagingCents, message: input.draft.message, requests: input.draft.requests },
-      totalCents: basket.totalCents,
+      totalCents: grandTotalCents,
       taxCents: basket.taxCents,
       taxApproved: basket.taxApproved,
-      depositCents: pay.paidInFull ? basket.totalCents : pay.chargeNowCents,
+      depositCents: pay.paidInFull ? grandTotalCents : pay.chargeNowCents,
       amountPaidCents: 0,
-      balanceDueCents: basket.totalCents,
+      balanceDueCents: grandTotalCents,
       rewards: { member: memberId, earnPoints },
       stockOwner: owner,
       stockPlan: serializePlan(plan),
@@ -732,12 +940,42 @@ export async function reserveBasket(
       const chargeCents = reservation.depositCents;
       const paidInFull = chargeCents >= reservation.totalCents;
       const attempt = await beginAttempt(payload, "reservations", reservation);
-      const charge = await chargeSafely(provider, { reference: reservation.number, amountCents: chargeCents, idempotencyKey: `${key}:${attempt}` }, ctx.chargeTimeoutMs);
+      const charge = await chargeSafely(
+        provider,
+        {
+          reference: reservation.number,
+          amountCents: chargeCents,
+          idempotencyKey: `${key}:${attempt}`,
+          source: card.source,
+          clientIp: input.clientIp,
+          order: {
+            email: reservation.customer.email,
+            customerName: reservation.customer.name,
+            phone: reservation.customer.phone,
+            // One line for the whole basket, its contents in the description, so the tax stays exact.
+            lines: [
+              {
+                description: `${basket.title} (${basket.basketSizeIn}"): ${basket.components.map((c) => `${c.quantity} × ${c.name}`).join(", ")}, basket & packaging`,
+                amountCents: basket.subtotalCents,
+                taxCents: basket.taxCents,
+                taxName: "Sales Tax",
+              },
+            ],
+            shippingCents: fulfillment.shippingCents,
+            fulfillmentNote: `${reservation.number}: ${fulfillmentNote(fulfillment)}${paidInFull ? "" : `; balance ${formatCents(reservation.totalCents - chargeCents)} due at pickup`}`,
+            customerNote: [input.draft.message && `Gift message: ${input.draft.message}`, input.draft.requests && `Requests: ${input.draft.requests}`].filter(Boolean).join(" | ") || undefined,
+            shipTo: fulfillment.address,
+            orderTotalCents: reservation.totalCents,
+          },
+          onProviderOrder: rememberProviderOrder(payload, "reservations", reservation.id, provider.id),
+        },
+        ctx.chargeTimeoutMs,
+      );
       if (charge.status === "unknown") {
         await payload.update({
           collection: "reservations",
           id: reservation.id,
-          data: { paymentStatus: "unknown", payment: { provider: provider.id, reference: charge.reference }, stockNote: UNKNOWN_NOTE },
+          data: { paymentStatus: "unknown", payment: { provider: provider.id, reference: charge.reference, ...providerOrder(charge) }, stockNote: UNKNOWN_NOTE },
           overrideAccess: true,
         });
         return { ok: false, error: unknownPayment(reservation.number) };
@@ -751,19 +989,19 @@ export async function reserveBasket(
                 paymentStatus: paidInFull ? "paid_in_full" : "deposit_paid",
                 amountPaidCents: chargeCents,
                 balanceDueCents: reservation.totalCents - chargeCents,
-                payment: { provider: provider.id, reference: charge.reference },
+                payment: { provider: provider.id, reference: charge.reference, ...providerOrder(charge) },
                 // `advanceWhenPaid` then confirms it, or sends it to staff review when there are requests (A12, A14).
               }
             : {
                 paymentStatus: "failed",
-                payment: { provider: provider.id, reference: charge.reference },
+                payment: { provider: provider.id, reference: charge.reference, ...providerOrder(charge) },
                 ...(reservation.stockStatus === "held" ? { stockStatus: "released" as const } : {}),
               },
         overrideAccess: true,
       });
       if (charge.status !== "paid") {
         await releaseHolds(payload, owner, now);
-        return { ok: false, error: "The payment didn't go through. Please try again." };
+        return { ok: false, error: provider.needsCardToken && charge.message ? charge.message : "The payment didn't go through. Please try again." };
       }
       console.info(`[reservation] ${reservation.number} reserved${reservation.testMode ? " (test)" : ""}`);
     }

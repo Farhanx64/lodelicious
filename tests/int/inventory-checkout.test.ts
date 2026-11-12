@@ -145,6 +145,8 @@ describe("a curated basket with a bill of materials (INV 01)", () => {
 
   it("is unavailable until every component is counted, and falls back to its own stock without contents", async () => {
     const uncounted = await makeProduct(w, { stock: null });
+    // This component is tracked: "Always available (stock not tracked)" is switched off for it (D54).
+    await payload.update({ collection: "products", id: uncounted.id, data: { alwaysAvailable: "no" }, overrideAccess: true });
     const basket = await makeProduct(w, { stock: null, components: [{ product: uncounted.id, quantity: 1 }] });
     expect(await changeBag(payload, newCartToken(), { unitId: String(basket.id), quantity: 1, mode: "add" }, ctx)).toMatchObject({ ok: false });
 

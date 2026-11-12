@@ -51,6 +51,27 @@ All **(not yet run for real)** unless a step says "local".
    those are switched on (`CLOVER_API_TOKEN`, `SMTP_PASS`, and so on); plain settings go in
    `"vars"` in `wrangler.jsonc`.
 
+   **All secrets and settings, by feature:**
+
+   | Name | Where | When |
+   | --- | --- | --- |
+   | `PAYLOAD_SECRET` | secret | always |
+   | `FIRST_OWNER_EMAIL` | secret | until the first owner exists |
+   | `APP_ENV`, `NEXT_PUBLIC_SITE_URL` | `"vars"` | always |
+   | `CLOVER_ECOMM_PRIVATE_TOKEN` | secret | card payments (D54) |
+   | `CLOVER_ECOMM_PUBLIC_KEY` | secret (it is shown to browsers on checkout, but keep it with the token) | card payments (D54) |
+   | `CLOVER_ECOMM_ENVIRONMENT` | `"vars"`: `production` live (sandbox is refused there), `sandbox` on staging | card payments (D54) |
+   | `CLOVER_ECOMM_MERCHANT_ID` | `"vars"` (not secret), optional | card payments, if Clover's iframe needs it (D54) |
+   | `PAYMENT_TIMEOUT_MS` | `"vars"`, optional (default 30000) | card payments |
+   | `CLOVER_ENVIRONMENT`, `CLOVER_MERCHANT_ID`, `CLOVER_API_TOKEN`, `CLOVER_SYNC_LIVE` | token as secret, rest `"vars"` | inventory sync, once verified (D43) |
+   | `EMAIL_TRANSPORT`, `EMAIL_FROM`, `SMTP_*`, `EMAIL_SEND_LIVE` | `SMTP_PASS` as secret, rest `"vars"` | real email (D44) |
+
+   Card payments go live only when all three `CLOVER_ECOMM_*` values are set; until then checkout
+   says "call to order". Set them with `npx wrangler secret put CLOVER_ECOMM_PRIVATE_TOKEN` (and
+   `CLOVER_ECOMM_PUBLIC_KEY`), typing the value at the prompt, never on the command line. After the
+   deploy, `/ops/system-check` must show `Payments: Clover production`. Then place one small real
+   order and refund it in the Clover dashboard (Lody's approval) to prove the whole path.
+
 4. Stop changes on the old host (stop the Node app, or put it in maintenance), so nothing is written
    after the copy.
 

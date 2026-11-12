@@ -1,6 +1,6 @@
 # Project status
 
-Last updated: 2026-11-11 · hosting ported to Cloudflare Workers, D1 and R2, verified under local emulation only (D51); member rewards, built switched off (D47); the admin reorganized by task (D45). `main` is at 51da35c (PR #10), which
+Last updated: 2026-11-11 · card payments through Clover's embedded form, shipping and untracked stock (D54, built against fixtures); hosting ported to Cloudflare Workers, D1 and R2, verified under local emulation only (D51); member rewards, built switched off (D47); the admin reorganized by task (D45). `main` is at 51da35c (PR #10), which
 includes checkout hardening, the Clover sync worker against a fake and transactional emails to the console.
 
 **Stack:** Payload 3.90.2 + Next.js 16.3.6. **Hosting plan: Cloudflare** (Workers through OpenNext,
@@ -141,6 +141,19 @@ the first deploy and the domain. On a Node host the old steps still work (`npm r
 | 4 | Cart, checkout, order snapshots, staff assembly views | **Done (test payments)**: bag, checkout, orders, basket reservations with deposits (D34–D36). Hardened from the audit (D41, D42) |
 | 5 | Inventory: BOM, atomic reservations, expiring holds, outbox, Clover sync | **Website half done** (D40): ledger, holds, atomic sales, BOM, restock, stale stock, outbox. Clover push/pull worker built against a fake (D43); the live sync needs Lody's stock counts, an inventory-only token and sandbox verification |
 | 6 | Clover embedded payments, USPS rates, fixture-tested until credentials exist | **Emails built, console only** (D44). Payments and USPS not started: need Clover ecommerce keys, fee approval, USPS credentials and a sending service |
+
+## Pay on the site, shipping, untracked stock — 2026-11-11 (D54)
+
+- **Clover card payments, built against fixtures:** Clover's embedded card fields on checkout and
+  reserve (no redirect, no card data on our servers), then a Clover order with the line items, tax,
+  shipping and pickup/ship note, paid with the token. Idempotent per attempt; unknown results are
+  looked up by the 5-minute job. Switched on only by the `CLOVER_ECOMM_*` settings; live stays "call
+  to order" until they are set. Needs a sandbox run and one real test order (see D54).
+- **Shipping:** Settings → Shipping. $8.95 flat, baskets $10 / $15 / $20 / $25 by size, pickup free,
+  one charge per order (the highest). Build a Basket can ship (paid in full).
+- **Always available (stock not tracked):** on by default; uncounted products can be bought. A count wins.
+- **Order alert email:** Store details, default Lodeliciousorderss@gmail.com.
+- Migration `checkout_shipping_payments`. Screenshots: `docs/screenshots/d54-*`.
 
 ## Member rewards — 2026-10-14 (D47)
 

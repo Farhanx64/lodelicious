@@ -18,6 +18,8 @@ import { sendPendingEmails } from "../email/pending";
 import { acquireJobLock, releaseJobLock } from "../inventory/job-lock";
 import { expireHolds } from "../inventory/ledger";
 import { reconcilePaidHeld } from "../inventory/settle";
+import { getPaymentProvider } from "../payments";
+import { reconcileUnknownPayments } from "../payments/reconcile";
 
 export const JOB_NAMES = ["release-expired-holds", "send-pending-emails", "purge-carts", "clover-push", "clover-pull"] as const;
 
@@ -55,14 +57,17 @@ async function locked(payload: Payload, job: JobName, lockMs: number, work: () =
  * hold had expired: it takes the stock if it is still there, and otherwise flags the paid record
  * for staff (never charging again).
  */
-function releaseExpiredHolds(payload: Payload): Promise<JobResult> {
+function releaseExpiredHolds(payload: Payload, env: Record<string, string | undefined> = process.env): Promise<JobResult> {
   return locked(payload, "release-expired-holds", 5 * 60_000, async () => {
+    // First, payments whose result was unknown: Clover may say they went through (D54).
+    const payments = await reconcileUnknownPayments(payload, getPaymentProvider(env));
     const now = new Date();
     const reconciled = await reconcilePaidHeld(payload, now);
     const holds = await expireHolds(payload, now);
     return (
       `${holds.expired} hold(s) expired, ${holds.pruned} old hold(s) removed; ` +
-      `${reconciled.checked} paid record(s) checked, ${reconciled.committed} took their stock, ${reconciled.needsAttention} need staff attention.`
+      `${reconciled.checked} paid record(s) checked, ${reconciled.committed} took their stock, ${reconciled.needsAttention} need staff attention; ` +
+      `${payments.checked} unknown payment(s) looked up, ${payments.paid} confirmed paid.`
     );
   });
 }
@@ -141,7 +146,7 @@ async function cloverPull(payload: Payload, { dryRun = false, env = process.env 
 export async function runJob(payload: Payload, job: JobName, options: JobOptions = {}): Promise<JobResult> {
   switch (job) {
     case "release-expired-holds":
-      return releaseExpiredHolds(payload);
+      return releaseExpiredHolds(payload, options.env);
     case "send-pending-emails":
       return sendPending(payload);
     case "purge-carts":
