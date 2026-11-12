@@ -85,6 +85,18 @@ describe("order and reservation forms keep the customer's entries after an error
   });
 });
 
+describe("addToBag return path (D56)", () => {
+  it("goes back to checkout for its '+ Add to your order', keeping shipping, and to the bag for anything else", async () => {
+    mocks.changeBag.mockResolvedValue({ ok: true });
+    const to = (next?: string) => addToBag({ error: null }, form({ unitId: "7", quantity: "1", ...(next === undefined ? {} : { next }) }));
+    await expect(to()).rejects.toThrow("REDIRECT /cart");
+    await expect(to("/checkout")).rejects.toThrow("REDIRECT /checkout");
+    await expect(to("/checkout?method=ship")).rejects.toThrow("REDIRECT /checkout?method=ship");
+    await expect(to("https://evil.example/")).rejects.toThrow("REDIRECT /cart");
+    await expect(to("//evil.example")).rejects.toThrow("REDIRECT /cart");
+  });
+});
+
 describe("one submission, one order (A11)", () => {
   it("hands the verified nonce to the service, and refuses a form without a valid one before doing any work", async () => {
     mocks.placeOrder.mockResolvedValue({ ok: false, error: "Nope" });
