@@ -1531,4 +1531,5 @@ read-only GETs to see what Lody's existing REST token may do (below). No migrati
   names (and data keys) of the messages Clover's frames post to the page, page errors, window
   focus/blur and our own submit outcome, and beacons them to `POST /wallet-log`, which logs one
   `[applepay-diag]` line for `wrangler tail`. No card, address, email or token values are recorded.
-- **Remove** the module, the route and the hooks in `ApplePayButton.tsx` once Apple Pay works.
+- **Removed** (2026-11-14) once Apple Pay worked. The logs showed every Clover message twice: two
+  `clover.elements()` relays began two Apple Pay sessions per tap (fixed in PR #39).
