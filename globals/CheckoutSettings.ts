@@ -2,6 +2,8 @@ import type { Field, GlobalConfig } from "payload";
 
 import { isCommerceManager, isStaff } from "../src/access/roles";
 import { withCents } from "../src/fields/money";
+import { percentToBasisPoints, SHIP_TAX_HELP } from "../src/lib/checkout/ship-tax";
+import { US_STATES } from "../src/lib/shipping/rates";
 import { auditGlobal } from "../src/hooks/audit";
 
 const whole = (name: string, label: string, defaultValue: number, description: string): Field => ({
@@ -33,13 +35,14 @@ const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Frida
 export const CheckoutSettings: GlobalConfig = {
   slug: "checkout-settings",
   label: "Checkout & reservations",
-  admin: { group: "Settings", description: "Default tax classes, pickup times and closed dates, and the deposit for basket reservations." },
+  admin: { group: "Settings", description: "Default tax classes and tax by ship-to state, pickup times and closed dates, and the deposit for basket reservations." },
   access: { read: isStaff, update: isCommerceManager },
   hooks: {
     afterChange: [
       auditGlobal([
         "defaultTaxClass",
         "packagingTaxClass",
+        "shipTaxStates",
         "pickupHours",
         "slotMinutes",
         "leadTimeHours",
@@ -62,6 +65,50 @@ export const CheckoutSettings: GlobalConfig = {
           fields: [
             { name: "defaultTaxClass", label: "Default tax class", type: "relationship", relationTo: "tax-classes", admin: { description: "Used for products without their own tax class." } },
             { name: "packagingTaxClass", label: "Basket & packaging tax class", type: "relationship", relationTo: "tax-classes", admin: { description: "Used for basket & packaging fees." } },
+            {
+              // D65: shipped orders are taxed by the ship-to state. Pickup always uses the tax classes above.
+              name: "shipTaxStates",
+              label: "Tax by ship-to state",
+              type: "array",
+              labels: { singular: "State", plural: "States" },
+              admin: {
+                description: `${SHIP_TAX_HELP} Orders shipped to a state in this list pay its rate on taxable items; orders shipped to any other state pay no sales tax, and the Clover order is marked "no tax". Pickup always uses the tax classes above. Shipping is never taxed.`,
+              },
+              defaultValue: [{ state: "MA", ratePercent: 6.25, cloverTaxName: "Sales Tax" }],
+              validate: (rows: unknown) => {
+                const seen = new Set<string>();
+                for (const row of Array.isArray(rows) ? (rows as { state?: string }[]) : []) {
+                  if (row?.state && seen.has(row.state)) return `${row.state} is listed twice. Keep one row per state.`;
+                  if (row?.state) seen.add(row.state);
+                }
+                return true;
+              },
+              fields: [
+                {
+                  type: "row",
+                  fields: [
+                    { name: "state", label: "State", type: "select", required: true, options: US_STATES.map((s) => ({ label: s, value: s })), admin: { width: "25%" } },
+                    {
+                      name: "ratePercent",
+                      label: "Rate (%)",
+                      type: "number",
+                      required: true,
+                      min: 0,
+                      max: 100,
+                      admin: { width: "25%", step: 0.01, description: "6.25 = 6.25%." },
+                      validate: (v: unknown) => (percentToBasisPoints(v) === null ? "Enter a percentage with at most two decimals, e.g. 6.25" : true),
+                    },
+                    {
+                      name: "cloverTaxName",
+                      label: "Clover tax rate name",
+                      type: "text",
+                      maxLength: 60,
+                      admin: { width: "50%", description: 'The name of this rate in Clover → Taxes & fees, exactly (Lody\'s is "Sales Tax"). Blank uses "Sales Tax".' },
+                    },
+                  ],
+                },
+              ],
+            },
           ],
         },
         {

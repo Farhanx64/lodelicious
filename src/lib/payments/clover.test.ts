@@ -194,3 +194,39 @@ describe("Clover tax rates (live 400: Could not find tax rate for line item)", (
     expect(cloverTaxRate(null, 1000, 63)).toBe(630000);
   });
 });
+
+describe("Clover tax by ship-to state (D65)", () => {
+  const items = async (tax: NonNullable<ChargeInput["order"]>["tax"], lines?: NonNullable<ChargeInput["order"]>["lines"], total = 2861) => {
+    const { fetch, calls } = scriptedFetch({ status: 200, body: createdOrder(total) }, { status: 200, body: paidOrder(total) });
+    const base = input().order!;
+    await new CloverPaymentProvider(config, { fetch }).charge(input({ amountCents: total, order: { ...base, lines: lines ?? base.lines, orderTotalCents: total, tax } }));
+    return { items: (calls[0].body as { items: Record<string, unknown>[] }).items, calls };
+  };
+
+  it("an untaxed ship-to state sends every line on Clover's NO_TAX_APPLIED rate, so Clover adds no tax; shipping stays untaxed", async () => {
+    const untaxed = [
+      { description: "2 × Phillips Dark Chocolate Bar", amountCents: 850, taxCents: 0, taxName: "Sales Tax", taxRateBasisPoints: 0 },
+      { description: "1 × Small gift basket", amountCents: 1000, taxCents: 0, taxName: "Sales Tax" },
+    ];
+    const { items: sent } = await items({ kind: "none" }, untaxed, 2745);
+    expect(sent.slice(0, 2).map((i) => i.tax_rates)).toEqual([[{ name: "NO_TAX_APPLIED", rate: 0 }], [{ name: "NO_TAX_APPLIED", rate: 0 }]]);
+    expect(sent[2]).toEqual({ type: "shipping", amount: 895, currency: "usd", quantity: 1, description: "Shipping" });
+  });
+
+  it("a listed state uses its own Clover rate name; pickup and an unnamed state keep the default", async () => {
+    expect((await items({ kind: "named", cloverTaxName: "NY State Tax" })).items[0].tax_rates).toEqual([{ name: "NY State Tax", rate: 625000 }]);
+    expect((await items({ kind: "named", cloverTaxName: null })).items[0].tax_rates).toEqual([{ name: "Sales Tax", rate: 625000 }]);
+    expect((await items({ kind: "default" })).items[0].tax_rates).toEqual([{ name: "Sales Tax", rate: 625000 }]);
+    expect((await items(undefined)).items[0].tax_rates).toEqual([{ name: "Sales Tax", rate: 625000 }]);
+  });
+
+  it("refuses to pay when Clover's total includes tax we didn't charge (total mismatch)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const untaxed = [{ description: "1 × Fudge", amountCents: 1000, taxCents: 0, taxName: "Sales Tax", taxRateBasisPoints: 0 }];
+    const { fetch, calls } = scriptedFetch({ status: 200, body: createdOrder(1958) });
+    const base = input().order!;
+    const result = await new CloverPaymentProvider(config, { fetch }).charge(input({ amountCents: 1895, order: { ...base, lines: untaxed, orderTotalCents: 1895, tax: { kind: "none" } } }));
+    expect(result).toMatchObject({ status: "failed", message: expect.stringMatching(/Nothing was charged/) });
+    expect(calls).toHaveLength(1);
+  });
+});

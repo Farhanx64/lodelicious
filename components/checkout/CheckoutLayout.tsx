@@ -64,9 +64,22 @@ export function CheckoutTopBar({ back, current }: { back: { href: string; label:
  * "Order summary" with its item count; on a phone the summary is behind a "Show order summary · $X"
  * button, open from the tablet width up.
  */
-export function OrderSummarySection({ heading, count, totalCents, children }: { heading: string; count: number; totalCents: number; children: React.ReactNode }) {
+export function OrderSummarySection({
+  heading,
+  count,
+  totalCents,
+  totalLabel,
+  children,
+}: {
+  heading: string;
+  count: number;
+  totalCents: number;
+  /** Replaces the formatted total, when it follows the ship-to state (D65). */
+  totalLabel?: React.ReactNode;
+  children: React.ReactNode;
+}) {
   return (
-    <SummaryDisclosure id="order-summary" totalLabel={formatCents(totalCents)}>
+    <SummaryDisclosure id="order-summary" totalLabel={totalLabel ?? formatCents(totalCents)}>
       <h2 className="mb-4 flex items-center gap-3 font-sans text-2xl font-semibold normal-case tracking-normal text-ink">
         {heading}
         <span className="rounded-full border border-line bg-paper px-2.5 py-0.5 text-xs font-normal text-ink-soft">
@@ -118,13 +131,15 @@ export type TotalsProps = {
   taxApproved: boolean;
   /** What the tax info button says, e.g. "Sales tax 6.25% on taxable items. Shipping isn't taxed." */
   taxNote: string;
+  /** The tax row's label for a shipped order (D65): "Tax (MA 6.25%)" or "No sales tax (ships to NY)". */
+  taxLabel?: React.ReactNode;
   shipping: { method: "pickup" | "ship"; cents: number };
   /** Rows after the total (deposit due now, balance at pickup). */
   extra?: React.ReactNode;
 };
 
 /** Subtotal, shipping (or free pickup), tax with its rate behind an info button, and the total. */
-export function TotalsCard({ subtotalCents, taxCents, totalCents, taxApproved, taxNote, shipping, extra }: TotalsProps) {
+export function TotalsCard({ subtotalCents, taxCents, totalCents, taxApproved, taxNote, taxLabel, shipping, extra }: TotalsProps) {
   return (
     <div className={`${card} p-4`}>
       <dl className="grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-2">
@@ -133,7 +148,7 @@ export function TotalsCard({ subtotalCents, taxCents, totalCents, taxApproved, t
         <dt className="text-ink-soft">{shipping.method === "ship" ? "Shipping" : "Pickup in store"}</dt>
         <dd className="text-right text-ink-soft">{shipping.method === "ship" ? formatCents(shipping.cents) : "Free"}</dd>
         <dt className="flex items-center text-ink-soft">
-          {taxApproved ? "Tax" : "Estimated tax (to be confirmed)"}
+          {taxLabel ?? (taxApproved ? "Tax" : "Estimated tax (to be confirmed)")}
           <InfoTip label="About tax" text={taxNote} />
         </dt>
         <dd className="text-right text-ink-soft">{formatCents(taxCents)}</dd>

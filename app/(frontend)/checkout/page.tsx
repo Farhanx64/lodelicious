@@ -24,6 +24,7 @@ import { NotesField } from "@/components/checkout/FormFields";
 import { FulfillmentChoice } from "@/components/checkout/FulfillmentChoice";
 import { AddOnButton, QtyStepper, RemoveLine } from "@/components/checkout/OrderSummaryParts";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
+import { ExpectedCharge, ForShipTax, ShipTaxProvider, ShipTaxText, ShipToState } from "@/components/checkout/ShipTax";
 import { ShippingAddressFields } from "@/components/checkout/ShippingFields";
 import { SubmissionField } from "@/components/checkout/SubmissionField";
 import { TestModeNote } from "@/components/checkout/Summary";
@@ -32,17 +33,30 @@ import { availableSlots } from "@/src/lib/checkout/pickup";
 import { bagLineLooks, suggestAddOn } from "@/src/lib/checkout/presentation";
 import { priceBagForCheckout } from "@/src/lib/checkout/service";
 import { bagToken, checkoutPayload } from "@/src/lib/checkout/session";
-import { describeTax } from "@/src/lib/checkout/tax";
+import { taxLabelFor, type TaxBasis } from "@/src/lib/checkout/ship-tax";
+import { bagTaxViews, byView } from "@/src/lib/checkout/tax-views";
 import { formatCents } from "@/src/lib/money";
 import { orderingState } from "@/src/lib/payments";
 import { telHref } from "@/src/lib/phone";
-import { affordableOptions, formatPoints, pointsFor, totalsWithDiscount } from "@/src/lib/rewards/program";
+import { affordableOptions, formatPoints, pointsFor } from "@/src/lib/rewards/program";
 import { currentMember } from "@/src/lib/rewards/session";
 import { getStoreSettings } from "@/src/lib/store";
 
 export const metadata: Metadata = { title: "Checkout", robots: { index: false } };
 
 const FORM_ID = "checkout-form";
+
+/** The tax row's label for a shipped order (D65); pickup keeps the plain "Tax". */
+function taxLabelNode(basis: TaxBasis, approved: boolean): React.ReactNode {
+  if (basis.kind === "none") {
+    return (
+      <>
+        No sales tax (ships to <ShipToState />)
+      </>
+    );
+  }
+  return basis.kind === "state" ? taxLabelFor(basis, approved) : undefined;
+}
 
 export default async function CheckoutPage({ searchParams }: { searchParams: Promise<{ method?: string | string[] }> }) {
   const [{ payload, ctx }, store, query] = await Promise.all([checkoutPayload(), getStoreSettings(), searchParams]);
@@ -51,7 +65,6 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   // Pickup unless the customer chose shipping and this bag can ship (D54).
   const method = query.method === "ship" && shipping.available ? "ship" : "pickup";
   const shippingCents = method === "ship" && shipping.available ? shipping.cents : 0;
-  const totalCents = bag.totalCents + shippingCents;
   const state = orderingState(ctx.provider, bag.taxApproved);
   const slots = availableSlots(ctx.pickup, new Date());
   const [member, looks, addOn] = await Promise.all([
@@ -60,28 +73,23 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     // Only offered while the customer can actually pay here.
     state.open ? suggestAddOn(payload, bag) : null,
   ]);
-  // Each reward the member can afford, labelled with the total it would leave, worked out the way checkout will (D47).
-  const lines = bag.payable.map((l) => ({ amountCents: l.lineTotalCents, taxClass: l.taxClass }));
-  const rewardOptions = member
-    ? affordableOptions(ctx.rewards.config.options, member.pointsBalance, bag.subtotalCents).map((o) => ({
-        id: o.id,
-        label: `${formatCents(o.discountCents)} off for ${formatPoints(o.pointsRequired)} (total ${formatCents(totalsWithDiscount(lines, o.discountCents).totalCents)})`,
-        // What checkout will charge with this reward: the discounted total plus any shipping.
-        chargeCents: totalsWithDiscount(lines, o.discountCents).totalCents + shippingCents,
-      }))
-    : [];
-  // What the Apple Pay or Google Pay sheet shows (D59, D63): the order total, following the reward radio when there is one.
-  const walletAmount = {
-    cents: totalCents,
-    ...(rewardOptions.length ? { byChoice: { field: "reward", cents: { none: totalCents, ...Object.fromEntries(rewardOptions.map((o) => [o.id, o.chargeCents])) } } } : {}),
-  };
+  const affordable = member ? affordableOptions(ctx.rewards.config.options, member.pointsBalance, bag.subtotalCents) : [];
+  // Sales tax follows the ship-to state (D65). A shipped bag is worked out for every state in "Tax by
+  // ship-to state" and for "no sales tax"; the page shows the one for the state chosen in the address.
+  // Pickup is the one version it always was. The server recomputes it from the submitted address.
+  const views = bagTaxViews(bag, { method, shippingCents, rules: ctx.shipTaxRules, rewards: affordable }).map((v) => ({ ...v, taxLabel: taxLabelNode(v.basis, v.bag.taxApproved) }));
+  const first = views[0];
+  const byKey = <T,>(pick: (v: (typeof views)[number]) => T) => byView(views, pick);
+  const totalCents = first.totalCents;
+  const rewardOptions = first.rewards.map((o) => ({ id: o.id, label: o.label, labels: byKey((v) => v.rewards.find((r) => r.id === o.id)?.label ?? o.label) }));
+  const payLabel = (cents: number) => (ctx.provider?.test ? `Place test order · ${formatCents(cents)}` : `Pay ${formatCents(cents)}`);
   const earn = member ? pointsFor(bag.subtotalCents, ctx.rewards.config.pointsPerDollar) : 0;
   const returnPath = method === "ship" ? "/checkout?method=ship" : "/checkout";
 
   const summary = (
     <div className={leftColumn}>
       <CheckoutTopBar back={{ href: "/cart", label: "Bag" }} current="Checkout" />
-      <OrderSummarySection heading="Order summary" count={bag.itemCount} totalCents={totalCents}>
+      <OrderSummarySection heading="Order summary" count={bag.itemCount} totalCents={totalCents} totalLabel={<ShipTaxText texts={byKey((v) => formatCents(v.totalCents))} />}>
         <ul className="mb-4 space-y-3">
           {bag.payable.map((l) => {
             const look = looks.get(l.productId);
@@ -100,17 +108,19 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
             );
           })}
         </ul>
-        <TotalsCard
-          subtotalCents={bag.subtotalCents}
-          taxCents={bag.taxCents}
-          totalCents={totalCents}
-          taxApproved={bag.taxApproved}
-          taxNote={describeTax(
-            bag.payable.map((l) => l.taxClass),
-            bag.taxApproved,
-          )}
-          shipping={{ method, cents: shippingCents }}
-        />
+        {views.map((v) => (
+          <ForShipTax key={v.key} variant={v.key}>
+            <TotalsCard
+              subtotalCents={v.bag.subtotalCents}
+              taxCents={v.bag.taxCents}
+              totalCents={v.totalCents}
+              taxApproved={v.bag.taxApproved}
+              taxNote={v.taxNote}
+              taxLabel={v.taxLabel}
+              shipping={{ method, cents: shippingCents }}
+            />
+          </ForShipTax>
+        ))}
         {addOn && (
           <section aria-labelledby="addon-heading" className="mt-8">
             <h2 id="addon-heading" className="mb-3 font-sans text-base font-semibold normal-case tracking-normal text-ink">
@@ -142,7 +152,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
             {member ? (
               <RewardChoice
                 formId={FORM_ID}
-                options={rewardOptions.map(({ id, label }) => ({ id, label }))}
+                options={rewardOptions}
                 balanceLabel={formatPoints(member.pointsBalance)}
                 earnLabel={earn > 0 ? `This order earns about ${formatPoints(earn)} once it's paid (fewer if you use a reward).` : null}
               />
@@ -161,7 +171,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     </div>
   );
 
-  return (
+  const page = (
     <div className="mx-auto w-full md:w-[min(100%-2rem,76rem)]">
       <h1 className="sr-only">Checkout</h1>
       {ctx.provider?.test && (
@@ -173,7 +183,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         <ActionForm
           id={FORM_ID}
           action={submitOrder}
-          submitLabel={ctx.provider?.test ? `Place test order · ${formatCents(totalCents)}` : `Pay ${formatCents(totalCents)}`}
+          submitLabel={payLabel(totalCents)}
+          submitLabels={byKey((v) => payLabel(v.totalCents))}
           submitIcon={<LockIcon />}
           pendingLabel="Placing order…"
           disabled={method === "pickup" && slots.length === 0}
@@ -181,13 +192,18 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           wrapperClassName={panelGrid}
           formClassName={rightColumn}
           stickySubmit
-          beforeSubmit={
-            <PayTotals
-              subtotalCents={bag.subtotalCents}
-              totalCents={totalCents}
-              rows={[{ label: "Includes tax", value: formatCents(bag.taxCents) }, ...(method === "ship" ? [{ label: "Includes shipping", value: formatCents(shippingCents) }] : [])]}
-            />
-          }
+          beforeSubmit={views.map((v) => (
+            <ForShipTax key={v.key} variant={v.key}>
+              <PayTotals
+                subtotalCents={v.bag.subtotalCents}
+                totalCents={v.totalCents}
+                rows={[
+                  v.key === "none" ? { label: "Sales tax", value: "None" } : { label: "Includes tax", value: formatCents(v.bag.taxCents) },
+                  ...(method === "ship" ? [{ label: "Includes shipping", value: formatCents(shippingCents) }] : []),
+                ]}
+              />
+            </ForShipTax>
+          ))}
           afterSubmit={<PolicyLine />}
         >
           <SubmissionField kind="order" />
@@ -212,7 +228,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
               </p>
             )}
           </div>
-          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} walletAmount={walletAmount} />
+          <ExpectedCharge amounts={byKey((v) => v.wallet)} />
+          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} walletAmount={first.wallet} walletAmounts={byKey((v) => v.wallet)} />
         </ActionForm>
       ) : (
         <div className={panelGrid}>
@@ -228,4 +245,6 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
       )}
     </div>
   );
+  // Shipped: the totals follow the state chosen in the address (D65).
+  return method === "ship" ? <ShipTaxProvider listed={ctx.shipTaxRules.map((r) => r.state)}>{page}</ShipTaxProvider> : page;
 }

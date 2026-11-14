@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 import { US_STATES } from "@/src/lib/shipping/rates";
 
 import { useFormValues } from "./ActionForm";
+import { useShipTax } from "./ShipTax";
 
 // One bordered box, a row per part of the address (D56). Each row keeps its own visible label; the
 // focus ring is drawn on the row, around the label and the input together.
@@ -14,6 +17,12 @@ const rowInput = "block min-h-8 w-full bg-transparent text-base text-ink focus-v
 /** The ship-to address (D54), grouped in one box. US only. Keeps what the customer typed after an error. */
 export function ShippingAddressFields({ prefix }: { prefix: string }) {
   const v = useFormValues();
+  // Sales tax follows the state (D65): tell the page's totals which state is chosen, now and after an error refills the form.
+  const { setState } = useShipTax();
+  const stateRef = useRef<HTMLSelectElement>(null);
+  useEffect(() => {
+    if (stateRef.current) setState?.(stateRef.current.value);
+  }, [setState, v.shipState]);
   const input = (name: string, text: string, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <div className={row}>
       <label htmlFor={`${prefix}-${name}`} className={rowLabel}>
@@ -38,13 +47,26 @@ export function ShippingAddressFields({ prefix }: { prefix: string }) {
           <label htmlFor={`${prefix}-shipState`} className={rowLabel}>
             State
           </label>
-          <select id={`${prefix}-shipState`} name="shipState" required defaultValue={v.shipState ?? "MA"} autoComplete="shipping address-level1" className={rowInput}>
+          <select
+            ref={stateRef}
+            id={`${prefix}-shipState`}
+            name="shipState"
+            required
+            defaultValue={v.shipState ?? "MA"}
+            autoComplete="shipping address-level1"
+            aria-describedby={`${prefix}-shipState-tax`}
+            onChange={(event) => setState?.(event.target.value)}
+            className={rowInput}
+          >
             {US_STATES.map((s) => (
               <option key={s} value={s}>
                 {s}
               </option>
             ))}
           </select>
+          <span id={`${prefix}-shipState-tax`} className="sr-only">
+            Sales tax depends on the state; the total updates when you change it.
+          </span>
         </div>
         <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] divide-x divide-ink-soft/40">
           {input("shipCity", "Town or city", { autoComplete: "shipping address-level2", required: true, maxLength: 60 })}

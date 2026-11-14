@@ -11,7 +11,7 @@ import { MAX_LINE_QUANTITY } from "@/src/lib/checkout/cart";
  * the tablet width up (D56). Without JavaScript a phone starts with it folded; the totals are also
  * repeated above the Pay button.
  */
-export function SummaryDisclosure({ id, totalLabel, children }: { id: string; totalLabel: string; children: React.ReactNode }) {
+export function SummaryDisclosure({ id, totalLabel, children }: { id: string; totalLabel: React.ReactNode; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   return (
     <div>

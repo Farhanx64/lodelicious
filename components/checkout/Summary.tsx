@@ -10,6 +10,7 @@ export function Summary({
   taxCents,
   totalCents,
   taxApproved,
+  taxLabel,
   shipping,
   extra,
 }: {
@@ -20,6 +21,8 @@ export function Summary({
   taxCents: number;
   totalCents: number;
   taxApproved: boolean;
+  /** The tax row's label as recorded at checkout (D65), e.g. "Tax (MA 6.25%)" or "No sales tax (ships to NY)". */
+  taxLabel?: string | null;
   /** The shipping line (D54): pickup is free; shipping is one charge, the highest rate that applies. Text overrides the amount. */
   shipping?: { method: "pickup" | "ship"; cents: number; text?: string } | null;
   extra?: React.ReactNode;
@@ -46,7 +49,7 @@ export function Summary({
             <dd className="text-right">−{formatCents(discountCents)}</dd>
           </>
         )}
-        <dt>{taxApproved ? "Tax" : "Estimated tax (to be confirmed)"}</dt>
+        <dt>{taxLabel || (taxApproved ? "Tax" : "Estimated tax (to be confirmed)")}</dt>
         <dd className="text-right">{formatCents(taxCents)}</dd>
         {shipping && (
           <>

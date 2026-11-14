@@ -8,6 +8,7 @@ import type { Product } from "@/payload-types";
 import { onlineQuantity } from "../catalog/availability";
 import { sellableUnits } from "../catalog/product";
 import { multiplyCents, sumCents, type Cents } from "../money";
+import { classForBasis, type TaxBasis } from "./ship-tax";
 import { computeTax, resolveTaxClass, type TaxClass } from "./tax";
 
 export const MAX_LINE_QUANTITY = 20;
@@ -129,4 +130,18 @@ export function priceCart(cart: readonly CartLine[], products: readonly Product[
     blocking: lines.some((l) => l.problem?.blocking),
     itemCount: lines.reduce((n, l) => n + l.quantity, 0),
   };
+}
+
+/**
+ * The same bag taxed for where it goes (D65): pickup is the bag as priced; shipped, each line's
+ * class is replaced by what the ship-to state charges, and the tax is worked out again, rounded per
+ * line exactly as `priceCart` does. Prices, quantities and problems are unchanged.
+ */
+export function retaxCart(bag: PricedCart, basis: TaxBasis): PricedCart {
+  if (basis.kind === "pickup") return bag;
+  const lines = bag.lines.map((l) => ({ ...l, taxClass: classForBasis(l.taxClass, basis), taxCents: 0 }));
+  const payable = lines.filter((l) => !l.problem?.blocking);
+  const tax = computeTax(payable.map((l) => ({ amountCents: l.lineTotalCents, taxClass: l.taxClass })));
+  payable.forEach((l, i) => (l.taxCents = tax.perLine[i]));
+  return { ...bag, lines, payable, taxCents: tax.taxCents, totalCents: bag.subtotalCents + tax.taxCents, taxApproved: payable.length > 0 && tax.approved };
 }

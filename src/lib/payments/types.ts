@@ -1,5 +1,6 @@
 /** The payment provider seam (D35, D42, D54). Framework free, integer cents. */
 import type { Cents } from "../money";
+import type { ProviderTax } from "../checkout/ship-tax";
 import type { ShippingAddress } from "../shipping/rates";
 
 /**
@@ -19,6 +20,12 @@ export type ChargeOrderDetails = {
   shipTo?: ShippingAddress | null;
   /** The whole order's total. A reservation deposit charges less than this; the rest is due later. */
   orderTotalCents: Cents;
+  /**
+   * How the order is taxed (D65): pickup uses the default Clover rate ("Sales Tax"); a ship-to state
+   * in the list uses that state's Clover rate name; any other ship-to state is "none", sent to
+   * Clover as its NO_TAX_APPLIED rate so Clover adds no tax. Absent means default.
+   */
+  tax?: ProviderTax;
 };
 
 export type ChargeInput = {

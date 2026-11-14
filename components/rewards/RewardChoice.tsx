@@ -1,8 +1,10 @@
 "use client";
 
 import { useFormValues } from "@/components/checkout/ActionForm";
+import { useShipTax } from "@/components/checkout/ShipTax";
 
-export type RewardChoiceOption = { id: string; label: string };
+/** `labels`: the label for each ship-to tax version (D65), since the total in it depends on the state. */
+export type RewardChoiceOption = { id: string; label: string; labels?: Record<string, string> };
 
 /**
  * At checkout: which reward a signed-in member spends on this order, or none (D47). Keeps the choice
@@ -22,6 +24,7 @@ export function RewardChoice({
   formId?: string;
 }) {
   const chosen = useFormValues().reward ?? "none";
+  const { variant } = useShipTax();
   return (
     <fieldset>
       <legend className="mb-1 font-semibold">Your points</legend>
@@ -37,7 +40,7 @@ export function RewardChoice({
           {options.map((o) => (
             <label key={o.id} className="flex min-h-11 items-center gap-3">
               <input type="radio" form={formId} name="reward" value={o.id} defaultChecked={chosen === o.id} className="size-5 shrink-0 accent-coastal-deep" />
-              {o.label}
+              {o.labels?.[variant] ?? o.label}
             </label>
           ))}
           <p className="text-sm text-ink-soft">A reward comes off before tax. Your total is confirmed when you place the order.</p>

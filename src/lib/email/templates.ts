@@ -122,6 +122,8 @@ export type OrderEmail = {
   taxCents: number;
   totalCents: number;
   taxApproved: boolean;
+  /** How the tax was worked out (D65): "Tax (MA 6.25%)" or "No sales tax (ships to NY)". Missing on older orders. */
+  taxLabel?: string | null;
   pickupLabel: string;
   /** Set when the order ships (D54): the address, on one line. Pickup rows are then replaced by it. */
   shipTo?: string | null;
@@ -146,6 +148,8 @@ export type ReservationEmail = {
   components: { name: string; quantity: number }[];
   totalCents: number;
   taxCents: number;
+  /** As on orders (D65). */
+  taxLabel?: string | null;
   paidCents: number;
   balanceDueCents: number;
   paidInFull: boolean;
@@ -209,7 +213,7 @@ export function customerOrderConfirmation(d: OrderEmail): Rendered {
       rows: [
         ["Subtotal", money(d.subtotalCents)],
         ...(d.discountCents ? ([["Reward", `-${money(d.discountCents)}`]] as [string, string][]) : []),
-        ["Tax", money(d.taxCents)],
+        [oneLine(d.taxLabel || "Tax"), money(d.taxCents)],
         ...shippingRows(d),
         ["Total paid", money(d.totalCents)],
         ...(d.earnPoints ? ([["Points earned", d.earnPoints.toLocaleString("en-US")]] as [string, string][]) : []),
@@ -240,7 +244,7 @@ export function customerReservationConfirmation(d: ReservationEmail): Rendered {
       kind: "rows",
       rows: [
         [d.shipTo ? "Total (with tax and shipping)" : "Basket total (with tax)", money(d.totalCents)],
-        ["Tax included", money(d.taxCents)],
+        [d.taxLabel && d.taxLabel !== "Tax" ? `${oneLine(d.taxLabel)}, included` : "Tax included", money(d.taxCents)],
         ...shippingRows(d),
         [d.paidInFull ? "Paid in full" : "Deposit paid", money(d.paidCents)],
         ["Balance due at pickup", money(d.balanceDueCents)],
@@ -339,7 +343,7 @@ export function staffNewOrder(d: OrderEmail): Rendered {
   const blocks: Block[] = [
     { kind: "p", text: d.staffReview ? `New PAID order ${d.number} needs STAFF REVIEW: the customer left a note. Read it before packing.` : `New paid order ${d.number}. It is ready to prepare.` },
     ...testNote(d.testMode),
-    { kind: "rows", rows: [...contactRows(d), whereRow(d), ...shippingRows(d), ["Total paid", money(d.totalCents)], ["Tax", money(d.taxCents) + (d.taxApproved ? "" : " (estimate: tax class not approved)")]] },
+    { kind: "rows", rows: [...contactRows(d), whereRow(d), ...shippingRows(d), ["Total paid", money(d.totalCents)], [oneLine(d.taxLabel || "Tax"), money(d.taxCents) + (d.taxApproved ? "" : " (estimate: tax class not approved)")]] },
     { kind: "items", items: d.lines.map(lineBlock) },
   ];
   if (d.notes.trim()) blocks.push({ kind: "quote", label: "Customer note", text: d.notes });

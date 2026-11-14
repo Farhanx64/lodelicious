@@ -23,6 +23,7 @@
  * log line. Written from Clover's public docs (2026-11-11); see D54 for what must still be checked
  * in the sandbox.
  */
+import { CLOVER_NO_TAX_RATE } from "../checkout/ship-tax";
 import type { Cents } from "../money";
 import type { ChargeInput, ChargeResult, LookupResult, PaymentProvider } from "./types";
 
@@ -193,6 +194,8 @@ export class CloverPaymentProvider implements PaymentProvider {
       fulfillment: o.fulfillmentNote.slice(0, 300),
       ...(o.customerNote ? { customer_note: o.customerNote.slice(0, 300) } : {}),
     };
+    const untaxed = o.tax?.kind === "none";
+    const rateName = (o.tax?.kind === "named" && o.tax.cloverTaxName ? o.tax.cloverTaxName : this.taxRateName).slice(0, 60);
     return {
       currency: "usd",
       email: o.email,
@@ -205,7 +208,13 @@ export class CloverPaymentProvider implements PaymentProvider {
           description: l.description.slice(0, 1000),
           // Clover matches each line's tax to one of the merchant's own tax rates by name and rate
           // (rate in Clover units: 6.25% = 625000), not by amount. Lody's Clover rate is "Sales Tax".
-          ...(l.taxCents > 0 ? { tax_rates: [{ name: this.taxRateName, rate: cloverTaxRate(l.taxRateBasisPoints, l.amountCents, l.taxCents) }] } : {}),
+          // An order shipped outside the states the shop collects for carries Clover's zero rate
+          // (NO_TAX_APPLIED, D65), so Clover can't put its default tax back on.
+          ...(untaxed
+            ? { tax_rates: [{ name: CLOVER_NO_TAX_RATE, rate: 0 }] }
+            : l.taxCents > 0
+              ? { tax_rates: [{ name: rateName, rate: cloverTaxRate(l.taxRateBasisPoints, l.amountCents, l.taxCents) }] }
+              : {}),
         })),
         ...(o.shippingCents > 0 ? [{ type: "shipping", amount: o.shippingCents, currency: "usd", quantity: 1, description: "Shipping" }] : []),
       ],

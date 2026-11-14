@@ -71,6 +71,13 @@ export default async function ReservationPage({ params, searchParams }: { params
               <dd className="text-right">{formatCents(r.fulfillment?.shippingCents ?? 0)}</dd>
             </>
           )}
+          {shipTo && r.taxLabel && (
+            // How the tax was worked out (D65): "Tax (MA 6.25%)" or "No sales tax (ships to NY)".
+            <>
+              <dt>{r.taxLabel}</dt>
+              <dd className="text-right">{formatCents(r.taxCents)}</dd>
+            </>
+          )}
           <dt>{shipTo ? "Total, with shipping" : "Basket total"}{r.taxApproved ? "" : " (tax estimated)"}</dt>
           <dd className="text-right">{formatCents(r.totalCents)}</dd>
           <dt>Paid now</dt>

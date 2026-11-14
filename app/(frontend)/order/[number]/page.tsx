@@ -58,6 +58,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
         taxCents={order.totals.taxCents}
         totalCents={order.totals.totalCents}
         taxApproved={Boolean(order.totals.taxApproved)}
+        taxLabel={order.totals.taxLabel}
         shipping={{ method: shipTo ? "ship" : "pickup", cents: order.totals.shippingCents ?? 0 }}
       />
       {order.rewards?.member && (order.rewards.earnPoints ?? 0) > 0 && (
