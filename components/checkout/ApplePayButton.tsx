@@ -4,6 +4,8 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 
 import { amountFor, applePayAvailable, mountApplePay, type ApplePayAmount, type CloverApplePay } from "@/src/lib/payments/apple-pay";
 
+import { startApplePayDiag } from "@/src/lib/payments/apple-pay-diag";
+
 import { useWalletSubmit } from "./ActionForm";
 
 const MOUNT_ID = "apple-pay-button";
@@ -37,6 +39,7 @@ export function ApplePayButton({ clover, sessionIdentifier, amount }: { clover: 
 
   useEffect(() => {
     if (!available || !walletRef.current) return;
+    const diag = startApplePayDiag(window);
     const current = () => amountFor(amountRef.current, amountRef.current.byChoice ? chosen(amountRef.current.byChoice.field) : null);
     let mounted: ReturnType<typeof mountApplePay>;
     try {
@@ -46,10 +49,21 @@ export function ApplePayButton({ clover, sessionIdentifier, amount }: { clover: 
         mountSelector: `#${MOUNT_ID}`,
         sessionIdentifier,
         amountCents: current(),
-        submit: (payment) => walletRef.current!.submit({ ...payment, wallet: "apple_pay" }),
-        showError: (message) => walletRef.current?.showError(message),
+        submit: (payment) => {
+          diag.note("paymentMethod token received");
+          return walletRef.current!.submit({ ...payment, wallet: "apple_pay" }).then((o) => {
+            diag.note(`submit outcome ${o.kind}`);
+            return o;
+          });
+        },
+        showError: (message) => {
+          diag.note(`showError ${message.slice(0, 80)}`);
+          walletRef.current?.showError(message);
+        },
       });
-    } catch {
+    } catch (err) {
+      diag.note(`mount failed: ${String((err as Error)?.message ?? err).slice(0, 120)}`);
+      diag.stop();
       return; // Clover's SDK without Apple Pay: the card form is still there.
     }
     control.current = mounted;
@@ -63,6 +77,7 @@ export function ApplePayButton({ clover, sessionIdentifier, amount }: { clover: 
       document.removeEventListener("change", onChange);
       mounted.destroy();
       control.current = null;
+      diag.stop();
     };
   }, [available, clover, sessionIdentifier]);
 
