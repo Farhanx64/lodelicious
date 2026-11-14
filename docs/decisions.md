@@ -1519,3 +1519,16 @@ read-only GETs to see what Lody's existing REST token may do (below). No migrati
   a refused token given up, a test order not sent live, the job, and a real checkout with Clover down
   still paid.
 - Owner instructions: `docs/clover-order-printing.md`.
+
+## D62. Temporary Apple Pay diagnostics
+
+- **Why.** On a live iPhone the Apple Pay sheet opens and closes within a second. Clover's merchant
+  session call (`POST api.clover.com/v3/apple_pay_session` with `domainRegistrationIdentifier` = the
+  merchant id) returns a valid Apple session for both shoplodelicious.com and www, so domain
+  registration is not the cause. Apple's session runs inside Clover's cross-origin frame, so nothing
+  on our page saw why it closed.
+- **What.** While the Apple Pay button is mounted, `src/lib/payments/apple-pay-diag.ts` records the
+  names (and data keys) of the messages Clover's frames post to the page, page errors, window
+  focus/blur and our own submit outcome, and beacons them to `POST /wallet-log`, which logs one
+  `[applepay-diag]` line for `wrangler tail`. No card, address, email or token values are recorded.
+- **Remove** the module, the route and the hooks in `ApplePayButton.tsx` once Apple Pay works.
