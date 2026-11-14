@@ -1,5 +1,5 @@
 /**
- * Print paid web orders on Lody's Clover device (D60). Switched off unless `CLOVER_ORDER_PRINT=on`.
+ * Print paid web orders on Lody's Clover device (D61). Switched off unless `CLOVER_ORDER_PRINT=on`.
  *
  * After a website payment succeeds, this
  *
@@ -15,7 +15,7 @@
  * The payment is NOT linked to this order. Clover only links an ecommerce charge to an order by
  * paying that order through the ecommerce API, which would move this step in front of the charge;
  * recording a second "payment" on it would count the sale twice in her reports. The slip says
- * "PAID ONLINE" and carries the ecommerce order id instead. See D60.
+ * "PAID ONLINE" and carries the ecommerce order id instead. See D61.
  *
  * Rules:
  *   - It never throws and never touches the record's payment: a Clover problem is logged, kept on a
@@ -28,7 +28,7 @@
  *   - A sandbox payment prints only to the sandbox and a live one only to the live device.
  *   - The token goes only in the Authorization header and never into a message or log line.
  *
- * Written from Clover's public docs (read 2026-11-13); what must still be checked is in D60.
+ * Written from Clover's public docs (read 2026-11-13); what must still be checked is in D61.
  */
 import crypto from "node:crypto";
 

@@ -1,5 +1,5 @@
 /**
- * Printing paid web orders on the Clover device (D60): settings, what goes on the slip, when it is
+ * Printing paid web orders on the Clover device (D61): settings, what goes on the slip, when it is
  * due, and the exact Clover requests. No network: Clover is a scripted `fetch`.
  */
 import { describe, expect, it } from "vitest";

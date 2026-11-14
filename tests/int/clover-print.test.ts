@@ -1,5 +1,5 @@
 /**
- * Printing paid web orders on the Clover device (D60), against a real Payload instance. No network:
+ * Printing paid web orders on the Clover device (D61), against a real Payload instance. No network:
  * Clover is a scripted `fetch`, and the hook test replaces the global `fetch`.
  *
  * Covers: one Clover order and one print per web order; nothing on re-save or a second run; a Clover
@@ -67,7 +67,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-describe("printing a paid web order on Clover (D60)", () => {
+describe("printing a paid web order on Clover (D61)", () => {
   it("creates one Clover order with custom lines, prints it once, and leaves the order as it was", async () => {
     const order = await paidOrder();
     expect(order.testMode).toBe(true); // the test provider counts as the sandbox

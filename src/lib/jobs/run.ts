@@ -74,7 +74,7 @@ function releaseExpiredHolds(payload: Payload, env: Record<string, string | unde
 }
 
 /**
- * Send any transactional email that is owed but not yet sent (D44), then retry Clover printing (D60). Each email is claimed with a
+ * Send any transactional email that is owed but not yet sent (D44), then retry Clover printing (D61). Each email is claimed with a
  * marker on the record before it is sent, so nothing is sent twice. Until a sending service is
  * connected the console adapter only logs; those emails still count as handled.
  */
@@ -82,7 +82,7 @@ function sendPending(payload: Payload): Promise<JobResult> {
   return locked(payload, "send-pending-emails", 10 * 60_000, async () => {
     const r = await sendPendingEmails(payload);
     const line = `${r.records} record(s) checked, ${r.sent} email(s) handed to the transport, ${r.failed} failed (will retry next run).`;
-    // Paid web orders not yet on the Clover device (D60); nothing while CLOVER_ORDER_PRINT is off.
+    // Paid web orders not yet on the Clover device (D61); nothing while CLOVER_ORDER_PRINT is off.
     const p = await printPendingOrders(payload).catch((e: unknown) => ({ checked: 0, printed: 0, failed: 1, error: (e as Error).message }));
     return p.checked || p.failed ? `${line} Clover printing: ${p.printed} printed, ${p.failed} failed.` : line;
   });
