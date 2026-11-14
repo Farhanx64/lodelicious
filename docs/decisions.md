@@ -1533,3 +1533,57 @@ read-only GETs to see what Lody's existing REST token may do (below). No migrati
   `[applepay-diag]` line for `wrangler tail`. No card, address, email or token values are recorded.
 - **Removed** (2026-11-14) once Apple Pay worked. The logs showed every Clover message twice: two
   `clover.elements()` relays began two Apple Pay sessions per tap (fixed in PR #39).
+
+## D63 — Google Pay through Clover's iframe, where Apple Pay isn't shown (2026-11-14)
+
+Google Pay at checkout and reserve, from the same Clover iframe SDK as the card fields (D54) and
+Apple Pay (D59), paid through the same server path as a card. **Nothing here has run against Clover
+or with a real Google Pay account**: it is written from Clover's own code (`checkout.clover.com/sdk.js`
+and the frame bundle `scripts/account-address-element_29.entry.js`, downloaded 2026-11-14) and
+tested with fakes only.
+
+- **Switch.** `CLOVER_ECOMM_GOOGLE_PAY=on`, off by default, and only with `CLOVER_ECOMM_MERCHANT_ID`:
+  Clover's hidden relay frame sends the merchant's ecommerce config (which says whether Google Pay is
+  supported) only when the Clover instance has a merchant id; without it the button never draws.
+  Turn it on once Clover's dashboard shows Google Pay enabled for the account. Independent of
+  `CLOVER_ECOMM_APPLE_PAY`.
+- **Where it shows.** Above "Card details" on `/checkout` and `/reserve`, with "or pay by card",
+  only where Apple Pay is not shown: a browser where `ApplePaySession.canMakePayments()` is true on a
+  page offering Apple Pay gets Apple Pay alone. Server markup never has the button.
+- **One elements factory (the PR #39 lesson).** `CardFields` still calls `clover.elements()` once and
+  passes that `elements` to both wallet buttons; `GooglePayButton` creates
+  `PAYMENT_REQUEST_BUTTON` on it. A test checks there is exactly one `.elements()` call and none in
+  the Google Pay files.
+- **Invisible until it renders.** Clover's frame removes itself (`removeGooglePayFromDom`, which the
+  SDK handles by deleting the iframe titled "PAYMENT REQUEST BUTTON") when `gpay.supported` is false
+  or Google's `isReadyToPay` says no, but it never tells the page that it *did* render. So the mount
+  div starts at zero height with no divider, and our page loads Google's `pay.js` and asks the same
+  `isReadyToPay` question (card, Amex/Discover/Mastercard/Visa, `CRYPTOGRAM_3DS` + `PAN_ONLY`; `TEST`
+  with the Clover sandbox, `PRODUCTION` otherwise). Only a yes gives it its 48 px and the divider;
+  Clover's removal message (checked to come from Clover's origin) hides it for good. Remaining gap:
+  if the merchant config says unsupported, the button can show its empty space briefly until
+  Clover's removal arrives; the switch exists so that doesn't happen live. pay.js failing to load
+  means no Google Pay; the card form is unchanged.
+- **Request** (`googlePaymentRequest`): `total { label: "Lodelicious", amount }` with the amount in
+  **cents** (the frame's `getTransactionInfo` turns 2550 into "25.50"), `currency: "USD"`,
+  `merchantName: "Lodelicious"`, `options.totalPriceStatus: "FINAL"`, Google's `pay` button in the
+  default colour. Clover supplies its own Google merchant id and the `clover` gateway. The amount
+  follows the same `walletAmount` as Apple Pay (renamed from `applePay` on `CardFields`): order total
+  with the reward radio on checkout, deposit or pay-in-full on reserve. Changes go through
+  `clover.updateGPayPaymentRequest({ total })`, which the frame merges into its request.
+- **Paying.** Clover calls the element's `paymentMethod` listener (registered with
+  `element.addEventListener`, not on `window`) with `{ card, token, customer: { email, billingInfo } }`,
+  or an error object. A token passing the `clv_` check (`CARD_TOKEN`) goes to `useWalletSubmit` with
+  `wallet=google_pay`: the form is checked like the Pay button (the wallet's email fills an empty
+  email box), then charged by `placeOrder` / `reserveBasket` exactly like a card token, and the
+  answer is the receipt URL (`paidWithWallet` now covers `google_pay`). No token: "Google Pay didn't
+  send a payment. Nothing was charged." Form incomplete: the fields are highlighted and the page asks
+  to pay again (that token is never charged). Google's sheet has already closed, so there is no
+  status call. Clover allows one listener per element type and event; unmounting removes it and the
+  frame so a remount works.
+- **No diagnostics.** The D62 Apple Pay diagnostics are not extended to Google Pay (coordinator's
+  call, 2026-11-14); they were removed in PR #40.
+- **To check in the Clover sandbox, then live:** the token prefix (`clv_` assumed; anything else is
+  refused, charging nothing); that `PAYMENT_REQUEST_BUTTON` draws with this account's merchant id;
+  that `updateGPayPaymentRequest` changes the sheet's total; that Clover's tokenization of the Google
+  token is charged by `/v1/orders/{id}/pay` like a card token.

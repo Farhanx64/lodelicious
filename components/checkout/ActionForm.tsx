@@ -30,11 +30,11 @@ export type Preparer = (form: FormData) => Promise<string | null>;
 const PreparerContext = createContext<((p: Preparer | null) => void) | null>(null);
 
 /**
- * Pays with a wallet token instead of the card fields (Apple Pay, D59): checks the form like a normal
+ * Pays with a wallet token instead of the card fields (Apple Pay D59, Google Pay D63): checks the form like a normal
  * submit, then sends it with `cardToken` set to the wallet's token and `wallet` set, skipping the
  * card step. Resolves with the server's answer, before the page moves on to the receipt.
  */
-export type WalletSubmit = (payment: { token: string; email: string | null; wallet: "apple_pay" }) => Promise<WalletOutcome>;
+export type WalletSubmit = (payment: { token: string; email: string | null; wallet: "apple_pay" | "google_pay" }) => Promise<WalletOutcome>;
 const WalletContext = createContext<{ submit: WalletSubmit; showError(message: string): void } | null>(null);
 
 /** The surrounding ActionForm's wallet submit, or null outside one. */
@@ -151,7 +151,7 @@ export function ActionForm({
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     const paying = wallet.current;
     if (paying) {
-      // Apple Pay already gave a token: the card fields are skipped, the server charges it like a card token.
+      // A wallet already gave a token: the card fields are skipped, the server charges it like a card token.
       event.preventDefault();
       const form = new FormData(event.currentTarget);
       form.set("cardToken", paying.token);

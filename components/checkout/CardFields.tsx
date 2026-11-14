@@ -3,18 +3,17 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import { applePayConfigured, type ApplePayAmount, type CloverApplePay } from "@/src/lib/payments/apple-pay";
+import { googlePayConfigured, type CloverGooglePay, type CloverWalletElements } from "@/src/lib/payments/google-pay";
 import type { BrowserPaymentConfig } from "@/src/lib/payments/types";
 
 import { usePreparer } from "./ActionForm";
 import { ApplePayButton } from "./ApplePayButton";
+import { GooglePayButton } from "./GooglePayButton";
 
-/** The parts of Clover's iframe SDK this page uses (D54, D59). The card is typed into Clover's frames, never ours. */
-type CloverElement = {
-  mount(selector: string): void;
-  addEventListener(event: "change" | "blur", fn: (e: Record<string, { error?: string; touched?: boolean }>) => void): void;
-};
-type CloverInstance = CloverApplePay & {
-  elements(): { create(type: string, options?: Record<string, unknown>): CloverElement };
+/** The parts of Clover's iframe SDK this page uses (D54, D59, D63). The card is typed into Clover's frames, never ours. */
+type FieldEvent = Record<string, { error?: string; touched?: boolean }>;
+type CloverInstance = CloverApplePay & CloverGooglePay & {
+  elements(): CloverWalletElements;
   createToken(): Promise<{ token?: string; errors?: Record<string, string> }>;
 };
 declare global {
@@ -99,10 +98,11 @@ function CardFieldset({ children }: { children: React.ReactNode }) {
 
 /**
  * The card form: Clover's hosted iframes, or a labelled placeholder with the test provider. With
- * Clover and `applePay` (the amount Apple's sheet shows), Clover's Apple Pay button goes above the
- * card fields on devices that have Apple Pay (D59); everywhere else nothing extra renders.
+ * Clover and `walletAmount` (what the wallet's sheet shows), Clover's Apple Pay button goes above the
+ * card fields on devices that have Apple Pay (D59), or else Clover's Google Pay button where Google
+ * can pay (D63); everywhere else nothing extra renders.
  */
-export function CardFields({ config, applePay }: { config: BrowserPaymentConfig; applePay?: ApplePayAmount }) {
+export function CardFields({ config, walletAmount }: { config: BrowserPaymentConfig; walletAmount?: ApplePayAmount }) {
   if (config.kind !== "clover") {
     return (
       <CardFieldset>
@@ -110,7 +110,13 @@ export function CardFields({ config, applePay }: { config: BrowserPaymentConfig;
       </CardFieldset>
     );
   }
-  return <CloverCard config={config} applePay={applePayConfigured(config) ? applePay : undefined} />;
+  return (
+    <CloverCard
+      config={config}
+      applePay={applePayConfigured(config) ? walletAmount : undefined}
+      googlePay={googlePayConfigured(config) ? walletAmount : undefined}
+    />
+  );
 }
 
 function Grid({ children }: { children: React.ReactNode }) {
@@ -139,9 +145,17 @@ function TestCard() {
   );
 }
 
-function CloverCard({ config, applePay }: { config: Extract<BrowserPaymentConfig, { kind: "clover" }>; applePay?: ApplePayAmount }) {
+function CloverCard({
+  config,
+  applePay,
+  googlePay,
+}: {
+  config: Extract<BrowserPaymentConfig, { kind: "clover" }>;
+  applePay?: ApplePayAmount;
+  googlePay?: ApplePayAmount;
+}) {
   const clover = useRef<CloverInstance | null>(null);
-  // The same Clover instance drives the card fields and the Apple Pay button.
+  // The same Clover instance and the same one elements factory drive the card fields and both wallet buttons.
   const [instance, setInstance] = useState<{ clover: CloverInstance; elements: ReturnType<CloverInstance["elements"]> } | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -157,7 +171,7 @@ function CloverCard({ config, applePay }: { config: Extract<BrowserPaymentConfig
           const el = elements.create(f.type, frameStyles);
           el.mount(`#${f.id}`);
           el.addEventListener("change", (event) => {
-            const e = event[f.type];
+            const e = (event as FieldEvent)[f.type];
             setErrors((prev) => ({ ...prev, [f.type]: e?.touched && e.error ? e.error : "" }));
           });
         }
@@ -186,6 +200,15 @@ function CloverCard({ config, applePay }: { config: Extract<BrowserPaymentConfig
   return (
     <>
       {applePay && instance && config.merchantId && <ApplePayButton clover={instance.clover} elements={instance.elements} sessionIdentifier={config.merchantId} amount={applePay} />}
+      {googlePay && instance && (
+        <GooglePayButton
+          clover={instance.clover}
+          elements={instance.elements}
+          amount={googlePay}
+          applePayOffered={!!applePay}
+          environment={config.sdkUrl.includes("sandbox") ? "TEST" : "PRODUCTION"}
+        />
+      )}
       <CardFieldset>
         {status === "failed" && (
           <p role="alert" className="mb-3 border border-error p-3 text-error">

@@ -82,7 +82,7 @@ describe("the page without Apple Pay is unchanged", () => {
       createElement(
         ActionForm as ComponentType<Omit<ComponentProps<typeof ActionForm>, "children">>,
         { action: async () => ({ error: null }), submitLabel: "Pay", pendingLabel: "…" },
-        createElement(CardFields, { config, applePay: { cents: 2550 } }),
+        createElement(CardFields, { config, walletAmount: { cents: 2550 } }),
       ),
     );
 

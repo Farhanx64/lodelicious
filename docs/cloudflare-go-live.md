@@ -61,8 +61,9 @@ All **(not yet run for real)** unless a step says "local".
    | `CLOVER_ECOMM_PRIVATE_TOKEN` | secret | card payments (D54) |
    | `CLOVER_ECOMM_PUBLIC_KEY` | secret (it is shown to browsers on checkout, but keep it with the token) | card payments (D54) |
    | `CLOVER_ECOMM_ENVIRONMENT` | `"vars"`: `production` live (sandbox is refused there), `sandbox` on staging | card payments (D54) |
-   | `CLOVER_ECOMM_MERCHANT_ID` | `"vars"` (not secret), optional | card payments, if Clover's iframe needs it (D54); required for Apple Pay (D59) |
+   | `CLOVER_ECOMM_MERCHANT_ID` | `"vars"` (not secret), optional | card payments, if Clover's iframe needs it (D54); required for Apple Pay (D59) and Google Pay (D63) |
    | `CLOVER_ECOMM_APPLE_PAY` | `"vars"`: `on` once the domain shows Verified in Clover's Apple Pay settings | Apple Pay button (D59) |
+   | `CLOVER_ECOMM_GOOGLE_PAY` | `"vars"`: `on` once Clover shows Google Pay enabled; needs `CLOVER_ECOMM_MERCHANT_ID` | Google Pay button (D63) |
    | `PAYMENT_TIMEOUT_MS` | `"vars"`, optional (default 30000) | card payments |
    | `CLOVER_ENVIRONMENT`, `CLOVER_MERCHANT_ID`, `CLOVER_API_TOKEN`, `CLOVER_SYNC_LIVE` | token as secret, rest `"vars"` | inventory sync, once verified (D43) |
    | `EMAIL_TRANSPORT`, `EMAIL_FROM`, `SMTP_*`, `EMAIL_SEND_LIVE` | `SMTP_PASS` as secret, rest `"vars"` | real email (D44) |
