@@ -220,7 +220,7 @@ describe("shipping (D54)", () => {
     await changeBag(payload, token, { unitId: String(a.id), quantity: 2, mode: "add" }, ctx);
     await changeBag(payload, token, { unitId: String(b.id), quantity: 1, mode: "add" }, ctx);
     const { bag, shipping } = await priceBagForCheckout(payload, token, ctx);
-    expect(shipping).toEqual({ available: true, cents: 895 });
+    expect(shipping).toMatchObject({ available: true, cents: 895 });
 
     const result = await placeOrder(payload, { cartToken: token, form: { ...CONTACT, method: "ship", ...ADDRESS }, now: NOW }, ctx);
     if (!result.ok) throw new Error(result.error);
@@ -240,7 +240,7 @@ describe("shipping (D54)", () => {
     const small = await shippable("small-gift-basket", 5, { channel: "online", priceApproved: true, priceCents: 4500 });
     const token = newCartToken();
     for (const p of [bar, small, large]) expect(await changeBag(payload, token, { unitId: String(p.id), quantity: 1, mode: "add" }, ctx)).toEqual({ ok: true });
-    expect((await priceBagForCheckout(payload, token, ctx)).shipping).toEqual({ available: true, cents: 2000 });
+    expect((await priceBagForCheckout(payload, token, ctx)).shipping).toMatchObject({ available: true, cents: 2000 });
 
     const result = await placeOrder(payload, { cartToken: token, form: { ...CONTACT, method: "ship", ...ADDRESS }, now: NOW }, ctx);
     if (!result.ok) throw new Error(result.error);
@@ -269,7 +269,7 @@ describe("shipping (D54)", () => {
     expect(await placeOrder(payload, { cartToken: token, form: { ...CONTACT, method: "ship", ...ADDRESS, shipZip: "123" }, now: NOW }, ctx)).toMatchObject({ ok: false, error: expect.stringMatching(/ZIP/) });
 
     await payload.updateGlobal({ slug: "shipping-settings", data: { flatRateCents: 1095 }, user: manager, overrideAccess: false });
-    expect((await priceBagForCheckout(payload, token, await loadCheckoutContext(payload, { APP_ENV: "test" }))).shipping).toEqual({ available: true, cents: 1095 });
+    expect((await priceBagForCheckout(payload, token, await loadCheckoutContext(payload, { APP_ENV: "test" }))).shipping).toMatchObject({ available: true, cents: 1095 });
     await payload.updateGlobal({ slug: "shipping-settings", data: { shippingEnabled: false }, overrideAccess: true });
     expect((await priceBagForCheckout(payload, token, await loadCheckoutContext(payload, { APP_ENV: "test" }))).shipping).toMatchObject({ available: false, reason: "disabled" });
     await payload.updateGlobal({ slug: "shipping-settings", data: { shippingEnabled: true, flatRateCents: 895 }, overrideAccess: true });
@@ -282,7 +282,7 @@ describe("shipping (D54)", () => {
     const fresh = await loadCheckoutContext(payload, { APP_ENV: "test" });
     const priced = await priceBasket(payload, draft, fresh, { now: NOW });
     if (!priced.ok) throw new Error(priced.error);
-    expect(priced.shipping).toEqual({ available: true, cents: 1000 }); // small basket
+    expect(priced.shipping).toMatchObject({ available: true, cents: 1000 }); // small basket
 
     const result = await reserveBasket(payload, { draft, form: { ...CONTACT, method: "ship", payment: "deposit", ...ADDRESS }, now: NOW }, fresh);
     if (!result.ok) throw new Error(result.error);
@@ -304,6 +304,97 @@ describe("shipping (D54)", () => {
     expect(priced.shipping).toMatchObject({ available: false, reason: "not_shippable" });
     expect(await reserveBasket(payload, { draft, form: { ...CONTACT, method: "ship", ...ADDRESS }, now: NOW }, ctx)).toMatchObject({ ok: false, error: expect.stringMatching(/choose pickup/) });
     await payload.update({ collection: "products", id: Number(first), data: { perishable: false }, overrideAccess: true });
+  });
+});
+
+describe("shipping boxes by weight (D60)", () => {
+  const ADDRESS = { shipLine1: "1 Main St", shipCity: "Boston", shipState: "MA", shipZip: "02108" };
+  const fresh = () => loadCheckoutContext(payload, { APP_ENV: "test" });
+
+  async function weighed(slug: string, shippingWeightLbs: number | null) {
+    const p = await stock(slug, 10);
+    return payload.update({ collection: "products", id: p.id, data: { shippable: true, perishable: false, shippingWeightLbs }, overrideAccess: true }) as Promise<Product>;
+  }
+
+  it("keeps Lody's four boxes on the Shipping settings, with charging by box off, after staff save other fields", async () => {
+    await payload.updateGlobal({ slug: "shipping-settings", data: { flatRateCents: 895 }, user: manager, overrideAccess: false });
+    const saved = await payload.findGlobal({ slug: "shipping-settings", overrideAccess: true });
+    expect(saved.chargeByBox).toBe(false);
+    expect((saved.boxes ?? []).map((b) => [b.name, b.maxWeightLbs, b.priceCents])).toEqual([
+      ["Small box", 3, 1000],
+      ["Medium box", 4, 1500],
+      ["Large box", 6, 2000],
+      ["Extra large box", 7, 2500],
+    ]);
+    expect((await fresh()).shipping.boxes.map((b) => b.name)).toEqual(["Small box", "Medium box", "Large box", "Extra large box"]);
+  });
+
+  it("puts the box to pack on a shipped order; the price only changes once Charge by box is ticked", async () => {
+    const dark = await weighed("phillips-dark-chocolate-bar", 0.75);
+    const milk = await weighed("phillips-milk-chocolate-bar", 1.5);
+    const token = newCartToken();
+    await changeBag(payload, token, { unitId: String(dark.id), quantity: 2, mode: "add" }, ctx);
+    await changeBag(payload, token, { unitId: String(milk.id), quantity: 1, mode: "add" }, ctx);
+
+    // Off (the default): the D54 flat rate, and staff still see the box.
+    expect((await priceBagForCheckout(payload, token, await fresh())).shipping).toMatchObject({ cents: 895, chargedBy: "rules", packing: { box: { name: "Small box" }, weightLbs: 3 } });
+
+    await payload.updateGlobal({ slug: "shipping-settings", data: { chargeByBox: true }, user: manager, overrideAccess: false });
+    const on = await fresh();
+    expect((await priceBagForCheckout(payload, token, on)).shipping).toMatchObject({ cents: 1000, chargedBy: "box" });
+    const result = await placeOrder(payload, { cartToken: token, form: { ...CONTACT, method: "ship", ...ADDRESS }, now: NOW }, on);
+    if (!result.ok) throw new Error(result.error);
+    expect(await findByToken(payload, "orders", result.number, result.token)).toMatchObject({
+      fulfillment: { method: "ship", shippingCents: 1000, box: "Small box, 14 × 9 × 14 in", weightLbs: 3 },
+      totals: { shippingCents: 1000 },
+    });
+  });
+
+  it("falls back to today's rules when an item has no weight or the order is heavier than the largest box", async () => {
+    const dark = await weighed("phillips-dark-chocolate-bar", 0.75);
+    const bare = await weighed("phillips-smores-bar", null);
+    const token = newCartToken();
+    await changeBag(payload, token, { unitId: String(dark.id), quantity: 1, mode: "add" }, ctx);
+    await changeBag(payload, token, { unitId: String(bare.id), quantity: 1, mode: "add" }, ctx);
+    const on = await fresh();
+    expect(on.shipping.chargeByBox).toBe(true);
+    expect((await priceBagForCheckout(payload, token, on)).shipping).toMatchObject({ cents: 895, chargedBy: "rules", packing: { box: null, reason: "missing_weight", missing: [bare.title] } });
+    const result = await placeOrder(payload, { cartToken: token, form: { ...CONTACT, method: "ship", ...ADDRESS }, now: NOW }, on);
+    if (!result.ok) throw new Error(result.error);
+    expect((await findByToken(payload, "orders", result.number, result.token))?.fulfillment).toMatchObject({ shippingCents: 895, box: `Choose a box by hand: no shipping weight for ${bare.title}`, weightLbs: null });
+
+    const heavy = newCartToken();
+    const brick = await weighed("phillips-milk-chocolate-bar", 4);
+    await changeBag(payload, heavy, { unitId: String(brick.id), quantity: 2, mode: "add" }, ctx);
+    expect((await priceBagForCheckout(payload, heavy, on)).shipping).toMatchObject({ cents: 895, chargedBy: "rules", packing: { reason: "too_heavy", weightLbs: 8 } });
+  });
+
+  it("weighs a Build a Basket with its empty basket, and falls back to the basket rate until that is weighed", async () => {
+    const eligible = await payload.find({ collection: "products", where: { basketEligible: { equals: true } }, limit: 200, depth: 0, overrideAccess: true });
+    for (const p of eligible.docs) await payload.update({ collection: "products", id: p.id, data: { shippable: true, perishable: false, shippingWeightLbs: 0.25 }, overrideAccess: true });
+    const picks = (await payload.find({ collection: "products", where: { and: [{ basketEligible: { equals: true } }, { _status: { equals: "published" } }, { priceApproved: { equals: true } }, { premium: { equals: false } }, { exclusiveTo: { exists: false } }, { giftTypes: { contains: "sweet" } }] }, limit: 20, depth: 0, overrideAccess: true })).docs.slice(0, 5);
+    const premium = (await payload.find({ collection: "products", where: { and: [{ basketEligible: { equals: true } }, { _status: { equals: "published" } }, { priceApproved: { equals: true } }, { premium: { equals: true } }, { exclusiveTo: { exists: false } }, { giftTypes: { contains: "sweet" } }] }, limit: 1, depth: 0, overrideAccess: true })).docs;
+    const basketDraft: BasketDraft = {
+      request: { kind: "custom", size: "small", giftType: "sweet", budgetCents: null, selections: [...picks, ...premium].map((p) => ({ productId: p.variants?.length ? `${p.id}:${p.variants[0].key}` : String(p.id), quantity: 1 })) },
+      message: "",
+      requests: "",
+    };
+    const on = await fresh();
+    const unweighed = await priceBasket(payload, basketDraft, on, { now: NOW });
+    if (!unweighed.ok) throw new Error(unweighed.error);
+    expect(unweighed.shipping).toMatchObject({ cents: 1000, chargedBy: "rules", packing: { reason: "missing_weight", missing: ["Basket & packaging"] } });
+
+    const gift = await payload.findGlobal({ slug: "gift-builder-settings", overrideAccess: true });
+    await payload.updateGlobal({ slug: "gift-builder-settings", data: { sizes: (gift.sizes ?? []).map((s) => (s.code === "small" ? { ...s, shippingWeightLbs: 2.5 } : s)) }, overrideAccess: true });
+    const boxed = await priceBasket(payload, basketDraft, on, { now: NOW });
+    if (!boxed.ok) throw new Error(boxed.error);
+    // 6 items × 0.25 lb + 2.5 lb basket = 4 lb: the Medium box.
+    expect(boxed.shipping).toMatchObject({ cents: 1500, chargedBy: "box", packing: { box: { name: "Medium box" }, weightLbs: 4 } });
+    const result = await reserveBasket(payload, { draft: basketDraft, form: { ...CONTACT, method: "ship", ...ADDRESS }, now: NOW }, on);
+    if (!result.ok) throw new Error(result.error);
+    expect((await findByToken(payload, "reservations", result.number, result.token))?.fulfillment).toMatchObject({ shippingCents: 1500, box: "Medium box, 16 × 10 × 16 in", weightLbs: 4 });
+
+    await payload.updateGlobal({ slug: "shipping-settings", data: { chargeByBox: false }, overrideAccess: true });
   });
 });
 

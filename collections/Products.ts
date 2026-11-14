@@ -97,6 +97,7 @@ export const Products: CollectionConfig = {
         "taxClass",
         "shippable",
         "perishable",
+        "shippingWeightLbs",
         "maxPerGift",
         "fitUnits",
         "_status",
@@ -359,7 +360,23 @@ export const Products: CollectionConfig = {
                 { name: "perishable", type: "checkbox", defaultValue: false, label: "Perishable / prepared" },
               ],
             },
-            whole("packedWeightOz", "Packed weight (oz)"),
+            {
+              name: "shippingWeightLbs",
+              label: "Shipping weight (lbs)",
+              type: "number",
+              min: 0,
+              admin: {
+                step: 0.01,
+                description:
+                  "Optional. The packed weight of one of this item in pounds, decimals allowed (1.5 = 1 lb 8 oz). Checkout uses it to pick the shipping box (Settings → Shipping). For a ready-made basket, the whole basket. Leave empty if not weighed yet: an order with any unweighed item uses the standard shipping rates.",
+              },
+              validate: (value: number | null | undefined) =>
+                value === null || value === undefined || (Number.isFinite(value) && value > 0) ? true : "Enter a weight above 0, or leave it empty",
+            },
+            {
+              ...whole("packedWeightOz", "Packed weight (oz, not used)"),
+              admin: { step: 1, description: "Not used for shipping. Enter Shipping weight (lbs) above instead." },
+            } as Field,
           ],
         },
         {

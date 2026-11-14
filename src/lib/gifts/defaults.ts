@@ -166,6 +166,8 @@ export function parseSettings(doc: Row): GiftSettings {
       capacityUnits: nullableCount(r.capacityUnits, `${where} capacity`),
       // Rows saved before the switch existed were all offered.
       enabled: r.enabled !== false,
+      // Only when weighed (D60), so rows saved before the field existed parse exactly as before.
+      ...(typeof r.shippingWeightLbs === "number" && Number.isFinite(r.shippingWeightLbs) && r.shippingWeightLbs > 0 ? { shippingWeightLbs: r.shippingWeightLbs } : {}),
     };
     range(rule.minItems, rule.maxItems, where);
     return rule;

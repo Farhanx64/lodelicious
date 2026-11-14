@@ -66,6 +66,19 @@ export const fulfillmentFields: Field = {
       ],
     },
     {
+      type: "row",
+      admin: { condition: (data) => data?.fulfillment?.method === "ship" },
+      fields: [
+        {
+          name: "box",
+          label: "Box to pack",
+          type: "text",
+          admin: { readOnly: true, description: "Picked by checkout from the order's weight (Settings → Shipping → Boxes, D60)." },
+        },
+        { name: "weightLbs", label: "Order weight (lbs)", type: "number", admin: { readOnly: true, description: "Quantity × each item's shipping weight. Empty when an item had no weight." } },
+      ],
+    },
+    {
       name: "shipTo",
       label: "Ship to",
       type: "group",

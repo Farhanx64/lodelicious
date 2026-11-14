@@ -31,7 +31,7 @@ const SummaryDisclosureWithChildren = SummaryDisclosure as unknown as ComponentT
 const ActionFormWithChildren = ActionForm as unknown as ComponentType<Omit<ComponentProps<typeof ActionForm>, "children">>;
 
 describe("fulfilment switch", () => {
-  const ships = { available: true, cents: 895 } as const;
+  const ships = { available: true, cents: 895, packing: { box: null, reason: "no_boxes" }, chargedBy: "rules" } as const;
 
   it("marks the current half, posts the method, and links each half to its own server-priced page", () => {
     const pickup = render(createElement(FulfillmentChoice, { path: "/checkout", method: "pickup", shipping: ships }));

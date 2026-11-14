@@ -1388,3 +1388,47 @@ features: Apple Pay", read 2026-11-12) and tested with fakes and fixtures only.
   payment.
 - Screenshot: `docs/screenshots/d59-checkout-no-apple-pay.png` (headless Chrome, which has no Apple
   Pay, with Clover sandbox and the switch on: the page is as before).
+
+## D60 — Shipping boxes by weight; box price charged only once Lody switches it on (2026-11-13)
+
+Lody's boxes (2026-11-13): Small 14 × 9 × 14 in, 2–3 lb (baskets and smaller items); Medium
+16 × 10 × 16, 3–4 lb; Large 18 × 12 × 20 h, 5–6 lb (large basket); Extra large 22 × 22 × 18,
+6–7 lb. She is entering each product's weight now. One migration, `shipping_boxes`.
+
+- **Weights.** Products → Fulfillment → **Shipping weight (lbs)**: optional, decimals allowed, above
+  0. One weight per product, so every option weighs the same. A ready-made basket (Gift baskets
+  category) is a product: its weight is the whole basket. Build a Basket items are products too, so
+  there is no separate field; each basket size in Gift builder settings gains **Empty basket &
+  packaging weight (lbs)**, added to the chosen items. The older `packedWeightOz` field (never used)
+  is kept, relabelled "not used".
+- **Boxes** (Settings → Shipping → Boxes by weight): an editable list of name, maximum weight (lb),
+  price and L × W × H (in), prefilled with her four boxes. Each maximum is the top of her range
+  (3, 4, 6, 7 lb). Prices default to the D54 basket rates for the same size ($10, $15, $20, $25).
+- **Picking the box** (`src/lib/shipping/boxes.ts`): order weight = Σ quantity × weight, in exact
+  hundredths of a pound; the box is the one with the smallest maximum that holds it (the cheaper of
+  two equal maximums). Only weight decides; the dimensions are shown to staff. No box is picked when
+  any item (or a custom basket's empty basket) has no weight, the order is over the largest box, or
+  the list is empty.
+- **Charging.** A new **Charge by box** switch, **off**. Off: the D54 rules charge exactly as before
+  and the box is only recorded for staff. On: an order that fits a box pays that box's price. With
+  the switch on, any order without a picked box still pays the D54 rules exactly. Who may ship is
+  unchanged (Can ship, not perishable, shipping on). Why a switch, when the boxes are priced at
+  today's rates: the D54 rate depends on what is in the order (regular items $8.95, baskets by
+  size) and a box price doesn't, so no box price can match today's charge for every order. Example:
+  a 1 lb chocolate order fits the Small box ($10) but pays $8.95 today.
+- **On the order.** Orders and reservations: Pickup or shipping gains **Box to pack** ("Medium box,
+  16 × 10 × 16 in", or "Choose a box by hand: no shipping weight for Truffles" / "… over the largest
+  box") and **Order weight (lbs)**. They show for shipped records only, read-only, set by checkout.
+- **Settings rows.** A Shipping row that has never been saved uses the four boxes from code. A saved
+  row uses the list as staff left it, even when empty. The migration inserts the four boxes for an
+  existing row (the live one), so the admin shows them.
+- **Migration** `20261114_035407_shipping_boxes`, generated with `payload migrate:create`. Additive
+  only: a new `shipping_settings_boxes` table and nullable columns (`products` and `_products_v`
+  shipping weight, `gift_builder_settings_sizes` packaging weight, `orders`/`reservations` box and
+  weight), plus `shipping_settings.charge_by_box` defaulting to false. No table is rebuilt, so
+  there is no D1 cascade (D54). One hand-added `INSERT … SELECT` prefills the boxes. I ran it with
+  sqlite3 against a table holding one existing row; it has not been run on D1. The snapshot is the
+  generated one; a second `migrate:create` reports no schema changes.
+- **For Lody to decide:** box prices (the Small box at $10 costs a regular-items order $1.05 more
+  than today's $8.95), then tick Charge by box. Until every item in an order has a weight, that
+  order keeps today's rates.
