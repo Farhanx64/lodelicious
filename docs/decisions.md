@@ -1432,3 +1432,90 @@ Lody's boxes (2026-11-13): Small 14 × 9 × 14 in, 2–3 lb (baskets and smaller
 - **For Lody to decide:** box prices (the Small box at $10 costs a regular-items order $1.05 more
   than today's $8.95), then tick Charge by box. Until every item in an order has a weight, that
   order keeps today's rates.
+
+## D61 — Paid web orders print on Lody's Clover device (2026-11-13)
+
+The owner asked whether web orders can print on her Clover device instead of her checking email each
+time. Built **switched off** (`CLOVER_ORDER_PRINT=on` turns it on). **Nothing here has called Clover
+to write anything:** it is written from Clover's public docs (read 2026-11-13: "Print orders with the
+REST API", "Create custom orders", "Create an atomic order", "Orders FAQs", the `print_event` and
+`/v1/orders/{id}/pay` references) and tested with a scripted `fetch` only. The only live calls were
+read-only GETs to see what Lody's existing REST token may do (below). No migration.
+
+- **What happens** (`src/lib/clover/order-print.ts`, hook `src/hooks/clover-print.ts` on orders and
+  reservations, after the email hook). When a record is saved as paid (an order `paid`; a reservation
+  `deposit_paid` or `paid_in_full`), not canceled:
+  1. `POST /v3/merchants/{mId}/orders` with `state: "open"` (Clover's docs: only open orders show in the
+     Orders app), `title: "WEB <number> PAID"`, `taxRemoved: true` (so the device adds no tax of its
+     own), `total`, and a `note`: "PAID ONLINE at the website - do not charge again", the order number,
+     the customer's name and phone, `PICKUP: <slot>` or `SHIP TO: <address>`, the reward discount, the
+     customer's note (orders) or the basket contents, card message, requests and "BALANCE DUE AT PICKUP"
+     (reservations), and the ecommerce order id of the payment.
+  2. `POST .../orders/{id}/bulk_line_items` with **custom lines: `name` and `price` only, never `item`**,
+     so no inventory item is used or created and Clover's stock is untouched. One line per bag line,
+     "2 x Fudge box (Dark)" priced at the line total after any reward (quantity folded into the name, as
+     the D54 ecommerce order does, so discounts stay exact and `unitQty`'s units don't matter); then
+     "Shipping (paid)" and "Sales tax (paid)" lines, so the lines add up to the amount charged. A
+     reservation is one basket line.
+  3. `POST /v3/merchants/{mId}/print_event` with `{ orderRef: { id } }`. Clover routes it to the
+     device's order printer, or its built-in printer when there is none.
+- **The payment is not linked to that order.** Clover links an ecommerce charge to an order only by
+  paying the order through the ecommerce API (`/v1/orders/{id}/pay`, which the atomic-order guide shows
+  for a v3 order). Doing that would put Clover's Orders API in front of the charge, so a v3 problem
+  could fail a payment, which the request forbids. Recording a "payment" on the printed order instead
+  (`/v3/.../orders/{id}/payments`) would count every web sale twice in her reports. So the printed order
+  is a slip: it says PAID ONLINE and carries the ecommerce order id; the money stays on the D54
+  ecommerce order. **Consequence:** the slip is an open, unpaid order in her Orders app. Staff must not
+  take payment on it (the title and note say so) and can delete or close it once packed.
+  - Not chosen: printing the D54 ecommerce order itself with `print_event`. It is linked to the payment
+    and would avoid a second order, but Clover doesn't say whether ecommerce orders are v3 orders a
+    device can print, and they carry our details only in `metadata`, which a slip doesn't show. Worth
+    one sandbox test (below); if it works it is a smaller change than this.
+- **Never fails or refunds the order.** The hook catches everything; a Clover error is one log line
+  (`[clover-print] order SP-1042: not printed (...); will retry. The order itself is fine.`) with the
+  token redacted. The record is never written by this code. Emails (D44) still go out, so a missed
+  slip still reaches the order alert inbox.
+- **Once per order.** A `sync-jobs` row per record, key `clover-print:<collection>:<idempotency key>`
+  (never a bare row id, D45), is the lock and the checkpoint: one conditional UPDATE claims it (two
+  saves or the hook and the job never run it together), and each step is saved before and after its
+  call. A create whose answer was lost is found by its title (`GET .../orders?filter=title=...`) before
+  another is made; lines whose answer was lost are counted (`GET .../line_items`) before they are added
+  again. The paper is at least once: a lost print answer prints a second slip rather than none. Done
+  rows (`last_success_at` set) are never run again. No migration: the row lives in the existing table,
+  so failures are also visible in System → Sync jobs.
+- **Retries.** The send-pending-emails job (every 10 minutes) also runs `printPendingOrders`: paid
+  records from the last 48 hours not printed yet. At most 6 tries each; a 401, 403 or 404 (bad token,
+  missing permission, wrong merchant) gives up at once. Each call times out after 8 s.
+- **Only new orders.** Records created more than 48 hours ago are never printed, so switching it on
+  doesn't print the backlog.
+- **Sandbox stays sandbox.** A test-mode record (the test provider, or a Clover sandbox payment) prints
+  only when the print environment is `sandbox`, a live one only when it is `production`; the live store
+  refuses `sandbox` (D41 rule: unset `APP_ENV` counts as live).
+- **Settings.** `CLOVER_ORDER_PRINT=on`; `CLOVER_ORDER_PRINT_TOKEN` (else `CLOVER_API_TOKEN`);
+  `CLOVER_MERCHANT_ID` (else `CLOVER_ECOMM_MERCHANT_ID`); `CLOVER_ORDER_PRINT_ENVIRONMENT` (else
+  `CLOVER_ECOMM_ENVIRONMENT`). Missing or malformed values are logged by name, never by value, and print
+  nothing. Hosts: `api.clover.com`, `apisandbox.dev.clover.com` (North America only).
+- **Lody's current token** (`lody-token.txt`, checked 2026-11-13 with read-only GETs on
+  `api.clover.com`): `GET /items` 200; `GET /merchants/{mId}`, `/orders`, `/order_types`, `/devices`,
+  `/employees`, `/properties` all **401**. It can read inventory only, so it **cannot create orders or
+  print**. Clover requires "Write orders" for `print_event` and "Read orders" to look one up. She needs a
+  token with **Orders: Read and Write** (Clover web dashboard → Account & Setup → API Tokens → create
+  one, tick Orders read and write; nothing else is needed). Whether a token can write can't be checked
+  without writing, so the first real test is the check.
+- **To verify in the sandbox, then live (needs a person at the device):**
+  - the order appears in the Orders app and prints, with the title, note and custom lines; Clover's FAQ
+    says custom *modifiers* don't print and that atomic orders with custom items may not (we use
+    neither), so check the lines really print;
+  - `taxRemoved: true` keeps the device from adding tax to the custom lines;
+  - `filter=title=` works on the orders list (the lost-answer lookup);
+  - whether the slip prints on an order (kitchen) printer or the receipt printer, and how long it takes
+    (community reports up to ~2 minutes);
+  - optional: `print_event` with the D54 ecommerce order id, to see whether the paid order itself
+    prints (see "Not chosen").
+- **Tests.** Unit (`src/lib/clover/order-print.test.ts`): settings, the slip for orders, shipping and
+  reservations, text cleaning and limits, when it is due, the exact requests (no `item`, token only in
+  the header). Integration (`tests/int/clover-print.test.ts`): one order and one print, nothing on a
+  second run, switch off, a 503 finished by a retry from its checkpoint, a lost create found by title,
+  a refused token given up, a test order not sent live, the job, and a real checkout with Clover down
+  still paid.
+- Owner instructions: `docs/clover-order-printing.md`.
