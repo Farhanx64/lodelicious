@@ -226,6 +226,7 @@ const ORDER_STATUS: Record<string, string> = {
   staff_review: "Being checked",
   preparing: "Being prepared",
   ready: "Ready for pickup",
+  shipped: "Shipped",
   completed: "Picked up",
   canceled: "Canceled",
 };

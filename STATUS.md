@@ -95,8 +95,8 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
    (absolute vs delta stock updates, idempotency, response shape), then run push and pull with
    `CLOVER_DRY_RUN=1`, then for real on sandbox. Per-option Clover IDs need a small migration once
    Lody splits the shared items.
-2. **Email sending:** once Lody picks a service and a From domain (SPF, DKIM, DMARC), install
-   `@payloadcms/email-nodemailer` and fill in the SMTP stub (D44).
+2. **Email sending:** built on Cloudflare Email Service (D64), with ready-for-pickup and shipped
+   emails. Switch on with `EMAIL_TRANSPORT=cloudflare` and `EMAIL_SEND_LIVE=1` once Lody approves.
 3. **Milestone 6:** Clover embedded payments behind `src/lib/payments` (the service is already safe
    for a real provider, D42), then USPS rates once packing data and credentials exist.
 4. **Browser pass** at 390 px and 200% text over the new pages and forms, then staging review with

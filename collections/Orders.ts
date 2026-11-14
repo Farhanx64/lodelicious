@@ -24,6 +24,7 @@ import {
   staffNotesField,
   stockDetailFields,
   stockStatusField,
+  trackingFields,
 } from "./order-fields";
 
 /**
@@ -64,9 +65,14 @@ export const Orders: CollectionConfig = {
             { label: "Needs staff review", value: "staff_review" },
             { label: "Preparing", value: "preparing" },
             { label: "Ready for pickup", value: "ready" },
+            { label: "Shipped", value: "shipped" },
             { label: "Completed", value: "completed" },
             { label: "Canceled", value: "canceled" },
           ],
+          admin: {
+            description:
+              "The customer is emailed once when this status is saved as Ready for pickup (pickup orders) or Shipped (with the carrier and tracking number below, so fill those in first).",
+          },
         },
         {
           name: "paymentStatus",
@@ -93,6 +99,7 @@ export const Orders: CollectionConfig = {
           fields: [
             customerFields,
             fulfillmentFields,
+            trackingFields,
             pickupFields,
             { name: "summary", type: "ui", admin: { components: { Field: "@/components/admin/RecordSummary#OrderSummary" } } },
             { name: "notes", label: "Customer notes", type: "textarea", access: frozen },
@@ -132,6 +139,6 @@ export const Orders: CollectionConfig = {
     paymentReference,
     paymentAttempts,
     rewardsFields("orders"),
-    orderEmailFields,
+    orderEmailFields("orders"),
   ],
 };

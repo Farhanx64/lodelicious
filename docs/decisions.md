@@ -1587,3 +1587,71 @@ tested with fakes only.
   refused, charging nothing); that `PAYMENT_REQUEST_BUTTON` draws with this account's merchant id;
   that `updateGPayPaymentRequest` changes the sheet's total; that Clover's tokenization of the Google
   token is charged by `/v1/orders/{id}/pay` like a card token.
+
+## D64 — Real email through Cloudflare Email Service; ready-for-pickup and shipped emails (2026-11-14)
+
+Cloudflare Email Sending is enabled for the zone shoplodelicious.com (Workers Paid). This adds a
+Payload email adapter that sends through the Worker's `send_email` binding, and two customer status
+emails. **Nothing here has sent a real email**: the adapter is written from Cloudflare's docs (read
+2026-11-14: Email Service overview, "Send emails from Workers" / Workers API, send bindings, limits,
+local development) and tested against a fake binding. No new npm dependency. One migration,
+`20261114_171155_status_emails`.
+
+- **Transport** (`src/lib/email/config.ts`, `adapter.ts`). `EMAIL_TRANSPORT=cloudflare` selects
+  `cloudflareAdapter`. It refuses to start on the Node build (no binding there), with a malformed
+  `EMAIL_FROM`, and on the live store without `EMAIL_SEND_LIVE=1` (the D44 guard, unchanged: unset or
+  mistyped `APP_ENV` counts as live). Unset `EMAIL_TRANSPORT` stays the console (D44).
+- **Sending.** Per message, the adapter takes `env.EMAIL` from OpenNext's request context
+  (`getCloudflareContext`, loaded only on the Cloudflare build) and calls Cloudflare's structured
+  `send({ to, from, replyTo, subject, html, text })`, with addresses as `{ email, name }`. Every
+  message has both html and text (the templates always make both; Payload's own emails get the
+  missing half derived). Addresses with a line break are refused. Cloudflare's errors are
+  `Error`s with a `code` (`E_SENDER_NOT_VERIFIED`, `E_RECIPIENT_SUPPRESSED`, `E_RATE_LIMIT_EXCEEDED`, …);
+  the adapter rethrows with the code, `send.ts` logs it with addresses redacted.
+- **From and Reply-To.** With this transport From defaults to `Lodelicious <orders@shoplodelicious.com>`
+  and Reply-To to `Lodeliciousorderss@gmail.com` (the order alert inbox); `EMAIL_FROM` and
+  `EMAIL_REPLY_TO` override them and are also set in `wrangler.jsonc` `"vars"`. Staff alerts are
+  unchanged: Store details → Order alert email, default `Lodeliciousorderss@gmail.com` (D54).
+- **Binding** (`wrangler.jsonc`): `send_email: [{ name: "EMAIL", allowed_sender_addresses:
+  ["orders@shoplodelicious.com"] }]`. No recipient restriction, because customers are arbitrary
+  addresses (allowed once the domain is onboarded). **No `remote: true`**: the deployed Worker always
+  sends for real; `wrangler dev` and the local preview only simulate (log) unless the binding is
+  marked remote, which would send real mail from a laptop. The `env.remote` (command-line) environment
+  has no `send_email`, so `payload run` scripts against the real D1 cannot send: their sends fail,
+  the marker is cleared, and the Worker's cron retries.
+- **Failure never fails an order.** Unchanged D44 machinery: the marker is claimed, the send is
+  tried with a 15 s timeout, and on any failure (binding missing, Cloudflare refusal, timeout) the
+  marker is cleared again so the send-pending-emails Cron Trigger (every 10 minutes) retries it.
+- **Ready for pickup.** When a **paid pickup** order (fulfillment method `pickup` or unset) or
+  reservation is saved as `ready`, the customer is emailed once: number, items (or basket contents
+  and the balance due), pickup window, the shop's address and phone, and the opening hours from
+  Store details, plus the private link. Not for orders that ship.
+- **Shipped.** Orders gain the fulfillment status **Shipped** (`shipped`) and two optional fields
+  shown for shipped orders, **Carrier** (`trackingCarrier`: USPS, UPS, FedEx, Other) and **Tracking
+  number** (`trackingNumber`, up to 64 characters). When a paid order is saved as `shipped` the
+  customer is emailed once with the items, ship-to address, carrier, number and a tracking link
+  (`src/lib/email/tracking.ts`: USPS `tools.usps.com/go/TrackConfirmAction?tLabels=`, UPS
+  `www.ups.com/track?tracknum=`, FedEx `www.fedex.com/fedextrack/?trknbr=`; the number is reduced
+  to letters and digits first; Other has no link). Tracking added after the email went out does not
+  send a second one, so the status help text says to fill it in first. Reservations have no shipped
+  status and don't get one.
+- **Once each.** New nullable markers `emails.readySentAt` (orders and reservations) and
+  `emails.shippedSentAt` (orders), claimed like the D44 markers; `dueEmails` and the retry's
+  candidate query include them. A record that moves on (say to Completed) before a failed status
+  email is retried no longer owes it. Admin help on the status fields says the customer is emailed
+  when the status is saved.
+- **Migration.** Additive only: five nullable columns (`orders.tracking_carrier`,
+  `orders.tracking_number`, `orders.emails_ready_sent_at`, `orders.emails_shipped_sent_at`,
+  `reservations.emails_ready_sent_at`). The new select option needs no schema change. One hand-added
+  `UPDATE` per table marks records **already** at Ready for pickup as handled, so turning this on
+  doesn't email those customers late. Not run on D1.
+- **To switch real email on** (Lody's approval; not done here): set `EMAIL_TRANSPORT=cloudflare`
+  and `EMAIL_SEND_LIVE=1` (in `wrangler.jsonc` `"vars"`, so a deploy doesn't drop them), deploy, then
+  place one test order to a staff address and check the Email Sending logs in the dashboard.
+  Emails sent from a Worker show as "dropped" in the Email Routing summary even when delivered;
+  Email Sending's own metrics are the ones to read. New accounts start with a small daily quota.
+- **Tests.** `adapter.test.ts` (address and message mapping, both halves, a refusal with its code,
+  a missing binding, the redacted failed outcome), `config.test.ts` (transport guards, senders, due
+  rules), `templates.test.ts` and `tracking.test.ts`, `tests/int/emails.test.ts` (ready once, not for
+  shipped orders, shipped with a USPS link, a failed shipped email retried by the job, a reservation
+  ready once), `tests/cloudflare-config.test.ts` (the binding and the From agree).

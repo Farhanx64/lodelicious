@@ -21,3 +21,6 @@ NEXT_PUBLIC_SITE_URL=
 # CLOVER_ECOMM_MERCHANT_ID=
 # CLOVER_ECOMM_APPLE_PAY=on   (D59; needs the merchant id and a verified domain)
 # CLOVER_ECOMM_GOOGLE_PAY=on  (D63; needs the merchant id and Google Pay enabled in Clover)
+
+# Email (D64). The preview only simulates the EMAIL binding (it logs, nothing is delivered).
+# EMAIL_TRANSPORT=cloudflare

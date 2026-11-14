@@ -192,21 +192,56 @@ export const RECORD_DATA_NOTE = "Exactly what was saved when the customer checke
 const sentAt = (name: string, label: string): Field => ({ name, label, type: "date", access: frozen, admin: { readOnly: true, date: { pickerAppearance: "dayAndTime" } } });
 
 /**
- * Which emails have gone out (D44). Written only by `src/lib/email/notify.ts`, which claims a marker with
+ * Which emails have gone out (D44, D64). Written only by `src/lib/email/notify.ts`, which claims a marker with
  * one conditional UPDATE before sending, so a repeated save, a staff edit or a retry never sends twice. A
- * marker left empty means "not sent yet": the retry script sends it.
+ * marker left empty means "not sent yet": the retry script sends it. Orders also record the "shipped"
+ * email; reservations have no shipped status.
  */
-export const orderEmailFields: Field = {
-  name: "emails",
-  label: "Emails sent",
-  type: "group",
-  access: frozen,
-  admin: { position: "sidebar", description: "Set by the system when an email is sent. Empty means not sent yet." },
+export function orderEmailFields(collection: "orders" | "reservations"): Field {
+  return {
+    name: "emails",
+    label: "Emails sent",
+    type: "group",
+    access: frozen,
+    admin: { position: "sidebar", description: "Set by the system when an email is sent. Empty means not sent yet." },
+    fields: [
+      sentAt("confirmationSentAt", "Customer confirmation"),
+      sentAt("staffNotifiedAt", "Staff told of new paid record"),
+      sentAt("unknownNotifiedAt", "Staff told payment is unknown"),
+      sentAt("attentionNotifiedAt", "Staff told stock needs attention"),
+      sentAt("readySentAt", "Customer told it is ready for pickup"),
+      ...(collection === "orders" ? [sentAt("shippedSentAt", "Customer told it has shipped")] : []),
+    ],
+  };
+}
+
+/** Carriers a shipped order can name (D64); the email links to the carrier's tracking page. */
+export const TRACKING_CARRIERS = [
+  { label: "USPS", value: "usps" },
+  { label: "UPS", value: "ups" },
+  { label: "FedEx", value: "fedex" },
+  { label: "Other", value: "other" },
+] as const;
+
+/** Tracking for a shipped order (D64). Staff fill these in before saving the order as Shipped. */
+export const trackingFields: Field = {
+  type: "row",
+  admin: { condition: (data) => data?.fulfillment?.method === "ship" || data?.fulfillmentStatus === "shipped" },
   fields: [
-    sentAt("confirmationSentAt", "Customer confirmation"),
-    sentAt("staffNotifiedAt", "Staff told of new paid record"),
-    sentAt("unknownNotifiedAt", "Staff told payment is unknown"),
-    sentAt("attentionNotifiedAt", "Staff told stock needs attention"),
+    {
+      name: "trackingCarrier",
+      label: "Carrier",
+      type: "select",
+      options: [...TRACKING_CARRIERS],
+      admin: { description: "Fill in before saving Shipped: the shipped email links to this carrier's tracking page." },
+    },
+    {
+      name: "trackingNumber",
+      label: "Tracking number",
+      type: "text",
+      maxLength: 64,
+      admin: { description: "As printed on the label. Optional; without it the email says the parcel is on its way." },
+    },
   ],
 };
 

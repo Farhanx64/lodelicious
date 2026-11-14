@@ -13,7 +13,16 @@ import { formatCents } from "../money";
 
 export type Rendered = { subject: string; text: string; html: string };
 
-export type StoreInfo = { name: string; street?: string | null; locality?: string | null; phone?: string | null; email?: string | null };
+export type StoreInfo = {
+  name: string;
+  street?: string | null;
+  locality?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  /** Opening hours from Store details (D64: shown in the ready-for-pickup email). */
+  hoursLabel?: string | null;
+  hours?: { days: string; time: string }[] | null;
+};
 
 type Block =
   | { kind: "heading"; text: string }
@@ -255,6 +264,67 @@ export function customerInquiryReceipt(d: InquiryEmail): Rendered {
     { kind: "p", text: "You can reply to this email if you want to add anything." },
   ];
   return build(`We received your message (${d.number})`, blocks, storeFooter(d.store));
+}
+
+// ---------------------------------------------------------------- status emails (D64)
+
+/** The shop's address, phone and opening hours, for a customer on their way to pick up. */
+function pickupAtBlocks(store: StoreInfo): Block[] {
+  const address = [store.street, store.locality].filter(Boolean).map(oneLine).join(", ");
+  const blocks: Block[] = [{ kind: "heading", text: "Pick up at" }, { kind: "p", text: [oneLine(store.name), address, store.phone ? `Phone ${oneLine(store.phone)}` : ""].filter(Boolean).join("\n") }];
+  const hours = (store.hours ?? []).filter((h) => oneLine(h.days) && oneLine(h.time));
+  if (hours.length) {
+    blocks.push({ kind: "heading", text: oneLine(store.hoursLabel) || "Opening hours" }, { kind: "rows", rows: hours.map((h) => [oneLine(h.days), oneLine(h.time)] as [string, string]) });
+  }
+  return blocks;
+}
+
+export type ReadyEmail =
+  | ({ kind: "order" } & Pick<OrderEmail, "number" | "customerName" | "lines" | "pickupLabel" | "notes" | "testMode" | "link" | "store">)
+  | ({ kind: "reservation" } & Pick<ReservationEmail, "number" | "customerName" | "basketTitle" | "components" | "balanceDueCents" | "pickupLabel" | "testMode" | "link" | "store">);
+
+export function customerReadyForPickup(d: ReadyEmail): Rendered {
+  const isOrder = d.kind === "order";
+  const what = isOrder ? `order ${d.number}` : `basket reservation ${d.number}`;
+  const blocks: Block[] = [
+    { kind: "p", text: `Hi ${firstName(d.customerName)},` },
+    { kind: "p", text: `Good news: your ${what} is ready for pickup.` },
+    ...testNote(d.testMode),
+    { kind: "rows", rows: [[isOrder ? "Order" : "Reservation", d.number], ["Pickup", d.pickupLabel], ...(!isOrder && d.balanceDueCents > 0 ? ([["Balance due at pickup", money(d.balanceDueCents)]] as [string, string][]) : [])] },
+  ];
+  if (isOrder) blocks.push({ kind: "heading", text: "What you ordered" }, { kind: "items", items: d.lines.map(lineBlock) });
+  else blocks.push({ kind: "heading", text: oneLine(d.basketTitle) || "Your basket" }, { kind: "items", items: d.components.map((c) => ({ left: `${c.quantity} × ${oneLine(c.name)}`, right: "" })) });
+  blocks.push(...pickupAtBlocks(d.store));
+  blocks.push({ kind: "p", text: `Please bring your ${isOrder ? "order" : "reservation"} number. If you can't come at your pickup time, reply to this email or call us.` });
+  if (d.link) blocks.push({ kind: "link", label: isOrder ? "View your order" : "View your reservation", url: d.link });
+  return build(`${testPrefix(d.testMode)}Your ${isOrder ? "order" : "basket reservation"} ${d.number} is ready for pickup`, blocks, storeFooter(d.store));
+}
+
+export type ShippedEmail = Pick<OrderEmail, "number" | "customerName" | "lines" | "shipTo" | "testMode" | "link" | "store"> & {
+  /** "USPS", "UPS", "FedEx" or null for another carrier. */
+  carrierName: string | null;
+  trackingNumber: string | null;
+  /** The carrier's tracking page, or null (no number, or another carrier). */
+  trackingUrl: string | null;
+};
+
+export function customerShipped(d: ShippedEmail): Rendered {
+  const tracking: [string, string][] = [
+    ...(d.carrierName ? ([["Carrier", d.carrierName]] as [string, string][]) : []),
+    ...(d.trackingNumber ? ([["Tracking number", d.trackingNumber]] as [string, string][]) : []),
+  ];
+  const blocks: Block[] = [
+    { kind: "p", text: `Hi ${firstName(d.customerName)},` },
+    { kind: "p", text: `Your order ${d.number} has shipped and is on its way to you.` },
+    ...testNote(d.testMode),
+    { kind: "rows", rows: [["Order", d.number], ...(d.shipTo ? ([["Ship to", d.shipTo]] as [string, string][]) : []), ...tracking] },
+  ];
+  if (d.trackingUrl) blocks.push({ kind: "link", label: `Track your parcel${d.carrierName ? ` with ${d.carrierName}` : ""}`, url: d.trackingUrl });
+  else if (d.trackingNumber) blocks.push({ kind: "p", text: "You can track the parcel on the carrier's website with the tracking number above." });
+  blocks.push({ kind: "heading", text: "What's in the parcel" }, { kind: "items", items: d.lines.map(lineBlock) });
+  if (d.link) blocks.push({ kind: "link", label: "View your order", url: d.link });
+  blocks.push({ kind: "p", text: "Questions? Just reply to this email or call us." });
+  return build(`${testPrefix(d.testMode)}Your order ${d.number} has shipped`, blocks, storeFooter(d.store));
 }
 
 // ---------------------------------------------------------------- staff emails

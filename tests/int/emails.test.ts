@@ -126,7 +126,7 @@ describe("a paid order", () => {
     sent.length = 0;
     const saved = await orderOf(result.number);
     await payload.update({ collection: "orders", id: saved.id, data: { staffNotes: "Packed early" }, user: w.owner, overrideAccess: false });
-    await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "ready" }, user: w.fulfillment, overrideAccess: false });
+    await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "completed" }, user: w.fulfillment, overrideAccess: false });
     await payload.update({ collection: "orders", id: saved.id, data: { paymentStatus: "paid" }, user: w.owner, overrideAccess: false });
     expect(await sendDueEmails(payload, "orders", await orderOf(result.number))).toEqual({ sent: [], failed: [] });
     expect(sent).toHaveLength(0);
@@ -203,7 +203,7 @@ describe("states that must not send", () => {
     expect(to(ALERTS)).toHaveLength(1);
     expect(to(ALERTS)[0].subject).toContain(`New order ${number}`);
     sent.length = 0;
-    await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "ready" }, user: w.owner, overrideAccess: false });
+    await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "preparing" }, user: w.owner, overrideAccess: false });
     expect(sent).toHaveLength(0);
   });
 
@@ -244,6 +244,116 @@ describe("reservations", () => {
     sent.length = 0;
     await payload.update({ collection: "reservations", id: saved.id, data: { staffNotes: "Ribbon chosen" }, user: w.owner, overrideAccess: false });
     expect(sent).toHaveLength(0);
+  });
+});
+
+describe("status emails (D64)", () => {
+  it("Ready for pickup emails the customer once, with the items, pickup time, address and opening hours", async () => {
+    const result = await order({ email: "ready@example.test" });
+    if (!result.ok) throw new Error(result.error);
+    sent.length = 0;
+    const saved = await orderOf(result.number);
+    await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "ready" }, user: w.fulfillment, overrideAccess: false });
+    expect(sent).toHaveLength(1);
+    const [mail] = to("ready@example.test");
+    expect(mail.subject).toBe(`[TEST] Your order ${result.number} is ready for pickup`);
+    expect(mail.text).toContain("2 × Email fudge");
+    expect(mail.text).toContain(`Pickup: ${saved.pickup.label}`);
+    expect(mail.text).toContain("24 Manomet Point Rd.");
+    expect(mail.text).toContain("Mon–Thu: 11 AM – 6 PM");
+    expect(mail.html).toContain("<!doctype html>");
+    expect((await orderOf(result.number)).emails?.readySentAt).toBeTruthy();
+
+    // Saving it again, or back and forth, sends nothing more.
+    await payload.update({ collection: "orders", id: saved.id, data: { staffNotes: "On the shelf" }, user: w.owner, overrideAccess: false });
+    await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "preparing" }, user: w.owner, overrideAccess: false });
+    await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "ready" }, user: w.owner, overrideAccess: false });
+    expect(sent).toHaveLength(1);
+    expect(await sendPendingEmails(payload)).toEqual({ records: 0, sent: 0, failed: 0 });
+  });
+
+  it("is not sent for an order that ships", async () => {
+    const result = await order({ email: "shipready@example.test" });
+    if (!result.ok) throw new Error(result.error);
+    const saved = await orderOf(result.number);
+    await payload.update({ collection: "orders", id: saved.id, data: { fulfillment: { ...saved.fulfillment, method: "ship" } }, overrideAccess: true });
+    sent.length = 0;
+    await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "ready" }, user: w.owner, overrideAccess: false });
+    expect(sent).toHaveLength(0);
+    expect(await sendPendingEmails(payload)).toEqual({ records: 0, sent: 0, failed: 0 });
+  });
+
+  it("Shipped emails the customer once with the carrier's tracking link", async () => {
+    const result = await order({ email: "shipped@example.test" });
+    if (!result.ok) throw new Error(result.error);
+    sent.length = 0;
+    const saved = await orderOf(result.number);
+    await payload.update({
+      collection: "orders",
+      id: saved.id,
+      data: { fulfillmentStatus: "shipped", trackingCarrier: "usps", trackingNumber: "9400 1000 0000 0000 0000 00" },
+      user: w.fulfillment,
+      overrideAccess: false,
+    });
+    expect(sent).toHaveLength(1);
+    const [mail] = to("shipped@example.test");
+    expect(mail.subject).toBe(`[TEST] Your order ${result.number} has shipped`);
+    expect(mail.text).toContain("Carrier: USPS");
+    expect(mail.text).toContain("Tracking number: 9400100000000000000000");
+    expect(mail.text).toContain("https://tools.usps.com/go/TrackConfirmAction?tLabels=9400100000000000000000");
+    expect(mail.html).toContain('href="https://tools.usps.com/go/TrackConfirmAction?tLabels=9400100000000000000000"');
+    const after = await orderOf(result.number);
+    expect(after.emails?.shippedSentAt).toBeTruthy();
+    expect(after.emails?.readySentAt ?? null).toBeNull();
+
+    await payload.update({ collection: "orders", id: saved.id, data: { trackingNumber: "1Z999" }, user: w.owner, overrideAccess: false });
+    expect(sent).toHaveLength(1);
+  });
+
+  it("a failed status email does not fail the save, leaves its marker empty, and the retry job sends it once", async () => {
+    const result = await order({ email: "retry-ready@example.test" });
+    if (!result.ok) throw new Error(result.error);
+    const saved = await orderOf(result.number);
+    sent.length = 0;
+    transportDown = true;
+    const moved = await payload.update({ collection: "orders", id: saved.id, data: { fulfillmentStatus: "shipped", trackingCarrier: "ups", trackingNumber: "1Z12345E0205271688" }, user: w.owner, overrideAccess: false });
+    expect(moved.fulfillmentStatus).toBe("shipped");
+    expect((await orderOf(result.number)).emails?.shippedSentAt ?? null).toBeNull();
+    expect(logged.join("\n")).toMatch(/\[email\] FAILED customer_shipped_order/);
+    expect(logged.join("\n")).not.toMatch(/retry-ready@example\.test/);
+
+    transportDown = false;
+    const report = await sendPendingEmails(payload);
+    expect(report.sent).toBeGreaterThanOrEqual(1);
+    expect(to("retry-ready@example.test")).toHaveLength(1);
+    expect(to("retry-ready@example.test")[0].text).toContain("https://www.ups.com/track?tracknum=1Z12345E0205271688");
+    expect((await orderOf(result.number)).emails?.shippedSentAt).toBeTruthy();
+    sent.length = 0;
+    await sendPendingEmails(payload);
+    expect(sent).toHaveLength(0);
+  });
+
+  it("a reservation saved Ready for pickup emails the customer once, with the balance due", async () => {
+    const items = [];
+    for (let i = 0; i < 6; i++) {
+      const item = await makeProduct(w, { title: `Ready item ${i}`, stock: 20, reserve: 1, priceCents: 400, basketEligible: true });
+      await payload.update({ collection: "products", id: item.id, data: { giftTypes: ["sweet"] }, overrideAccess: true });
+      items.push(item);
+    }
+    const draft: BasketDraft = { request: { kind: "custom", size: "small", giftType: "sweet", budgetCents: null, selections: items.map((p) => ({ productId: String(p.id), quantity: 1 })) }, message: "", requests: "" };
+    const result = await reserveBasket(payload, { draft, form: { ...FORM, email: "basket-ready@example.test", pickup: "2026-10-08|11:00", payment: "deposit" }, submission: newSubmission("reservation"), now: NOW }, ctx);
+    if (!result.ok) throw new Error(result.error);
+    const saved = await reservationOf(result.number);
+    sent.length = 0;
+    await payload.update({ collection: "reservations", id: saved.id, data: { reservationStatus: "ready" }, user: w.owner, overrideAccess: false });
+    expect(sent).toHaveLength(1);
+    const [mail] = to("basket-ready@example.test");
+    expect(mail.subject).toBe(`[TEST] Your basket reservation ${result.number} is ready for pickup`);
+    expect(mail.text).toContain(`Balance due at pickup: $${(saved.balanceDueCents / 100).toFixed(2)}`);
+    expect(mail.text).toContain("1 × Ready item 0");
+    expect((await reservationOf(result.number)).emails?.readySentAt).toBeTruthy();
+    await payload.update({ collection: "reservations", id: saved.id, data: { staffNotes: "Bow tied" }, user: w.owner, overrideAccess: false });
+    expect(sent).toHaveLength(1);
   });
 });
 
