@@ -5,6 +5,7 @@ import { centsComponents } from "../src/fields/money";
 import { auditCollection, auditDelete } from "../src/hooks/audit";
 import { advanceWhenPaid } from "../src/hooks/payment-status";
 import { settleRewardsAfterChange } from "../src/hooks/rewards";
+import { printPaidToClover } from "../src/hooks/clover-print";
 import { sendRecordEmails } from "../src/hooks/send-emails";
 import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
 
@@ -45,7 +46,7 @@ export const Reservations: CollectionConfig = {
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   hooks: {
     beforeChange: [guardStockStatus, advanceWhenPaid("reservations")],
-    afterChange: [auditCollection(["paymentStatus", "reservationStatus", "stockStatus", "amountPaidCents", "balanceDueCents", "staffNotes"]), releaseHoldOnCancel("reservationStatus"), settleRewardsAfterChange("reservations"), sendRecordEmails("reservations")],
+    afterChange: [auditCollection(["paymentStatus", "reservationStatus", "stockStatus", "amountPaidCents", "balanceDueCents", "staffNotes"]), releaseHoldOnCancel("reservationStatus"), settleRewardsAfterChange("reservations"), sendRecordEmails("reservations"), printPaidToClover("reservations")],
     afterDelete: [auditDelete(["number", "paymentStatus", "reservationStatus", "stockStatus", "testMode"])],
   },
   fields: [
