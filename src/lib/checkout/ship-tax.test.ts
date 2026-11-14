@@ -74,11 +74,11 @@ describe("the saved list", () => {
 });
 
 describe("the tax basis", () => {
-  it("pickup is pickup; a listed state is its rule; anything else is no tax", () => {
+  it("pickup is pickup; a listed state is its rule; anything else is taxed like pickup (a Massachusetts sale)", () => {
     expect(taxBasisFor({ method: "pickup" }, MA)).toEqual({ kind: "pickup" });
     expect(taxBasisFor({ method: "ship", state: "ma" }, MA)).toEqual({ kind: "state", state: "MA", rateBasisPoints: 625, cloverTaxName: "Sales Tax" });
-    expect(taxBasisFor({ method: "ship", state: "NY" }, MA)).toEqual({ kind: "none", state: "NY" });
-    expect(taxBasisFor({ method: "ship", state: "MA" }, [])).toEqual({ kind: "none", state: "MA" });
+    expect(taxBasisFor({ method: "ship", state: "NY" }, MA)).toEqual({ kind: "pickup" });
+    expect(taxBasisFor({ method: "ship", state: "MA" }, [])).toEqual({ kind: "pickup" });
   });
 
   it("maps classes: pickup unchanged, a listed state's rate (exempt stays exempt), unlisted zero, approval kept", () => {
@@ -116,10 +116,9 @@ describe("retaxing a bag", () => {
     expect(ma.payable.map((l) => l.taxCents)).toEqual(priced.payable.map((l) => l.taxCents));
   });
 
-  it("NY shipping is untaxed; prices, subtotal and approval are unchanged", () => {
+  it("NY shipping is taxed exactly like pickup (every web order is a Massachusetts sale)", () => {
     const ny = retaxCart(priced, taxBasisFor({ method: "ship", state: "NY" }, MA));
-    expect(ny).toMatchObject({ subtotalCents: 1850, taxCents: 0, totalCents: 1850, taxApproved: true });
-    expect(ny.payable.map((l) => l.taxCents)).toEqual([0, 0]);
+    expect(ny).toMatchObject({ subtotalCents: 1850, taxCents: 53, totalCents: priced.totalCents, taxApproved: true });
     expect(priced.taxCents).toBe(53); // the original is not changed
   });
 });
@@ -134,19 +133,18 @@ describe("the pages' figures follow the same rule (incl. rewards and wallet amou
     expect(views[0]).toMatchObject({ totalCents: 2125, wallet: { cents: 2125, byChoice: { field: "reward", cents: { none: 2125, r5: 1594 } } } });
   });
 
-  it("shipped: MA taxed, every other state untaxed; rewards and the wallet sheet follow; shipping never taxed", () => {
+  it("shipped: MA and every other state taxed the same; rewards and the wallet sheet follow; shipping never taxed", () => {
     const views = bagTaxViews(priced, { method: "ship", shippingCents: 895, rules: MA, rewards: reward });
     expect(views.map((v) => v.key)).toEqual(["MA", "none"]);
     const by = byView(views, (v) => v.wallet);
     // MA: $20 + 6.25% = $21.25, + $8.95 shipping. With the $5 reward: $15 + $0.94 + $8.95.
     expect(by.MA).toEqual({ cents: 3020, byChoice: { field: "reward", cents: { none: 3020, r5: 2489 } } });
-    // Elsewhere: no sales tax. $20 + $8.95; with the reward $15 + $8.95.
-    expect(by.none).toEqual({ cents: 2895, byChoice: { field: "reward", cents: { none: 2895, r5: 2395 } } });
-    expect(views[1].rewards[0].label).toBe("$5.00 off for 100 points (total $15.00)");
-    expect(views[1].taxNote).toMatch(/No sales tax/);
+    // Elsewhere: the same Massachusetts tax.
+    expect(by.none).toEqual(by.MA);
+    expect(views[1].taxNote).not.toMatch(/No sales tax/);
   });
 
-  it("a basket: MA identical to pickup tax, NY untaxed, a shipped basket's wallet is the full total", () => {
+  it("a basket: MA and NY identical to pickup tax, a shipped basket's wallet is the full total", () => {
     const basket = {
       ok: true,
       subtotalCents: 3000,
@@ -157,9 +155,9 @@ describe("the pages' figures follow the same rule (incl. rewards and wallet amou
       taxAmounts: [2500, 500],
     } as unknown as PricedBasket;
     expect(retaxBasket(basket, taxBasisFor({ method: "ship", state: "MA" }, MA))).toMatchObject({ taxCents: 187, totalCents: 3187 });
-    expect(retaxBasket(basket, taxBasisFor({ method: "ship", state: "NY" }, MA))).toMatchObject({ taxCents: 0, totalCents: 3000 });
+    expect(retaxBasket(basket, taxBasisFor({ method: "ship", state: "NY" }, MA))).toMatchObject({ taxCents: 187, totalCents: 3187 });
     const views = basketTaxViews(basket, { method: "ship", shippingCents: 1000, rules: MA, deposit: { chargeNowCents: 797 }, allowPayInFull: true });
-    expect(byView(views, (v) => v.wallet)).toEqual({ MA: { cents: 4187 }, none: { cents: 4000 } });
+    expect(byView(views, (v) => v.wallet)).toEqual({ MA: { cents: 4187 }, none: { cents: 4187 } });
     const pickup = basketTaxViews(basket, { method: "pickup", shippingCents: 0, rules: MA, deposit: { chargeNowCents: 797 }, allowPayInFull: true });
     expect(pickup[0].wallet).toEqual({ cents: 797, byChoice: { field: "payment", cents: { deposit: 797, full: 3187 } } });
   });
