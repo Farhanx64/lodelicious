@@ -23,6 +23,7 @@ import * as migration_20261111_211711_reviews from './20261111_211711_reviews';
 import * as migration_20261112_013115_color_palette from './20261112_013115_color_palette';
 import * as migration_20261112_014718_checkout_shipping_payments from './20261112_014718_checkout_shipping_payments';
 import * as migration_20261114_035407_shipping_boxes from './20261114_035407_shipping_boxes';
+import * as migration_20261114_171155_status_emails from './20261114_171155_status_emails';
 
 export const migrations = [
   {
@@ -148,6 +149,11 @@ export const migrations = [
   {
     up: migration_20261114_035407_shipping_boxes.up,
     down: migration_20261114_035407_shipping_boxes.down,
-    name: '20261114_035407_shipping_boxes'
+    name: '20261114_035407_shipping_boxes',
+  },
+  {
+    up: migration_20261114_171155_status_emails.up,
+    down: migration_20261114_171155_status_emails.down,
+    name: '20261114_171155_status_emails'
   },
 ];

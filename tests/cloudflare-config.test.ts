@@ -7,6 +7,7 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
+import { DEFAULT_ORDER_ALERT_EMAIL, EMAIL_BINDING } from "../src/lib/email/config";
 import { toPositional } from "../src/lib/inventory/db";
 import { cronKey, isValidCronKey } from "../src/lib/jobs/cron-key";
 import { JOB_NAMES } from "../src/lib/jobs/run";
@@ -26,6 +27,7 @@ function wranglerConfig(): {
   ratelimits: { name: string; namespace_id: string; simple: { limit: number; period: number } }[];
   triggers: { crons: string[] };
   vars: Record<string, string>;
+  send_email?: { name: string; allowed_sender_addresses?: string[]; remote?: boolean }[];
 } {
   const text = read("wrangler.jsonc")
     .replace(/\/\*[\s\S]*?\*\//g, "")
@@ -51,6 +53,16 @@ describe("wrangler.jsonc", () => {
     }
     // Two limiters sharing a namespace would share their counts.
     expect(new Set(config.ratelimits.map((r) => r.namespace_id)).size).toBe(config.ratelimits.length);
+  });
+
+  it("binds Cloudflare Email Service under the name the email adapter reads, for the configured From only (D64)", () => {
+    expect(config.send_email?.map((b) => b.name)).toEqual([EMAIL_BINDING]);
+    const from = /<([^>]+)>/.exec(config.vars.EMAIL_FROM)?.[1];
+    expect(from).toBe("orders@shoplodelicious.com");
+    expect(config.send_email?.[0].allowed_sender_addresses).toEqual([from]);
+    // Local development must never send real mail.
+    expect(config.send_email?.[0].remote).toBeUndefined();
+    expect(config.vars.EMAIL_REPLY_TO).toBe(DEFAULT_ORDER_ALERT_EMAIL);
   });
 
   it("keeps secrets out of the file", () => {

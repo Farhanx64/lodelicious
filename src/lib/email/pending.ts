@@ -17,11 +17,16 @@ function candidates(collection: RecordKind): Where {
   if (collection === "inquiries") return { or: [empty("confirmationSentAt"), empty("staffNotifiedAt")] };
   const paid = collection === "orders" ? ["paid"] : ["deposit_paid", "paid_in_full"];
   const status = { paymentStatus: { in: paid } };
+  const statusField = collection === "orders" ? "fulfillmentStatus" : "reservationStatus";
+  const pickup: Where = { or: [{ "fulfillment.method": { equals: "pickup" } }, { "fulfillment.method": { exists: false } }] };
   return {
     or: [
       { and: [status, { or: [empty("confirmationSentAt"), empty("staffNotifiedAt")] }] },
       { and: [{ paymentStatus: { equals: "unknown" } }, empty("unknownNotifiedAt")] },
       { and: [status, { stockStatus: { equals: "needs_attention" } }, empty("attentionNotifiedAt")] },
+      // Status emails (D64).
+      { and: [status, { [statusField]: { equals: "ready" } }, pickup, empty("readySentAt")] },
+      ...(collection === "orders" ? [{ and: [status, { fulfillmentStatus: { equals: "shipped" } }, empty("shippedSentAt")] }] : []),
     ],
   };
 }

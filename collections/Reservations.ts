@@ -69,6 +69,7 @@ export const Reservations: CollectionConfig = {
             { label: "Completed", value: "completed" },
             { label: "Canceled", value: "canceled" },
           ],
+          admin: { description: "The customer is emailed once when this status is saved as Ready for pickup (pickup reservations)." },
         },
         {
           name: "paymentStatus",
@@ -139,6 +140,6 @@ export const Reservations: CollectionConfig = {
     paymentReference,
     paymentAttempts,
     rewardsFields("reservations"),
-    orderEmailFields,
+    orderEmailFields("reservations"),
   ],
 };

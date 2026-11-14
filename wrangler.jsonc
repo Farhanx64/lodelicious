@@ -34,8 +34,23 @@
     // "production" is the live store (D41). APP_ENV is also read at build time for the HSTS header.
     "APP_ENV": "production",
     // The public address; turns on Payload's CSRF allowlist. Change it if the domain differs.
-    "NEXT_PUBLIC_SITE_URL": "https://shoplodelicious.com,https://www.shoplodelicious.com"
+    "NEXT_PUBLIC_SITE_URL": "https://shoplodelicious.com,https://www.shoplodelicious.com",
+    // Who customer emails come from and where replies go (D64). Used once EMAIL_TRANSPORT=cloudflare
+    // and EMAIL_SEND_LIVE=1 are set; until then every email only goes to the log (D44).
+    "EMAIL_FROM": "Lodelicious <orders@shoplodelicious.com>",
+    "EMAIL_REPLY_TO": "Lodeliciousorderss@gmail.com"
   },
+
+  // Cloudflare Email Service (D64): `env.EMAIL.send({ to, from, subject, html, text, replyTo })`.
+  // Only this sender is allowed; recipients are any address (customers), which needs the domain
+  // onboarded to Email Sending (done for shoplodelicious.com). No `remote: true`: the deployed Worker
+  // always sends for real, and `wrangler dev` / the local preview only simulate and log.
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": ["orders@shoplodelicious.com"]
+    }
+  ],
 
   // The public address. Leave commented out until the domain's DNS is on Cloudflare and Lody has
   // approved the switch; until then the Worker answers on its workers.dev address.

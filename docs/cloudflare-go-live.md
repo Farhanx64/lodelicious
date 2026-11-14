@@ -66,7 +66,8 @@ All **(not yet run for real)** unless a step says "local".
    | `CLOVER_ECOMM_GOOGLE_PAY` | `"vars"`: `on` once Clover shows Google Pay enabled; needs `CLOVER_ECOMM_MERCHANT_ID` | Google Pay button (D63) |
    | `PAYMENT_TIMEOUT_MS` | `"vars"`, optional (default 30000) | card payments |
    | `CLOVER_ENVIRONMENT`, `CLOVER_MERCHANT_ID`, `CLOVER_API_TOKEN`, `CLOVER_SYNC_LIVE` | token as secret, rest `"vars"` | inventory sync, once verified (D43) |
-   | `EMAIL_TRANSPORT`, `EMAIL_FROM`, `SMTP_*`, `EMAIL_SEND_LIVE` | `SMTP_PASS` as secret, rest `"vars"` | real email (D44) |
+   | `EMAIL_TRANSPORT=cloudflare`, `EMAIL_SEND_LIVE=1` | `"vars"` | real email through Cloudflare Email Service and the `EMAIL` binding (D64) |
+   | `EMAIL_FROM`, `EMAIL_REPLY_TO` | `"vars"` (already set: orders@shoplodelicious.com, Lodeliciousorderss@gmail.com) | real email (D64) |
 
    Card payments go live only when all three `CLOVER_ECOMM_*` values are set; until then checkout
    says "call to order". Set them with `npx wrangler secret put CLOVER_ECOMM_PRIVATE_TOKEN` (and

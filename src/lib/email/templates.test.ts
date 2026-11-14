@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 import {
   customerInquiryReceipt,
   customerOrderConfirmation,
+  customerReadyForPickup,
   customerReservationConfirmation,
+  customerShipped,
   escapeHtml,
   staffAttention,
   staffNewInquiry,
@@ -196,6 +198,62 @@ describe("staff emails", () => {
     const stock = staffAttention({ kind: "reservation", number: "SPR-1002", reason: "stock_needs_attention", testMode: false, adminLink: null, store });
     expect(stock.text).toMatch(/stock could not be taken/);
     expect(stock.subject).toContain("Needs attention");
+  });
+});
+
+describe("status emails (D64)", () => {
+  const withHours = { ...store, hoursLabel: "Fall & winter hours", hours: [{ days: "Mon–Thu", time: "11 AM – 6 PM" }, { days: "Sun", time: "11 AM – 5 PM" }] };
+
+  it("ready for pickup (order): number, items, pickup window, shop address and opening hours", () => {
+    const mail = customerReadyForPickup({ kind: "order", ...order, store: withHours });
+    expect(mail.subject).toBe("Your order SP-1001 is ready for pickup");
+    expect(mail.text).toContain("Order: SP-1001");
+    expect(mail.text).toContain("Pickup: Sat, Oct 10, 2:00-2:30 PM");
+    expect(mail.text).toContain("2 × Cape Cod Penuche Fudge (Half pound)  $25.90");
+    expect(mail.text).toContain("24 Manomet Point Rd., Plymouth, MA 02360");
+    expect(mail.text).toContain("FALL & WINTER HOURS");
+    expect(mail.text).toContain("Mon–Thu: 11 AM – 6 PM");
+    expect(mail.text).toContain(order.link!);
+    expect(mail.html).toContain("Fall &amp; winter hours");
+    expect(mail.html).toContain(`href="${escapeHtml(order.link)}"`);
+  });
+
+  it("ready for pickup (reservation): basket contents and the balance due", () => {
+    const mail = customerReadyForPickup({ kind: "reservation", ...reservation, store: withHours });
+    expect(mail.subject).toBe("Your basket reservation SPR-1001 is ready for pickup");
+    expect(mail.text).toContain("Balance due at pickup: $75.00");
+    expect(mail.text).toContain("2 × Fudge");
+    const paid = customerReadyForPickup({ kind: "reservation", ...reservation, balanceDueCents: 0, store });
+    expect(paid.text).not.toContain("Balance due");
+    expect(paid.text).not.toContain("OPENING HOURS");
+  });
+
+  it("ready for pickup escapes customer text and marks test orders", () => {
+    const mail = customerReadyForPickup({ kind: "order", ...order, customerName: "<b>Pat</b>", testMode: true, store: withHours });
+    expect(mail.subject.startsWith("[TEST] ")).toBe(true);
+    expect(mail.html).not.toContain("<b>Pat</b>");
+    expect(mail.text).toContain("This was a test order");
+  });
+
+  it("shipped: the carrier, tracking number and a link to the carrier's page", () => {
+    const mail = customerShipped({ ...order, shipTo: "Pat Customer, 1 Main St, Boston, MA 02101", carrierName: "UPS", trackingNumber: "1Z999", trackingUrl: "https://www.ups.com/track?tracknum=1Z999" });
+    expect(mail.subject).toBe("Your order SP-1001 has shipped");
+    expect(mail.text).toContain("Ship to: Pat Customer, 1 Main St, Boston, MA 02101");
+    expect(mail.text).toContain("Carrier: UPS");
+    expect(mail.text).toContain("Tracking number: 1Z999");
+    expect(mail.text).toContain("Track your parcel with UPS\nhttps://www.ups.com/track?tracknum=1Z999");
+    expect(mail.html).toContain('href="https://www.ups.com/track?tracknum=1Z999"');
+    expect(mail.text).toContain("1 × Toblerone");
+  });
+
+  it("shipped without a link (another carrier) or without a number still reads well", () => {
+    const other = customerShipped({ ...order, shipTo: null, carrierName: null, trackingNumber: "ABC123", trackingUrl: null });
+    expect(other.text).toContain("Tracking number: ABC123");
+    expect(other.text).toContain("track the parcel on the carrier's website");
+    expect(other.text).not.toContain("Track your parcel");
+    const none = customerShipped({ ...order, shipTo: null, carrierName: null, trackingNumber: null, trackingUrl: null });
+    expect(none.text).not.toContain("Tracking number");
+    expect(none.text).toContain("has shipped and is on its way");
   });
 });
 

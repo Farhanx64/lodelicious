@@ -21,10 +21,13 @@ import { TOPIC_LABELS } from "../inquiries/shared";
 import { cleanAddress, DEFAULT_ORDER_ALERT_EMAIL, senderFor } from "./config";
 import { dueEmails, MARKER_COLUMN, TABLE, type EmailKind, type RecordKind } from "./due";
 import { redact, sendEmail, type OutgoingEmail } from "./send";
+import { CARRIER_NAMES, cleanTrackingNumber, isCarrier, trackingUrl } from "./tracking";
 import {
   customerInquiryReceipt,
   customerOrderConfirmation,
+  customerReadyForPickup,
   customerReservationConfirmation,
+  customerShipped,
   staffAttention,
   staffNewInquiry,
   staffNewOrder,
@@ -50,7 +53,8 @@ const str = (v: unknown): string => (typeof v === "string" ? v : "");
 const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
 function storeInfo(s: StoreSetting): StoreInfo {
-  return { name: s.name, street: s.street, locality: s.locality, phone: s.phone, email: s.email };
+  const hours = Array.isArray(s.hours) ? s.hours.map((h) => ({ days: str(h?.days), time: str(h?.time) })) : [];
+  return { name: s.name, street: s.street, locality: s.locality, phone: s.phone, email: s.email, hoursLabel: str(s.hoursLabel) || null, hours };
 }
 
 /** The one-line ship-to address of a shipped record (D54), or null for pickup. */
@@ -166,6 +170,25 @@ function compose(collection: RecordKind, kind: EmailKind, doc: AnyRecord, env: E
       }),
       to: staffTo,
       label: `staff_${kind === "staff_unknown" ? "unknown_payment" : "stock_attention"}_${isOrder ? "order" : "reservation"}`,
+    };
+  }
+  if (kind === "customer_ready") {
+    if (isOrder) {
+      const o = orderData(doc as Order, false, env, store);
+      return { rendered: customerReadyForPickup({ kind: "order", ...o }), to: cleanAddress((doc as Order).customer?.email), label: "customer_ready_order" };
+    }
+    const r = reservationData(doc as Reservation, false, env, store);
+    return { rendered: customerReadyForPickup({ kind: "reservation", ...r }), to: cleanAddress((doc as Reservation).customer?.email), label: "customer_ready_reservation" };
+  }
+  if (kind === "customer_shipped") {
+    const order = doc as Order;
+    const o = orderData(order, false, env, store);
+    const carrier = isCarrier(order.trackingCarrier) ? order.trackingCarrier : null;
+    const number = cleanTrackingNumber(order.trackingNumber) || null;
+    return {
+      rendered: customerShipped({ ...o, carrierName: carrier && carrier !== "other" ? CARRIER_NAMES[carrier] : null, trackingNumber: number, trackingUrl: trackingUrl(carrier, number) }),
+      to: cleanAddress(order.customer?.email),
+      label: "customer_shipped_order",
     };
   }
   const forStaff = kind === "staff_new";
