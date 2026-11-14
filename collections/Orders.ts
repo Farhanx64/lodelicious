@@ -128,6 +128,12 @@ export const Orders: CollectionConfig = {
                   ],
                 },
                 { name: "taxApproved", label: "Tax rate approved", type: "checkbox", admin: { description: "Unticked: the tax was an estimate from an unapproved tax class." } },
+                {
+                  name: "taxLabel",
+                  label: "Tax shown as",
+                  type: "text",
+                  admin: { description: 'How the tax was described to the customer (D65), e.g. "Tax (MA 6.25%)" or "No sales tax (ships to NY)". Empty on orders placed before D65.' },
+                },
               ],
             },
           ],

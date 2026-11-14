@@ -56,17 +56,21 @@ import { balanceOf, entryKey, NotEnoughPoints, postEntry, postedPoints } from ".
 import { loadRewardsConfig } from "../rewards/members";
 import { formatCents } from "../money";
 import { pointsFor, rewardsState, totalsWithDiscount, type RewardOption, type RewardsConfig } from "../rewards/program";
-import { priceCart, MAX_LINE_QUANTITY, type CartLine, type PricedCart } from "./cart";
+import { priceCart, retaxCart, MAX_LINE_QUANTITY, type CartLine, type PricedCart } from "./cart";
 import { paymentPlan, type DepositRule } from "./deposit";
 import { nextSequence } from "./numbering";
 import { accessUrlToken, assemblyInstructions, formatNumber, hashToken, idempotencyKey, type BasketComponent } from "./order";
 import { formatSlot, isAvailableSlot, SHOP_TZ, type PickupSettings, type Slot } from "./pickup";
+import { providerTaxFor, shipTaxRulesFrom, taxBasisFor, taxLabelFor, type ShipTaxRule, type TaxBasis } from "./ship-tax";
 import { computeTax, resolveTaxClass, type TaxClass } from "./tax";
+import { retaxBasket } from "./tax-views";
 
 export type CheckoutContext = {
   taxClasses: TaxClass[];
   defaultTaxClassId: string | null;
   packagingTaxClassId: string | null;
+  /** Tax by ship-to state (D65). A shipped order to any other state pays no sales tax. */
+  shipTaxRules: ShipTaxRule[];
   pickup: PickupSettings;
   reservationLeadHours: number;
   deposit: DepositRule;
@@ -97,10 +101,13 @@ export async function loadCheckoutContext(payload: Payload, env: Record<string, 
     payload.findGlobal({ slug: "shipping-settings", depth: 0, overrideAccess: true }) as Promise<ShippingSetting>,
     payload.find({ collection: "categories", where: { slug: { equals: GIFT_BASKET_CATEGORY } }, limit: 1, depth: 0, overrideAccess: true }),
   ]);
+  const taxClasses = classes.docs.map((c) => ({ id: String(c.id), name: c.name, rateBasisPoints: c.rateBasisPoints, approved: Boolean(c.approved) }));
+  const defaultTaxClassId = relId(settings.defaultTaxClass);
   return {
-    taxClasses: classes.docs.map((c) => ({ id: String(c.id), name: c.name, rateBasisPoints: c.rateBasisPoints, approved: Boolean(c.approved) })),
-    defaultTaxClassId: relId(settings.defaultTaxClass),
+    taxClasses,
+    defaultTaxClassId,
     packagingTaxClassId: relId(settings.packagingTaxClass),
+    shipTaxRules: shipTaxRulesFrom(settings, resolveTaxClass(defaultTaxClassId, taxClasses, defaultTaxClassId)),
     pickup: {
       hours: (settings.pickupHours ?? []).map((h) => ({ weekday: Number(h.weekday), open: h.open, close: h.close })),
       slotMinutes: settings.slotMinutes ?? 60,
@@ -257,6 +264,23 @@ function fulfillmentData(f: Fulfillment) {
 
 function fulfillmentNote(f: Fulfillment): string {
   return f.method === "ship" ? `Ship to ${formatAddress(f.address)}` : `Pickup ${formatSlot(f.slot)}`;
+}
+
+/** How this order is taxed (D65): from the checked ship-to address the customer submitted, never from a figure the page showed. */
+export function taxBasisOf(ctx: Pick<CheckoutContext, "shipTaxRules">, f: { method: "pickup" } | { method: "ship"; address: Pick<ShippingAddress, "state"> }): TaxBasis {
+  return taxBasisFor(f.method === "ship" ? { method: "ship", state: f.address.state } : { method: "pickup" }, ctx.shipTaxRules);
+}
+
+/**
+ * The amount the page showed next to the Pay button (and in an Apple Pay or Google Pay sheet), when
+ * it sent one. If the server's figure for the submitted address differs (say the ship-to state was
+ * changed and the page's total didn't follow), nothing is charged and the customer is shown the
+ * real figure. The server's figure is always the one charged; this only stops a surprise.
+ */
+function shownTotalMismatch(form: Record<string, unknown>, chargeCents: number): string | null {
+  const raw = String(form.expectedCents ?? "").trim();
+  if (!/^\d{1,9}$/.test(raw) || Number(raw) === chargeCents) return null;
+  return `Your total is ${formatCents(chargeCents)} for this address (sales tax depends on the ship-to state). Nothing was charged. Please check the total and pay again.`;
 }
 
 // ---------------------------------------------------------------- card token (D54)
@@ -543,9 +567,12 @@ export async function placeOrder(
 
   const reward = await chooseReward(payload, ctx, input.memberId, input.form.reward, bag.subtotalCents);
   if (!reward.ok) return reward;
+  // Taxed for where it goes (D65): pickup and listed states as before, any other ship-to state untaxed.
+  const taxBasis = taxBasisOf(ctx, fulfillment);
+  const taxed = retaxCart(bag, taxBasis);
   // A reward comes off before tax, shared over the lines; tax is then worked out on what is left (D47).
   const priced = totalsWithDiscount(
-    bag.payable.map((l) => ({ amountCents: l.lineTotalCents, taxClass: l.taxClass })),
+    taxed.payable.map((l) => ({ amountCents: l.lineTotalCents, taxClass: l.taxClass })),
     reward.option?.discountCents ?? 0,
   );
   const redeemedPoints = reward.option?.pointsRequired ?? 0;
@@ -566,6 +593,8 @@ export async function placeOrder(
     ...(fulfillment.method === "ship" ? [["ship", fulfillment.address, fulfillment.shippingCents]] : []),
   );
   const totalCents = priced.totalCents + fulfillment.shippingCents;
+  const mismatch = shownTotalMismatch(input.form, totalCents);
+  if (mismatch) return { ok: false, error: mismatch };
   const token = urlToken("order", key);
 
   // A payment from this bag whose result is unknown must be reconciled before anything is charged again.
@@ -600,7 +629,7 @@ export async function placeOrder(
       customer: contact.contact,
       ...fulfillmentData(fulfillment),
       notes,
-      lines: bag.payable.map((l, i) => ({
+      lines: taxed.payable.map((l, i) => ({
         unitId: l.unitId,
         title: l.title,
         option: l.optionLabel,
@@ -620,6 +649,7 @@ export async function placeOrder(
         shippingCents: fulfillment.shippingCents,
         totalCents,
         taxApproved: priced.taxApproved,
+        taxLabel: taxLabelFor(taxBasis, priced.taxApproved),
       },
       rewards: { member: reward.memberId, redeemedPoints, earnPoints },
       stockOwner: owner,
@@ -662,7 +692,7 @@ export async function placeOrder(
           idempotencyKey: `${key}:${attempt}`,
           source: card.source,
           clientIp: input.clientIp,
-          order: orderDetailsForProvider(order, fulfillment),
+          order: orderDetailsForProvider(order, fulfillment, taxBasis),
           onProviderOrder: rememberProviderOrder(payload, "orders", order.id, provider.id),
         },
         ctx.chargeTimeoutMs,
@@ -713,7 +743,7 @@ export async function placeOrder(
 const providerOrder = (charge: ChargeResult) => (charge.providerOrderId ? { providerOrderId: charge.providerOrderId } : {});
 
 /** The order as the payment provider records it (a Clover order on Lody's account, D54). */
-function orderDetailsForProvider(order: Order, f: Fulfillment): ChargeOrderDetails {
+function orderDetailsForProvider(order: Order, f: Fulfillment, basis: TaxBasis): ChargeOrderDetails {
   type Line = { title: string; option?: string | null; quantity: number; lineTotalCents: number; discountCents?: number; taxCents?: number; taxClass?: { name?: string; rateBasisPoints?: number | null } | null };
   const lines = (order.lines as Line[]).map((l) => ({
     description: `${l.quantity} × ${l.title}${l.option ? ` (${l.option})` : ""}`,
@@ -732,6 +762,7 @@ function orderDetailsForProvider(order: Order, f: Fulfillment): ChargeOrderDetai
     customerNote: order.notes ?? undefined,
     shipTo: f.address,
     orderTotalCents: order.totals.totalCents,
+    tax: providerTaxFor(basis),
   };
 }
 
@@ -774,6 +805,8 @@ export type PricedBasket = {
   taxApproved: boolean;
   /** The tax class of each line (contents, then packaging), for the rate shown at reserve (D56). */
   taxClasses: (TaxClass | null)[];
+  /** The amount of each of those lines, so the basket can be taxed again for a ship-to state (D65). */
+  taxAmounts: number[];
   /** Shipping for this basket (D54): the basket rate for its size, or why it can't ship. */
   shipping: ShippingQuote;
   /** Units sold without a stock count, which are neither held nor deducted (D54). */
@@ -858,6 +891,7 @@ export async function priceBasket(
     totalCents: validation.totals.totalCents + tax.taxCents,
     taxApproved: tax.approved,
     taxClasses: taxLines.map((l) => l.taxClass),
+    taxAmounts: taxLines.map((l) => l.amountCents),
     shipping,
     untracked,
   };
@@ -896,17 +930,22 @@ export async function reserveBasket(
 
   // The owner is known before pricing so this customer's own earlier hold never blocks their retry.
   const owner = basketOwner(input.draft.request, contact.contact.email, pickupSlot ?? shippedPlaceholder(now));
-  const basket = await priceBasket(payload, input.draft, ctx, { now, exceptOwner: owner });
-  if (!basket.ok) return basket;
+  const priced = await priceBasket(payload, input.draft, ctx, { now, exceptOwner: owner });
+  if (!priced.ok) return priced;
   // The real tax answer, after pricing (A05a).
-  if (!orderingState(provider, basket.taxApproved).open) return { ok: false, error: RESERVE_SOON };
-  const how = chooseFulfillment(ctx, now, input.form, ctx.reservationLeadHours, basket.shipping, contact.contact.name);
+  if (!orderingState(provider, priced.taxApproved).open) return { ok: false, error: RESERVE_SOON };
+  const how = chooseFulfillment(ctx, now, input.form, ctx.reservationLeadHours, priced.shipping, contact.contact.name);
   if (!how.ok) return how;
   const fulfillment = how.value;
+  // Taxed for where it goes (D65), exactly as the reserve page shows it.
+  const taxBasis = taxBasisOf(ctx, fulfillment);
+  const basket = retaxBasket(priced, taxBasis);
   const slot = fulfillment.slot;
   const grandTotalCents = basket.totalCents + fulfillment.shippingCents;
 
   const pay = paymentPlan(grandTotalCents, ctx.deposit, payInFull);
+  const mismatch = shownTotalMismatch(input.form, pay.chargeNowCents);
+  if (mismatch) return { ok: false, error: mismatch };
   const memberId = ctx.rewards.active && typeof input.memberId === "number" && Number.isSafeInteger(input.memberId) ? input.memberId : null;
   const earnPoints = memberId === null ? 0 : pointsFor(basket.subtotalCents, ctx.rewards.config.pointsPerDollar);
   const key = idempotencyKey(
@@ -951,6 +990,7 @@ export async function reserveBasket(
       totalCents: grandTotalCents,
       taxCents: basket.taxCents,
       taxApproved: basket.taxApproved,
+      taxLabel: taxLabelFor(taxBasis, basket.taxApproved),
       depositCents: pay.paidInFull ? grandTotalCents : pay.chargeNowCents,
       amountPaidCents: 0,
       balanceDueCents: grandTotalCents,
@@ -994,6 +1034,7 @@ export async function reserveBasket(
             customerNote: [input.draft.message && `Gift message: ${input.draft.message}`, input.draft.requests && `Requests: ${input.draft.requests}`].filter(Boolean).join(" | ") || undefined,
             shipTo: fulfillment.address,
             orderTotalCents: reservation.totalCents,
+            tax: providerTaxFor(taxBasis),
           },
           onProviderOrder: rememberProviderOrder(payload, "reservations", reservation.id, provider.id),
         },

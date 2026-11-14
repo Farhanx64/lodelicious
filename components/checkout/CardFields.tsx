@@ -9,6 +9,7 @@ import type { BrowserPaymentConfig } from "@/src/lib/payments/types";
 import { usePreparer } from "./ActionForm";
 import { ApplePayButton } from "./ApplePayButton";
 import { GooglePayButton } from "./GooglePayButton";
+import { useShipTax } from "./ShipTax";
 
 /** The parts of Clover's iframe SDK this page uses (D54, D59, D63). The card is typed into Clover's frames, never ours. */
 type FieldEvent = Record<string, { error?: string; touched?: boolean }>;
@@ -102,7 +103,18 @@ function CardFieldset({ children }: { children: React.ReactNode }) {
  * card fields on devices that have Apple Pay (D59), or else Clover's Google Pay button where Google
  * can pay (D63); everywhere else nothing extra renders.
  */
-export function CardFields({ config, walletAmount }: { config: BrowserPaymentConfig; walletAmount?: ApplePayAmount }) {
+export function CardFields({
+  config,
+  walletAmount,
+  walletAmounts,
+}: {
+  config: BrowserPaymentConfig;
+  walletAmount?: ApplePayAmount;
+  /** One amount per ship-to tax version (D65); the chosen state's is used, so the sheet follows the page. */
+  walletAmounts?: Record<string, ApplePayAmount>;
+}) {
+  const { variant } = useShipTax();
+  const amount = (walletAmounts && walletAmounts[variant]) ?? walletAmount;
   if (config.kind !== "clover") {
     return (
       <CardFieldset>
@@ -113,8 +125,8 @@ export function CardFields({ config, walletAmount }: { config: BrowserPaymentCon
   return (
     <CloverCard
       config={config}
-      applePay={applePayConfigured(config) ? walletAmount : undefined}
-      googlePay={googlePayConfigured(config) ? walletAmount : undefined}
+      applePay={applePayConfigured(config) ? amount : undefined}
+      googlePay={googlePayConfigured(config) ? amount : undefined}
     />
   );
 }

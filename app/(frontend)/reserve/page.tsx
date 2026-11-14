@@ -21,6 +21,7 @@ import { ContactFields } from "@/components/checkout/ContactFields";
 import { PaymentChoice } from "@/components/checkout/FormFields";
 import { FulfillmentChoice } from "@/components/checkout/FulfillmentChoice";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
+import { ExpectedCharge, ForShipTax, ShipTaxProvider, ShipTaxText, ShipToState } from "@/components/checkout/ShipTax";
 import { ShippingAddressFields } from "@/components/checkout/ShippingFields";
 import { SubmissionField } from "@/components/checkout/SubmissionField";
 import { primaryButton } from "@/components/checkout/styles";
@@ -30,7 +31,8 @@ import { availableSlots } from "@/src/lib/checkout/pickup";
 import { bagLineLooks } from "@/src/lib/checkout/presentation";
 import { priceBasket } from "@/src/lib/checkout/service";
 import { checkoutPayload, readBasketDraft } from "@/src/lib/checkout/session";
-import { describeTax } from "@/src/lib/checkout/tax";
+import { taxLabelFor } from "@/src/lib/checkout/ship-tax";
+import { basketTaxViews, byView } from "@/src/lib/checkout/tax-views";
 import { formatCents } from "@/src/lib/money";
 import { orderingState } from "@/src/lib/payments";
 import { telHref } from "@/src/lib/phone";
@@ -57,19 +59,26 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
   // Pickup unless the customer chose shipping and every item in the basket can ship (D54). A shipped basket is paid in full.
   const method = query.method === "ship" && basket.shipping.available ? "ship" : "pickup";
   const shippingCents = method === "ship" && basket.shipping.available ? basket.shipping.cents : 0;
-  const grandTotal = basket.totalCents + shippingCents;
   const deposit = paymentPlan(basket.totalCents, ctx.deposit, false);
   const slots = availableSlots(ctx.pickup, new Date(), ctx.reservationLeadHours);
   const state = orderingState(ctx.provider, basket.taxApproved);
-  // What the Apple Pay or Google Pay sheet shows (D59, D63): what is charged now. A shipped basket is paid in full; for pickup it
-  // follows the deposit / pay-in-full choice.
-  const walletAmount =
-    method === "ship"
-      ? { cents: grandTotal }
-      : {
-          cents: deposit.chargeNowCents,
-          byChoice: { field: "payment", cents: { deposit: deposit.chargeNowCents, ...(ctx.allowPayInFull ? { full: basket.totalCents } : {}) } },
-        };
+  // Sales tax follows the ship-to state (D65): a shipped basket is worked out for every state in
+  // "Tax by ship-to state" and for "no sales tax"; pickup is the one version it always was.
+  const views = basketTaxViews(basket, { method, shippingCents, rules: ctx.shipTaxRules, deposit, allowPayInFull: ctx.allowPayInFull }).map((v) => ({
+    ...v,
+    taxLabel:
+      v.basis.kind === "none" ? (
+        <>
+          No sales tax (ships to <ShipToState />)
+        </>
+      ) : v.basis.kind === "state" ? (
+        taxLabelFor(v.basis, v.basket.taxApproved)
+      ) : undefined,
+  }));
+  const first = views[0];
+  const byKey = <T,>(pick: (v: (typeof views)[number]) => T) => byView(views, pick);
+  const grandTotal = first.grandTotal;
+  const totalText = <ShipTaxText texts={byKey((v) => formatCents(v.grandTotal))} />;
   const depositLabel = ctx.deposit.type === "percent" ? `${ctx.deposit.percentBasisPoints / 100}% deposit` : "Deposit";
   const looks = await bagLineLooks(
     payload,
@@ -84,7 +93,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
         Custom baskets are made to order. A deposit reserves yours; the rest is paid when you pick it up. We&rsquo;ll be in touch if anything needs
         confirming.
       </p>
-      <OrderSummarySection heading="Your basket" count={itemCount} totalCents={grandTotal}>
+      <OrderSummarySection heading="Your basket" count={itemCount} totalCents={grandTotal} totalLabel={totalText}>
         <ul className="mb-4 space-y-3">
           {basket.components.map((c) => {
             const look = looks.get(c.productId.split(":")[0]);
@@ -101,14 +110,19 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
           })}
           <ItemCard title={`Basket & packaging (${basket.basketSizeIn}")`} quantity={1} totalCents={basket.packagingCents} />
         </ul>
-        <TotalsCard
-          subtotalCents={basket.subtotalCents}
-          taxCents={basket.taxCents}
-          totalCents={grandTotal}
-          taxApproved={basket.taxApproved}
-          taxNote={describeTax(basket.taxClasses, basket.taxApproved)}
-          shipping={{ method, cents: shippingCents }}
-        />
+        {views.map((v) => (
+          <ForShipTax key={v.key} variant={v.key}>
+            <TotalsCard
+              subtotalCents={v.basket.subtotalCents}
+              taxCents={v.basket.taxCents}
+              totalCents={v.grandTotal}
+              taxApproved={v.basket.taxApproved}
+              taxNote={v.taxNote}
+              taxLabel={v.taxLabel}
+              shipping={{ method, cents: shippingCents }}
+            />
+          </ForShipTax>
+        ))}
         <p className="mt-3">
           <Link href="/build-a-basket" className="inline-flex min-h-11 items-center">
             Change basket
@@ -125,7 +139,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
     </div>
   );
 
-  return (
+  const page = (
     <div className="mx-auto w-full md:w-[min(100%-2rem,76rem)]">
       <h1 className="sr-only">Reserve your basket</h1>
       {ctx.provider?.test && (
@@ -137,6 +151,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
         <ActionForm
           action={submitReservation}
           submitLabel={ctx.provider?.test ? "Reserve with test payment" : method === "ship" ? `Pay ${formatCents(grandTotal)}` : "Reserve and pay"}
+          submitLabels={ctx.provider?.test || method !== "ship" ? undefined : byKey((v) => `Pay ${formatCents(v.grandTotal)}`)}
           submitIcon={<LockIcon />}
           pendingLabel="Reserving…"
           disabled={method === "pickup" && slots.length === 0}
@@ -144,20 +159,22 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
           wrapperClassName={panelGrid}
           formClassName={rightColumn}
           stickySubmit
-          beforeSubmit={
-            <PayTotals
-              subtotalCents={basket.subtotalCents}
-              totalCents={grandTotal}
-              rows={
-                method === "ship"
-                  ? [{ label: "Paid in full now (shipped baskets)", value: formatCents(grandTotal) }]
-                  : [
-                      { label: `${depositLabel} now`, value: formatCents(deposit.chargeNowCents) },
-                      { label: "Balance at pickup", value: formatCents(deposit.balanceDueCents) },
-                    ]
-              }
-            />
-          }
+          beforeSubmit={views.map((v) => (
+            <ForShipTax key={v.key} variant={v.key}>
+              <PayTotals
+                subtotalCents={v.basket.subtotalCents}
+                totalCents={v.grandTotal}
+                rows={
+                  method === "ship"
+                    ? [{ label: "Paid in full now (shipped baskets)", value: formatCents(v.grandTotal) }]
+                    : [
+                        { label: `${depositLabel} now`, value: formatCents(deposit.chargeNowCents) },
+                        { label: "Balance at pickup", value: formatCents(deposit.balanceDueCents) },
+                      ]
+                }
+              />
+            </ForShipTax>
+          ))}
           afterSubmit={<PolicyLine />}
         >
           <SubmissionField kind="reservation" />
@@ -165,7 +182,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
           <ContactFields prefix="reserve" />
           {method === "ship" ? (
             <>
-              <p className="mb-3 text-sm">We make your basket, then ship it. A shipped basket is paid in full now: {formatCents(grandTotal)}.</p>
+              <p className="mb-3 text-sm">We make your basket, then ship it. A shipped basket is paid in full now: {totalText}.</p>
               <ShippingAddressFields prefix="reserve" />
             </>
           ) : (
@@ -185,7 +202,8 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
               />
             </>
           )}
-          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} walletAmount={walletAmount} />
+          <ExpectedCharge amounts={byKey((v) => v.wallet)} />
+          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} walletAmount={first.wallet} walletAmounts={byKey((v) => v.wallet)} />
         </ActionForm>
       ) : (
         <div className={panelGrid}>
@@ -200,4 +218,6 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
       )}
     </div>
   );
+  // Shipped: the totals follow the state chosen in the address (D65).
+  return method === "ship" ? <ShipTaxProvider listed={ctx.shipTaxRules.map((r) => r.state)}>{page}</ShipTaxProvider> : page;
 }

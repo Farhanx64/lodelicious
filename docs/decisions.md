@@ -1655,3 +1655,74 @@ local development) and tested against a fake binding. No new npm dependency. One
   rules), `templates.test.ts` and `tracking.test.ts`, `tests/int/emails.test.ts` (ready once, not for
   shipped orders, shipped with a USPS link, a failed shipped email retried by the job, a reservation
   ready once), `tests/cloudflare-config.test.ts` (the binding and the From agree).
+
+## D65 — Sales tax by the ship-to state; only MA is taxed (2026-11-14)
+
+Shipped orders to other states were charged Massachusetts 6.25%. The shop is in Plymouth, MA and is
+registered to collect MA sales tax only. Tax now follows where the order goes. **Nothing here has
+called Clover:** the Clover side is tested against scripted fixtures only. One migration,
+`20261114_175855_ship_tax`.
+
+- **The rule** (`src/lib/checkout/ship-tax.ts`):
+  - **Pickup:** exactly as before, from the tax classes (D34). The tax row still reads "Tax".
+  - **Shipped to a state in the list:** taxable lines pay that state's rate; a tax-exempt class (rate
+    0) stays exempt. The tax row reads "Tax (MA 6.25%)".
+  - **Shipped to any other state:** no sales tax. The tax row reads "No sales tax (ships to NY)".
+  - Shipping is never taxed (D34, D54). Tax is still rounded half-up per line. A class's approval
+    doesn't change, so unapproved tax still closes live checkout (D34).
+- **The setting.** Settings → Checkout & reservations → Tax → **Tax by ship-to state**: a list of
+  state, rate (%) and Clover tax rate name. Help text: "Only add a state if the shop is registered to
+  collect its sales tax." The rate is read from its text as exact basis points (at most two
+  decimals, so no float multiplication); one row per state. Owner and manager edit it, and changes
+  are audited. A settings row that has never been saved gets MA at the default class's rate; a saved
+  row uses the list as staff left it, even empty (then every shipped order is untaxed).
+- **Prefill.** New databases get MA at 6.25%, "Sales Tax" (the field default). The migration adds MA
+  to the existing settings row at the **default tax class's rate** (6.25% if there is none), with
+  Clover name "Sales Tax". With Lody's single 6.25% class, pickup and MA shipping charge to the cent
+  what they did before. If she ever adds a second non-zero class, an MA *shipped* order uses the
+  list's rate for it, not the class's.
+- **The server decides, from the submitted address.** `placeOrder` and `reserveBasket` choose the
+  fulfillment, then the basis (`taxBasisOf`, from the checked ship-to state), then re-tax the bag or
+  basket (`retaxCart`, `retaxBasket`). The order snapshot's line classes carry the rate charged, and
+  `totals.taxLabel` (orders) / `taxLabel` (reservations) keep the label. Rewards come off before
+  tax as before (D47), so a NY order with a reward pays no tax on what's left. The idempotency key
+  already includes the address.
+- **Clover** (`src/lib/payments/clover.ts`). Pickup lines keep the default rate name
+  (`CLOVER_TAX_RATE_NAME` or "Sales Tax"). A listed state uses its Clover rate name (blank = the
+  default). An untaxed ship-to state sends every line with `tax_rates: [{ name: "NO_TAX_APPLIED",
+  rate: 0 }]`, Clover's built-in zero rate, so Clover can't put its default tax back on. The existing
+  to-the-cent check of Clover's order total against ours still refuses the payment if Clover adds tax
+  anyway. Shipping lines carry no tax rate, as before.
+- **The checkout total follows the state, with no page load.** Pickup / Ship stay links (D56).
+  For Ship, the server renders the totals once per listed state and once for "no sales tax"
+  (`src/lib/checkout/tax-views.ts`, the same functions the charge uses). `components/checkout/ShipTax.tsx`
+  shows the version for the state chosen in the address select, so nothing typed is lost. The same goes
+  for the totals card, the summary toggle's total, the Pay button, the repeated totals, the reward labels
+  and the Apple Pay / Google Pay amount (`walletAmounts`, still following the reward or deposit radio,
+  D59, D63). The select is described to screen readers as changing the total.
+- **Total check.** Once the page is interactive, the form sends the amount it shows (`expectedCents`).
+  If the server's figure for the submitted address differs, nothing is held or charged and the
+  customer sees "Your total is $X for this address (sales tax depends on the ship-to state). Nothing
+  was charged." Without JavaScript the page can't follow a state change, so no figure is sent and the
+  server charges its own.
+- **Receipts.** The order page, the reservation page (shipped baskets), the customer and staff
+  emails and the admin record summary use the recorded label. Records placed before D65 have none
+  and keep "Tax". The floating bag receipt (D58) is shown before a method is chosen, so it still says
+  "Estimated tax (6.25%)".
+- **Migration.** Additive only: a new table `checkout_settings_ship_tax_states` and two nullable
+  columns (`orders.totals_tax_label`, `reservations.tax_label`). No table is rebuilt, so there is no
+  D1 cascade (D54). One hand-added `INSERT … SELECT` prefills MA. I ran it with sqlite3 against a DB
+  holding one settings row and one class; it has not been run on D1. A second `migrate:create`
+  reports no schema changes.
+- **To verify in the Clover sandbox (needs Lody's keys):** that a line with
+  `{ name: "NO_TAX_APPLIED", rate: 0 }` is accepted on Lody's account and the order's `amount` has no
+  tax; if Clover wants a different name for its zero rate, change `CLOVER_NO_TAX_RATE`.
+- **For Lody:** add a state only once the shop is registered to collect its tax.
+- **Tests.** `src/lib/checkout/ship-tax.test.ts` (rate parsing, the saved list, bases, labels, MA
+  identical to pickup, NY untaxed, rewards and wallet amounts per state, baskets),
+  `src/lib/payments/clover.test.ts` (NO_TAX_APPLIED lines, named rates, the total mismatch),
+  `tests/int/ship-tax.test.ts` (setting and validation; pickup, MA and NY orders through Clover
+  fixtures; the page-total mismatch; a Clover total with tax refused; the list edited; rewards on MA
+  and NY; reservations shipped to NY and MA, pickup unchanged), `tests/ship-tax-fields.test.ts` (the
+  version shown per state, reward labels, no expected total from the server render) and
+  `templates.test.ts` (labels in emails).

@@ -262,3 +262,18 @@ describe("escapeHtml", () => {
     expect(escapeHtml(`<a href="x">'&'</a>`)).toBe("&lt;a href=&quot;x&quot;&gt;&#39;&amp;&#39;&lt;/a&gt;");
   });
 });
+
+describe("the tax line follows the ship-to state (D65)", () => {
+  it("orders show the recorded label; older orders keep plain Tax", () => {
+    const shipped = { ...order, shipTo: "Pat, 1 State St, Albany, NY 12207", shippingCents: 895, taxLabel: "No sales tax (ships to NY)" };
+    expect(customerOrderConfirmation(shipped).text).toContain("No sales tax (ships to NY): $0.00");
+    expect(staffNewOrder(shipped).text).toContain("No sales tax (ships to NY): $0.00");
+    expect(customerOrderConfirmation({ ...order, taxLabel: "Tax (MA 6.25%)" }).text).toContain("Tax (MA 6.25%): $0.00");
+    expect(customerOrderConfirmation(order).text).toContain("Tax: $0.00");
+  });
+
+  it("reservations name the label for shipped baskets; pickup keeps Tax included", () => {
+    expect(customerReservationConfirmation({ ...reservation, taxLabel: "No sales tax (ships to NY)" }).text).toContain("No sales tax (ships to NY), included:");
+    expect(customerReservationConfirmation({ ...reservation, taxLabel: "Tax" }).text).toContain("Tax included:");
+  });
+});

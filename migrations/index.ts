@@ -24,6 +24,7 @@ import * as migration_20261112_013115_color_palette from './20261112_013115_colo
 import * as migration_20261112_014718_checkout_shipping_payments from './20261112_014718_checkout_shipping_payments';
 import * as migration_20261114_035407_shipping_boxes from './20261114_035407_shipping_boxes';
 import * as migration_20261114_171155_status_emails from './20261114_171155_status_emails';
+import * as migration_20261114_175855_ship_tax from './20261114_175855_ship_tax';
 
 export const migrations = [
   {
@@ -154,6 +155,11 @@ export const migrations = [
   {
     up: migration_20261114_171155_status_emails.up,
     down: migration_20261114_171155_status_emails.down,
-    name: '20261114_171155_status_emails'
+    name: '20261114_171155_status_emails',
+  },
+  {
+    up: migration_20261114_175855_ship_tax.up,
+    down: migration_20261114_175855_ship_tax.down,
+    name: '20261114_175855_ship_tax'
   },
 ];

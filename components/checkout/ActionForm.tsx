@@ -4,6 +4,7 @@ import { createContext, startTransition, useActionState, useCallback, useContext
 
 import type { WalletOutcome } from "@/src/lib/payments/apple-pay";
 
+import { useShipTax } from "./ShipTax";
 import { primaryButton } from "./styles";
 
 /** `next`: where to go after a wallet payment (D59), which can't follow a server redirect before Apple's sheet is told it worked. */
@@ -59,6 +60,7 @@ export function usePreparer(preparer: Preparer | null) {
 export function ActionForm({
   action,
   submitLabel,
+  submitLabels,
   pendingLabel,
   disabled,
   children,
@@ -73,6 +75,8 @@ export function ActionForm({
 }: {
   action: (prev: State, form: FormData) => Promise<State>;
   submitLabel: string;
+  /** The button's label for each ship-to tax version (D65), when it shows a total that depends on the state. */
+  submitLabels?: Record<string, string>;
   pendingLabel: string;
   disabled?: boolean;
   children: React.ReactNode;
@@ -115,6 +119,8 @@ export function ActionForm({
     if (shown.error) errorRef.current?.focus();
   }, [shown]);
   const busy = pending || preparing;
+  const { variant } = useShipTax();
+  const label = submitLabels?.[variant] ?? submitLabel;
 
   // The server answered: tell a waiting wallet first (Apple's sheet shows the tick or the failure), then go on to the receipt.
   useEffect(() => {
@@ -190,7 +196,7 @@ export function ActionForm({
       }}
       className={`${primaryButton} w-full gap-2`}
     >
-      {busy ? pendingLabel : submitLabel}
+      {busy ? pendingLabel : label}
       {submitIcon}
     </button>
   );

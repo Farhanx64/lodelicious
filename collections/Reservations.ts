@@ -131,6 +131,13 @@ export const Reservations: CollectionConfig = {
               ],
             },
             { name: "taxApproved", label: "Tax rate approved", type: "checkbox", access: frozen },
+            {
+              name: "taxLabel",
+              label: "Tax shown as",
+              type: "text",
+              access: frozen,
+              admin: { description: 'How the tax was described to the customer (D65), e.g. "Tax (MA 6.25%)" or "No sales tax (ships to NY)". Empty on reservations placed before D65.' },
+            },
           ],
         },
       ],

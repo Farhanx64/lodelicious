@@ -96,6 +96,7 @@ export const OrderSummary: UIFieldClientComponent = () => {
   const tax = useFormFields(([fields]) => fields["totals.taxCents"]?.value);
   const total = useFormFields(([fields]) => fields["totals.totalCents"]?.value);
   const taxApproved = useFormFields(([fields]) => fields["totals.taxApproved"]?.value);
+  const taxLabel = useFormFields(([fields]) => fields["totals.taxLabel"]?.value);
   const shipping = useFormFields(([fields]) => fields["totals.shippingCents"]?.value);
   const method = useFormFields(([fields]) => fields["fulfillment.method"]?.value);
 
@@ -108,7 +109,7 @@ export const OrderSummary: UIFieldClientComponent = () => {
   }));
   const totals: Total[] = [
     { label: "Subtotal", cents: subtotal },
-    { label: "Tax", cents: tax, note: taxApproved === false ? "estimate: the tax rate was not approved" : undefined },
+    { label: str(taxLabel) || "Tax", cents: tax, note: taxApproved === false ? "estimate: the tax rate was not approved" : undefined },
     ...(method === "ship" ? [{ label: "Shipping", cents: shipping }] : []),
     { label: "Total", cents: total, strong: true },
   ];
@@ -125,6 +126,7 @@ export const ReservationSummary: UIFieldClientComponent = () => {
   const tax = useFormFields(([fields]) => fields.taxCents?.value);
   const deposit = useFormFields(([fields]) => fields.depositCents?.value);
   const taxApproved = useFormFields(([fields]) => fields.taxApproved?.value);
+  const taxLabel = useFormFields(([fields]) => fields.taxLabel?.value);
   const shipping = useFormFields(([fields]) => fields["fulfillment.shippingCents"]?.value);
   const method = useFormFields(([fields]) => fields["fulfillment.method"]?.value);
 
@@ -139,7 +141,7 @@ export const ReservationSummary: UIFieldClientComponent = () => {
   if (packaging !== undefined && packaging > 0) rows.push({ label: "Basket & packaging", totalCents: packaging });
 
   const totals: Total[] = [
-    { label: "Tax", cents: tax, note: taxApproved === false ? "estimate: the tax rate was not approved" : undefined },
+    { label: str(taxLabel) || "Tax", cents: tax, note: taxApproved === false ? "estimate: the tax rate was not approved" : undefined },
     ...(method === "ship" ? [{ label: "Shipping", cents: shipping }] : []),
     { label: method === "ship" ? "Total with shipping" : "Basket total", cents: total, strong: true },
     { label: "Charged when reserved", cents: deposit },
