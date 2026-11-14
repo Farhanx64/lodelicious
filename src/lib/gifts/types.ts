@@ -26,7 +26,8 @@ export type SizeRule = {
   /** Total fit units the container holds; null = enforce counts only (products not measured). */
   capacityUnits: number | null;
   /** Shown in the builder and accepted at checkout. Off = kept configured but not offered (D27). */
-  enabled: boolean;
+  enabled: boolean;  /** Empty basket & packaging weight in pounds, for picking the shipping box (D60); null = not weighed. */
+  shippingWeightLbs?: number | null;
 };
 
 /** Gift-type-specific count range, e.g. large sympathy 13–16 from the owner's chart. */

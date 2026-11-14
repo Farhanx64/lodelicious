@@ -8,8 +8,12 @@
  * - Pickup is always free.
  * - An order can ship only if every item can: ticked "Can ship" and not perishable. Otherwise the
  *   customer is told which items keep it to pickup.
+ * - Boxes by weight (D60): every shippable quote also says which box the order fits. With "Charge by
+ *   box" on, that box's price is the charge; with it off, or when no box is picked (an item without a
+ *   weight, too heavy, no boxes), the rules above apply exactly.
  */
 import { assertCents, type Cents } from "../money";
+import { boxesFrom, pickBox, type Packing, type ShipBox } from "./boxes";
 
 export const DEFAULT_SHIPPING = {
   shippingEnabled: true,
@@ -18,6 +22,7 @@ export const DEFAULT_SHIPPING = {
   basketMediumCents: 1500,
   basketLargeCents: 2000,
   basketLargerCents: 2500,
+  chargeByBox: false,
 } as const;
 
 export type ShippingRates = {
@@ -27,6 +32,9 @@ export type ShippingRates = {
   basketMediumCents: Cents;
   basketLargeCents: Cents;
   basketLargerCents: Cents;
+  /** Charge the picked box's price instead of the rates above (D60). Off until Lody switches it on. */
+  chargeByBox: boolean;
+  boxes: ShipBox[];
 };
 
 /** "larger" is Extra large and any bigger size added later. */
@@ -36,10 +44,14 @@ export type ShipItem = {
   title: string;
   /** False when the product is not ticked "Can ship", or is perishable / prepared. */
   shippable: boolean;
+  /** How many of it are in the box (D60). Defaults to 1. */
+  quantity?: number;
+  /** Its shipping weight in pounds; null or missing when nobody has entered one (D60). */
+  weightLbs?: number | null;
 } & ({ kind: "regular" } | { kind: "basket"; size: BasketShipSize });
 
 export type ShippingQuote =
-  | { available: true; cents: Cents }
+  | { available: true; cents: Cents; packing: Packing; chargedBy: "box" | "rules" }
   | { available: false; reason: "disabled" | "empty" | "not_shippable"; blockers: string[] };
 
 export type FulfillmentMethod = "pickup" | "ship";
@@ -47,7 +59,7 @@ export type FulfillmentMethod = "pickup" | "ship";
 const cents = (value: unknown, fallback: Cents): Cents => (typeof value === "number" && Number.isSafeInteger(value) && value >= 0 ? value : fallback);
 
 /** The admin's Shipping settings, with the defaults for anything missing or malformed. */
-export function ratesFrom(doc: Partial<Record<keyof ShippingRates, unknown>> | null | undefined): ShippingRates {
+export function ratesFrom(doc: (Partial<Record<keyof ShippingRates, unknown>> & { updatedAt?: unknown }) | null | undefined): ShippingRates {
   const d = doc ?? {};
   return {
     shippingEnabled: d.shippingEnabled !== false,
@@ -56,6 +68,9 @@ export function ratesFrom(doc: Partial<Record<keyof ShippingRates, unknown>> | n
     basketMediumCents: cents(d.basketMediumCents, DEFAULT_SHIPPING.basketMediumCents),
     basketLargeCents: cents(d.basketLargeCents, DEFAULT_SHIPPING.basketLargeCents),
     basketLargerCents: cents(d.basketLargerCents, DEFAULT_SHIPPING.basketLargerCents),
+    chargeByBox: d.chargeByBox === true,
+    // Never saved (no row yet): Lody's boxes. A saved row's list is what staff left, even empty (D60).
+    boxes: boxesFrom(d.updatedAt || (Array.isArray(d.boxes) && d.boxes.length) ? (d.boxes ?? []) : undefined),
   };
 }
 
@@ -90,7 +105,13 @@ export function quoteShipping(items: readonly ShipItem[], rates: ShippingRates):
   if (items.length === 0) return { available: false, reason: "empty", blockers: [] };
   const blockers = [...new Set(items.filter((i) => !i.shippable).map((i) => i.title))];
   if (blockers.length > 0) return { available: false, reason: "not_shippable", blockers };
-  return { available: true, cents: assertCents(Math.max(...items.map((i) => rateFor(i, rates)))) };
+  const byRules = assertCents(Math.max(...items.map((i) => rateFor(i, rates))));
+  const packing = pickBox(
+    items.map((i) => ({ title: i.title, quantity: i.quantity ?? 1, weightLbs: i.weightLbs })),
+    rates.boxes,
+  );
+  if (rates.chargeByBox && packing.box) return { available: true, cents: assertCents(packing.box.priceCents), packing, chargedBy: "box" };
+  return { available: true, cents: byRules, packing, chargedBy: "rules" };
 }
 
 /** Whether a product may ship under the current rules: ticked "Can ship" and not perishable. */

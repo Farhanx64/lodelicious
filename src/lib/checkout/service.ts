@@ -51,6 +51,7 @@ import {
   type ShippingQuote,
   type ShippingRates,
 } from "../shipping/rates";
+import { packingNote, packingWeight, validWeight, type Packing } from "../shipping/boxes";
 import { balanceOf, entryKey, NotEnoughPoints, postEntry, postedPoints } from "../rewards/ledger";
 import { loadRewardsConfig } from "../rewards/members";
 import { formatCents } from "../money";
@@ -188,10 +189,12 @@ export function shipItemsOfBag(bag: Pick<PricedCart, "payable">, products: reado
     const product = byId.get(line.productId);
     if (!product) return [];
     const shippable = productShips(product);
+    // Weight per product (D60): every option of a product weighs the same.
+    const weighed = { quantity: line.quantity, weightLbs: validWeight(product.shippingWeightLbs) };
     if (basketCategoryId && relCategory(product) === basketCategoryId) {
-      return [{ title: line.title, shippable, kind: "basket" as const, size: basketSizeFromName(product.slug || product.title) }];
+      return [{ title: line.title, shippable, ...weighed, kind: "basket" as const, size: basketSizeFromName(product.slug || product.title) }];
     }
-    return [{ title: line.title, shippable, kind: "regular" as const }];
+    return [{ title: line.title, shippable, ...weighed, kind: "regular" as const }];
   });
 }
 
@@ -209,7 +212,7 @@ export async function priceBagForCheckout(
 /** How the customer gets it: a pickup slot, or a checked address with the shipping charge. */
 type Fulfillment =
   | { method: "pickup"; slot: Slot; shippingCents: 0; address: null }
-  | { method: "ship"; slot: Slot; shippingCents: number; address: ShippingAddress };
+  | { method: "ship"; slot: Slot; shippingCents: number; address: ShippingAddress; packing: Packing };
 
 /** A shipped record still fills the required pickup columns: the day it was placed, labelled as shipped. */
 function shippedPlaceholder(now: Date): Slot {
@@ -230,7 +233,7 @@ function chooseFulfillment(
     if (!shipping.available) return { ok: false, error: `${whyNoShipping(shipping)} Please choose pickup.` };
     const address = parseAddress(form, customerName);
     if (!address.ok) return address;
-    return { ok: true, value: { method: "ship", slot: shippedPlaceholder(now), shippingCents: shipping.cents, address: address.address } };
+    return { ok: true, value: { method: "ship", slot: shippedPlaceholder(now), shippingCents: shipping.cents, address: address.address, packing: shipping.packing } };
   }
   const slot = pickSlot(ctx, now, form.pickup, leadHours);
   if (!slot) return { ok: false, error: "That pickup time is no longer available. Please choose another." };
@@ -241,7 +244,13 @@ const SHIPPED_LABEL = "Ships by mail (no pickup)";
 
 function fulfillmentData(f: Fulfillment) {
   return {
-    fulfillment: { method: f.method, shippingCents: f.shippingCents, shipTo: f.address ? { ...f.address } : {} },
+    fulfillment: {
+      method: f.method,
+      shippingCents: f.shippingCents,
+      shipTo: f.address ? { ...f.address } : {},
+      // The box staff should pack (D60), or why they must choose one.
+      ...(f.method === "ship" ? { box: packingNote(f.packing), weightLbs: packingWeight(f.packing) } : {}),
+    },
     pickup: { date: f.slot.date, start: f.slot.start, end: f.slot.end, label: f.method === "ship" ? SHIPPED_LABEL : formatSlot(f.slot) },
   };
 }
@@ -809,8 +818,22 @@ export async function priceBasket(
   });
   // A custom basket ships at its size's basket rate, and only if every item in it can ship (D54).
   const shipsById = new Map(productDocs.map((p) => [String(p.id), productShips(p)]));
+  const weightById = new Map(productDocs.map((p) => [String(p.id), validWeight(p.shippingWeightLbs)]));
+  const shipSize = basketSizeFromCode(draft.request.size);
+  const sizeRule = settings.sizes.find((s) => s.code === draft.request.size);
   const shipping = quoteShipping(
-    components.map((c) => ({ title: c.name, shippable: shipsById.get(c.productId.split(":")[0]) ?? false, kind: "basket" as const, size: basketSizeFromCode(draft.request.size) })),
+    [
+      ...components.map((c) => ({
+        title: c.name,
+        shippable: shipsById.get(c.productId.split(":")[0]) ?? false,
+        quantity: c.quantity,
+        weightLbs: weightById.get(c.productId.split(":")[0]) ?? null,
+        kind: "basket" as const,
+        size: shipSize,
+      })),
+      // The basket itself and its wrapping weigh something too (D60); same rate as its contents.
+      { title: "Basket & packaging", shippable: true, quantity: 1, weightLbs: sizeRule?.shippingWeightLbs ?? null, kind: "basket" as const, size: shipSize },
+    ],
     ctx.shipping,
   );
   const classOf = new Map(productDocs.map((p) => [String(p.id), resolveTaxClass(relId(p.taxClass), ctx.taxClasses, ctx.defaultTaxClassId)]));

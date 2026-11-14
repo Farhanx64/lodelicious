@@ -124,6 +124,19 @@ export const GiftBuilderSettings: GlobalConfig = {
                   fields: [
                     cents("packagingCents", "Basket & packaging fee"),
                     whole("capacityUnits", "Fit capacity", false, "Leave empty until products are measured; counts still apply."),
+                    {
+                      name: "shippingWeightLbs",
+                      label: "Empty basket & packaging weight (lbs)",
+                      type: "number",
+                      min: 0,
+                      admin: {
+                        step: 0.01,
+                        description:
+                          "Optional. Added to the chosen items' weights to pick the shipping box (D60). Leave empty and a shipped custom basket uses the standard basket rate.",
+                      },
+                      validate: (value: number | null | undefined) =>
+                        value === null || value === undefined || (Number.isFinite(value) && value > 0) ? true : "Enter a weight above 0, or leave it empty",
+                    },
                   ],
                 },
               ],
