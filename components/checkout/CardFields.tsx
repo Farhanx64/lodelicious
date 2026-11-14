@@ -13,7 +13,7 @@ type CloverElement = {
   mount(selector: string): void;
   addEventListener(event: "change" | "blur", fn: (e: Record<string, { error?: string; touched?: boolean }>) => void): void;
 };
-type CloverInstance = Omit<CloverApplePay, "elements"> & {
+type CloverInstance = CloverApplePay & {
   elements(): { create(type: string, options?: Record<string, unknown>): CloverElement };
   createToken(): Promise<{ token?: string; errors?: Record<string, string> }>;
 };
@@ -142,7 +142,7 @@ function TestCard() {
 function CloverCard({ config, applePay }: { config: Extract<BrowserPaymentConfig, { kind: "clover" }>; applePay?: ApplePayAmount }) {
   const clover = useRef<CloverInstance | null>(null);
   // The same Clover instance drives the card fields and the Apple Pay button.
-  const [instance, setInstance] = useState<CloverInstance | null>(null);
+  const [instance, setInstance] = useState<{ clover: CloverInstance; elements: ReturnType<CloverInstance["elements"]> } | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "failed">("loading");
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -162,7 +162,7 @@ function CloverCard({ config, applePay }: { config: Extract<BrowserPaymentConfig
           });
         }
         clover.current = instance;
-        setInstance(instance);
+        setInstance({ clover: instance, elements });
         setStatus("ready");
       })
       .catch(() => !cancelled && setStatus("failed"));
@@ -185,7 +185,7 @@ function CloverCard({ config, applePay }: { config: Extract<BrowserPaymentConfig
 
   return (
     <>
-      {applePay && instance && config.merchantId && <ApplePayButton clover={instance} sessionIdentifier={config.merchantId} amount={applePay} />}
+      {applePay && instance && config.merchantId && <ApplePayButton clover={instance.clover} elements={instance.elements} sessionIdentifier={config.merchantId} amount={applePay} />}
       <CardFieldset>
         {status === "failed" && (
           <p role="alert" className="mb-3 border border-error p-3 text-error">
