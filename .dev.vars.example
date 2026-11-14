@@ -20,3 +20,4 @@ NEXT_PUBLIC_SITE_URL=
 # CLOVER_ECOMM_PRIVATE_TOKEN=
 # CLOVER_ECOMM_MERCHANT_ID=
 # CLOVER_ECOMM_APPLE_PAY=on   (D59; needs the merchant id and a verified domain)
+# CLOVER_ECOMM_GOOGLE_PAY=on  (D63; needs the merchant id and Google Pay enabled in Clover)

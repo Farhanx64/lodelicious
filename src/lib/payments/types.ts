@@ -52,6 +52,8 @@ export type BrowserPaymentConfig =
       merchantId: string | null;
       /** Offer Clover's Apple Pay button (D59), where the device has Apple Pay. */
       applePay?: boolean;
+      /** Offer Clover's Google Pay button (D63), where Apple Pay isn't shown. */
+      googlePay?: boolean;
     };
 
 export type PaymentProvider = {

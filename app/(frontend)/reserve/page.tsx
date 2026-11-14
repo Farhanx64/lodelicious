@@ -61,9 +61,9 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
   const deposit = paymentPlan(basket.totalCents, ctx.deposit, false);
   const slots = availableSlots(ctx.pickup, new Date(), ctx.reservationLeadHours);
   const state = orderingState(ctx.provider, basket.taxApproved);
-  // What Apple's sheet shows (D59): what is charged now. A shipped basket is paid in full; for pickup it
+  // What the Apple Pay or Google Pay sheet shows (D59, D63): what is charged now. A shipped basket is paid in full; for pickup it
   // follows the deposit / pay-in-full choice.
-  const applePayAmount =
+  const walletAmount =
     method === "ship"
       ? { cents: grandTotal }
       : {
@@ -185,7 +185,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
               />
             </>
           )}
-          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} applePay={applePayAmount} />
+          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} walletAmount={walletAmount} />
         </ActionForm>
       ) : (
         <div className={panelGrid}>

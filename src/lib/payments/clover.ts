@@ -45,6 +45,12 @@ export type CloverConfig = {
    * domain is verified with Clover, so Safari never shows a button that can't work.
    */
   applePay?: boolean;
+  /**
+   * Offer Google Pay through Clover's iframe (D63): `CLOVER_ECOMM_GOOGLE_PAY=on`, and only with a
+   * merchant id (Clover's frame gets the merchant's Google Pay setting through it). Off until Clover
+   * shows Google Pay enabled for the account.
+   */
+  googlePay?: boolean;
 };
 
 export class CloverConfigError extends Error {
@@ -77,8 +83,8 @@ export function cloverConfigFrom(env: EnvLike): CloverConfig {
   if (publicKey === privateToken) throw new CloverConfigError("CLOVER_ECOMM_PUBLIC_KEY and CLOVER_ECOMM_PRIVATE_TOKEN are the same value");
   const merchantId = get("CLOVER_ECOMM_MERCHANT_ID");
   if (merchantId && !/^[A-Z0-9]{8,20}$/.test(merchantId)) throw new CloverConfigError("CLOVER_ECOMM_MERCHANT_ID does not look like a Clover merchant id");
-  const applePay = ["on", "true", "1", "yes"].includes(get("CLOVER_ECOMM_APPLE_PAY").toLowerCase()) && merchantId !== "";
-  return { environment, publicKey, privateToken, merchantId: merchantId || null, applePay };
+  const on = (k: string) => ["on", "true", "1", "yes"].includes(get(k).toLowerCase()) && merchantId !== "";
+  return { environment, publicKey, privateToken, merchantId: merchantId || null, applePay: on("CLOVER_ECOMM_APPLE_PAY"), googlePay: on("CLOVER_ECOMM_GOOGLE_PAY") };
 }
 
 /** A single-use card token from Clover's iframe. */
@@ -137,6 +143,7 @@ export class CloverPaymentProvider implements PaymentProvider {
       publicKey: this.config.publicKey,
       merchantId: this.config.merchantId,
       applePay: this.config.applePay ?? false,
+      googlePay: this.config.googlePay ?? false,
     };
   }
 

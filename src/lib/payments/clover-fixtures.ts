@@ -61,6 +61,16 @@ export function scriptedFetch(...answers: ({ status: number; body: unknown } | "
  * shaped after the example on Clover's "Clover iframe features: Apple Pay" page (Clover spells it
  * `tokenRecieved`). Made up; the token's `clv_` prefix is assumed and must be confirmed live.
  */
+/**
+ * What Clover's SDK hands the Google Pay element's `paymentMethod` listener after its frame tokenizes
+ * (`{ card, token, customer: { email, billingInfo } }`, D63). Made up; the `clv_` prefix is assumed.
+ */
+export const googlePayPaymentMethod = (token = "clv_1TSTgooglepaytoken") => ({
+  card: { brand: "VISA", last4: "4242", exp_month: "12", exp_year: "2030" },
+  token,
+  customer: { email: "ann@example.test", billingInfo: { cardNetwork: "VISA", cardDetails: "4242" } },
+});
+
 export const applePayPaymentMethod = (id = "clv_1TSTapplepaytoken") => ({
   tokenRecieved: {
     id,

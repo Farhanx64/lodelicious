@@ -70,8 +70,8 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
         chargeCents: totalsWithDiscount(lines, o.discountCents).totalCents + shippingCents,
       }))
     : [];
-  // What Apple's sheet shows (D59): the order total, following the reward radio when there is one.
-  const applePayAmount = {
+  // What the Apple Pay or Google Pay sheet shows (D59, D63): the order total, following the reward radio when there is one.
+  const walletAmount = {
     cents: totalCents,
     ...(rewardOptions.length ? { byChoice: { field: "reward", cents: { none: totalCents, ...Object.fromEntries(rewardOptions.map((o) => [o.id, o.chargeCents])) } } } : {}),
   };
@@ -212,7 +212,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
               </p>
             )}
           </div>
-          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} applePay={applePayAmount} />
+          <CardFields config={ctx.provider?.browser ?? { kind: "test" }} walletAmount={walletAmount} />
         </ActionForm>
       ) : (
         <div className={panelGrid}>

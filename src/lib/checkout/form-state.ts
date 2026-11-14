@@ -17,9 +17,10 @@ export type FormState = {
   next?: string;
 };
 
-/** The form was paid with a wallet (Apple Pay) rather than the card fields; see `next` above. */
+/** The form was paid with a wallet (Apple Pay, Google Pay) rather than the card fields; see `next` above. */
 export function paidWithWallet(form: FormData): boolean {
-  return form.get("wallet") === "apple_pay";
+  const wallet = form.get("wallet");
+  return wallet === "apple_pay" || wallet === "google_pay";
 }
 
 /** Fields the checkout, reservation and add-to-bag forms send. */
