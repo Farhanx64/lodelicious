@@ -86,7 +86,8 @@ export function taxBasisFor(place: { method: "pickup" } | { method: "ship"; stat
   if (place.method !== "ship") return { kind: "pickup" };
   const state = String(place.state ?? "").trim().toUpperCase();
   const rule = rules.find((r) => r.state === state);
-  return rule ? { kind: "state", state, rateBasisPoints: rule.rateBasisPoints, cloverTaxName: rule.cloverTaxName } : { kind: "none", state };
+  // Every web order is a Massachusetts sale (the accountant, 2026-11-14): a state without its own row is taxed exactly like pickup.
+  return rule ? { kind: "state", state, rateBasisPoints: rule.rateBasisPoints, cloverTaxName: rule.cloverTaxName } : { kind: "pickup" };
 }
 
 /**
@@ -120,8 +121,8 @@ export function variantOf(basis: TaxBasis): string {
 export function shippedBases(rules: readonly ShipTaxRule[]): { key: string; basis: TaxBasis }[] {
   return [
     ...rules.map((r) => ({ key: r.state, basis: { kind: "state", state: r.state, rateBasisPoints: r.rateBasisPoints, cloverTaxName: r.cloverTaxName } as TaxBasis })),
-    // The page shows "ships to …" with the state the customer picks; the label is filled in in the browser.
-    { key: NO_TAX_VARIANT, basis: { kind: "none", state: "" } as TaxBasis },
+    // Any other state: a Massachusetts sale, taxed like pickup (matches taxBasisFor).
+    { key: NO_TAX_VARIANT, basis: { kind: "pickup" } as TaxBasis },
   ];
 }
 

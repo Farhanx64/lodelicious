@@ -198,7 +198,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
                 subtotalCents={v.bag.subtotalCents}
                 totalCents={v.totalCents}
                 rows={[
-                  v.key === "none" ? { label: "Sales tax", value: "None" } : { label: "Includes tax", value: formatCents(v.bag.taxCents) },
+                  { label: "Includes tax", value: formatCents(v.bag.taxCents) },
                   ...(method === "ship" ? [{ label: "Includes shipping", value: formatCents(shippingCents) }] : []),
                 ]}
               />

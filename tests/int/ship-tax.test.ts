@@ -1,6 +1,6 @@
 /**
  * Sales tax by the ship-to state, end to end (D65): pickup and MA shipping charge exactly as
- * before; shipping to any other state charges no sales tax and tells Clover so with NO_TAX_APPLIED.
+ * before; shipping to any other state is a Massachusetts sale too, taxed like pickup on Clover's Sales Tax.
  * Rewards, reservations and the page's total check use the same rule. No network: Clover is a
  * scripted `fetch`.
  */
@@ -94,45 +94,44 @@ describe("orders", () => {
     expect(items[1]).toEqual({ type: "shipping", amount: 895, currency: "usd", quantity: 1, description: "Shipping" });
   });
 
-  it("ships to NY: no sales tax, Clover told NO_TAX_APPLIED, labelled No sales tax (ships to NY)", async () => {
+  it("ships to NY: MA tax like pickup, Clover on the default Sales Tax rate, labelled Tax", async () => {
     const token = await bagOf(w.ctx, 1000);
-    const { fetch, calls } = scriptedFetch({ status: 200, body: createdOrder(1895, "ORDNY01") }, { status: 200, body: paidOrder(1895, "ORDNY01") });
+    const { fetch, calls } = scriptedFetch({ status: 200, body: createdOrder(1958, "ORDNY01") }, { status: 200, body: paidOrder(1958, "ORDNY01") });
     const order = await orderOf(await placeOrder(payload, { cartToken: token, form: { ...FORM, ...NY, cardToken: CARD }, now: NOW }, withClover(w.ctx, fetch)));
-    expect(order).toMatchObject({ paymentStatus: "paid", totals: { subtotalCents: 1000, taxCents: 0, shippingCents: 895, totalCents: 1895, taxLabel: "No sales tax (ships to NY)" } });
-    expect((order.lines as { taxCents: number; taxClass: { rateBasisPoints: number } }[])[0]).toMatchObject({ taxCents: 0, taxClass: { rateBasisPoints: 0 } });
+    expect(order).toMatchObject({ paymentStatus: "paid", totals: { subtotalCents: 1000, taxCents: 63, shippingCents: 895, totalCents: 1958, taxLabel: "Tax" } });
     const items = (calls[0].body as { items: Record<string, unknown>[] }).items;
-    expect(items[0].tax_rates).toEqual([{ name: "NO_TAX_APPLIED", rate: 0 }]);
+    expect(items[0].tax_rates).toEqual([{ name: "Sales Tax", rate: 625000 }]);
     expect(calls[1].body).toMatchObject({ source: CARD });
   });
 
-  it("the server goes by the submitted address: a page total for MA with a NY address charges nothing and says the real total", async () => {
+  it("the server goes by the submitted address: a wrong page total charges nothing and says the real total", async () => {
     const token = await bagOf(w.ctx, 1000);
     const { fetch, calls } = scriptedFetch();
     const holds = async () => (await payload.count({ collection: "stock-holds", overrideAccess: true })).totalDocs;
     const before = await holds();
-    const result = await placeOrder(payload, { cartToken: token, form: { ...FORM, ...NY, cardToken: CARD, expectedCents: "1958" }, now: NOW }, withClover(w.ctx, fetch));
-    expect(result).toEqual({ ok: false, error: expect.stringMatching(/Your total is \$18\.95 for this address.*Nothing was charged/) });
+    const result = await placeOrder(payload, { cartToken: token, form: { ...FORM, ...NY, cardToken: CARD, expectedCents: "1895" }, now: NOW }, withClover(w.ctx, fetch));
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/Your total is \$19\.58 for this address.*Nothing was charged/) });
     expect(calls).toHaveLength(0);
     expect(await holds()).toBe(before); // nothing held, no order made
     // The page's figure for NY matches: it goes through.
-    const ok = scriptedFetch({ status: 200, body: createdOrder(1895, "ORDNY02") }, { status: 200, body: paidOrder(1895, "ORDNY02") });
-    expect(await placeOrder(payload, { cartToken: token, form: { ...FORM, ...NY, cardToken: CARD, expectedCents: "1895" }, now: NOW }, withClover(w.ctx, ok.fetch))).toMatchObject({ ok: true });
+    const ok = scriptedFetch({ status: 200, body: createdOrder(1958, "ORDNY02") }, { status: 200, body: paidOrder(1958, "ORDNY02") });
+    expect(await placeOrder(payload, { cartToken: token, form: { ...FORM, ...NY, cardToken: CARD, expectedCents: "1958" }, now: NOW }, withClover(w.ctx, ok.fetch))).toMatchObject({ ok: true });
   });
 
-  it("refuses to pay when Clover's total for a NY order includes tax (total mismatch), releasing the stock", async () => {
+  it("refuses to pay when Clover's total for a NY order differs (total mismatch), releasing the stock", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     const p = await shippable(1000);
     const { changeBag, newCartToken } = await import("@/src/lib/checkout/service");
     const token = newCartToken();
     await changeBag(payload, token, { unitId: String(p.id), quantity: 1, mode: "add" }, w.ctx, NOW);
-    const { fetch, calls } = scriptedFetch({ status: 200, body: createdOrder(1958, "ORDNYTAX") });
+    const { fetch, calls } = scriptedFetch({ status: 200, body: createdOrder(1895, "ORDNYTAX") });
     expect(await placeOrder(payload, { cartToken: token, form: { ...FORM, ...NY, cardToken: CARD }, now: NOW }, withClover(w.ctx, fetch))).toMatchObject({ ok: false });
     expect(calls).toHaveLength(1); // the order only; no pay call
     expect(await liveStock(payload, p.id)).toBe(20);
     vi.restoreAllMocks();
   });
 
-  it("follows the list: a state added at its own rate and Clover name; MA removed means MA shipping is untaxed; pickup never changes", async () => {
+  it("follows the list: a state added at its own rate and Clover name; MA removed still taxes MA like pickup; pickup never changes", async () => {
     await payload.updateGlobal({
       slug: "checkout-settings",
       data: { shipTaxStates: [{ state: "NY", ratePercent: 4, cloverTaxName: "NY Sales Tax" }] } as never,
@@ -148,7 +147,7 @@ describe("orders", () => {
     expect((ny.calls[0].body as { items: Record<string, unknown>[] }).items[0].tax_rates).toEqual([{ name: "NY Sales Tax", rate: 400000 }]);
 
     const ma = await orderOf(await placeOrder(payload, { cartToken: await bagOf(ctx, 1000), form: { ...FORM, ...MA }, now: NOW }, ctx));
-    expect(ma.totals).toMatchObject({ taxCents: 0, totalCents: 1895, taxLabel: "No sales tax (ships to MA)" });
+    expect(ma.totals).toMatchObject({ taxCents: 63, totalCents: 1958, taxLabel: "Tax" });
     const pick = await orderOf(await placeOrder(payload, { cartToken: await bagOf(ctx, 1000), form: { ...FORM, pickup: pickup() }, now: NOW }, ctx));
     expect(pick.totals).toMatchObject({ taxCents: 63, totalCents: 1063 });
 
@@ -170,7 +169,7 @@ describe("rewards with ship-to tax (D47 + D65)", () => {
     await postEntry(payload, { memberId, kind: "adjust", points: 300, key: entryKey.adjust(`ship-tax-${memberId}`), note: "test" });
   });
 
-  it("the reward comes off before tax: MA taxes what is left, NY taxes nothing; the page's wallet amounts match the charge", async () => {
+  it("the reward comes off before tax: MA and NY tax what is left the same; the page's wallet amounts match the charge", async () => {
     const option = ctx.rewards.config.options[0];
     const place = async (address: Record<string, string>) => {
       const token = await bagOf(ctx, 2000);
@@ -187,8 +186,8 @@ describe("rewards with ship-to tax (D47 + D65)", () => {
     expect(ma.order.totals).toMatchObject({ subtotalCents: 2000, discountCents: 500, taxCents: 94, shippingCents: 895, totalCents: 2489 });
     expect(ma.expected).toBe(2489);
     const ny = await place(NY);
-    expect(ny.order.totals).toMatchObject({ subtotalCents: 2000, discountCents: 500, taxCents: 0, shippingCents: 895, totalCents: 2395, taxLabel: "No sales tax (ships to NY)" });
-    expect(ny.expected).toBe(2395);
+    expect(ny.order.totals).toMatchObject({ subtotalCents: 2000, discountCents: 500, taxCents: 94, shippingCents: 895, totalCents: 2489, taxLabel: "Tax" });
+    expect(ny.expected).toBe(2489);
     // Points are earned on what was paid before tax, the same either way.
     expect(ma.order.rewards?.earnPoints).toBe(15);
     expect(ny.order.rewards?.earnPoints).toBe(15);
@@ -214,18 +213,17 @@ describe("basket reservations", () => {
     return (await findByToken(payload, "reservations", result.number, result.token)) as Reservation;
   };
 
-  it("a basket shipped to NY pays no sales tax, in full, with Clover told NO_TAX_APPLIED; to MA it pays the pickup tax", async () => {
+  it("a basket shipped to NY or MA pays the pickup tax, in full", async () => {
     const { priceBasket } = await import("@/src/lib/checkout/service");
     const priced = await priceBasket(payload, draft, w.ctx, { now: NOW });
     if (!priced.ok) throw new Error(priced.error);
     if (!priced.shipping.available) throw new Error("basket should ship");
     const shippingCents = priced.shipping.cents;
 
-    const nyTotal = priced.subtotalCents + shippingCents;
+    const nyTotal = priced.totalCents + shippingCents;
     const ny = scriptedFetch({ status: 200, body: createdOrder(nyTotal, "ORDRNY01") }, { status: 200, body: paidOrder(nyTotal, "ORDRNY01") });
     const nyRes = await reservationOf(await reserve({ ...NY, name: "Nia NY", email: "nia@example.test" }, ny.fetch));
-    expect(nyRes).toMatchObject({ taxCents: 0, totalCents: nyTotal, depositCents: nyTotal, paymentStatus: "paid_in_full", taxLabel: "No sales tax (ships to NY)" });
-    expect((ny.calls[0].body as { items: Record<string, unknown>[] }).items[0].tax_rates).toEqual([{ name: "NO_TAX_APPLIED", rate: 0 }]);
+    expect(nyRes).toMatchObject({ taxCents: priced.taxCents, totalCents: nyTotal, depositCents: nyTotal, paymentStatus: "paid_in_full", taxLabel: "Tax" });
 
     const maTotal = priced.totalCents + shippingCents;
     const ma = scriptedFetch({ status: 200, body: createdOrder(maTotal, "ORDRMA01") }, { status: 200, body: paidOrder(maTotal, "ORDRMA01") });
