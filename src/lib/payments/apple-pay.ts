@@ -26,8 +26,10 @@ export type CloverApplePay = {
   createApplePaymentRequest(req: { amount: number; countryCode: string; currencyCode: string }): unknown;
   updateApplePaymentRequest(req: { amount: number; countryCode: string; currencyCode: string }): unknown;
   updateApplePaymentStatus(status: "success" | "failed"): unknown;
-  elements(): { create(type: string, options?: Record<string, unknown>): { mount(selector: string): void } };
 };
+
+/** Clover's elements factory. Create it once per page: each `clover.elements()` adds another hidden relay frame, and two relays start two Apple Pay sessions per tap, which closes the sheet. */
+export type CloverElements = { create(type: string, options?: Record<string, unknown>): { mount(selector: string): void } };
 
 /** Apple's `ApplePaySession`, as far as we read it. */
 type ApplePaySessionLike = { canMakePayments?: () => boolean };
@@ -93,6 +95,8 @@ export const MESSAGES = {
 export type ApplePayDeps = {
   win: WindowLike;
   clover: CloverApplePay;
+  /** The page's one elements factory, shared with the card fields. */
+  elements: CloverElements;
   /** CSS selector of the div the button is mounted in. */
   mountSelector: string;
   sessionIdentifier: string;
@@ -113,7 +117,7 @@ export function mountApplePay(deps: ApplePayDeps): { setAmount(cents: number): v
   let busy = false;
   // Clover's request goes to Apple untouched: an edited copy is not what Clover validates the session against.
   const request = clover.createApplePaymentRequest({ amount, ...REGION });
-  clover.elements().create(APPLE_PAY_ELEMENT, { applePaymentRequest: request, sessionIdentifier: deps.sessionIdentifier }).mount(deps.mountSelector);
+  deps.elements.create(APPLE_PAY_ELEMENT, { applePaymentRequest: request, sessionIdentifier: deps.sessionIdentifier }).mount(deps.mountSelector);
 
   const status = (s: "success" | "failed") => {
     try {

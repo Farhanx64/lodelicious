@@ -131,14 +131,13 @@ function fakes(outcome: WalletOutcome | Error = { kind: "paid" }) {
     })),
     updateApplePaymentRequest: vi.fn(),
     updateApplePaymentStatus: vi.fn(),
-    elements: () => ({ create }),
   } satisfies CloverApplePay;
   const submit = vi.fn(async () => {
     if (outcome instanceof Error) throw outcome;
     return outcome;
   });
   const showError = vi.fn();
-  const control = mountApplePay({ win, clover, mountSelector: "#apple-pay-button", sessionIdentifier: "ABCDEF123456", amountCents: 2550, submit, showError });
+  const control = mountApplePay({ win, clover, elements: { create }, mountSelector: "#apple-pay-button", sessionIdentifier: "ABCDEF123456", amountCents: 2550, submit, showError });
   const pay = async (detail: unknown) => {
     win.dispatchEvent(new CustomEvent("paymentMethod", { detail }));
     await new Promise((r) => setTimeout(r, 0));
@@ -222,5 +221,14 @@ describe("Apple Pay domain verification file", () => {
     expect(rules.find((r) => r.source === APPLE_PAY_DOMAIN_FILE)?.headers).toEqual([{ key: "Content-Type", value: "text/plain; charset=utf-8" }]);
     const headers = readFileSync(path.join(root, "public", "_headers"), "utf8");
     expect(headers).toMatch(new RegExp(`^${APPLE_PAY_DOMAIN_FILE.replace(/[.]/g, "\\.")}\\n\\s+Content-Type: text/plain`, "m"));
+  });
+});
+
+describe("one Clover elements factory per page", () => {
+  it("the card form passes its own elements to Apple Pay instead of creating a second relay", async () => {
+    const fs = await import("node:fs");
+    const src = fs.readFileSync("components/checkout/CardFields.tsx", "utf8");
+    expect(src.match(/\.elements\(\)/g)).toHaveLength(1);
+    expect(fs.readFileSync("src/lib/payments/apple-pay.ts", "utf8")).toContain("deps.elements.create(APPLE_PAY_ELEMENT");
   });
 });

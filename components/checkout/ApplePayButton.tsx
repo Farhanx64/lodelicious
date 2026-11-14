@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useSyncExternalStore } from "react";
 
-import { amountFor, applePayAvailable, mountApplePay, type ApplePayAmount, type CloverApplePay } from "@/src/lib/payments/apple-pay";
+import { amountFor, applePayAvailable, mountApplePay, type ApplePayAmount, type CloverApplePay, type CloverElements } from "@/src/lib/payments/apple-pay";
 
 import { startApplePayDiag } from "@/src/lib/payments/apple-pay-diag";
 
@@ -22,7 +22,17 @@ function chosen(field: string): string | null {
  * is switched on for the store. Paying submits the same form, with Apple Pay's token in place of the
  * card's, so the server charges it the same way.
  */
-export function ApplePayButton({ clover, sessionIdentifier, amount }: { clover: CloverApplePay; sessionIdentifier: string; amount: ApplePayAmount }) {
+export function ApplePayButton({
+  clover,
+  elements,
+  sessionIdentifier,
+  amount,
+}: {
+  clover: CloverApplePay;
+  elements: CloverElements;
+  sessionIdentifier: string;
+  amount: ApplePayAmount;
+}) {
   const available = useSyncExternalStore(
     noSubscribe,
     () => applePayAvailable(window),
@@ -46,6 +56,7 @@ export function ApplePayButton({ clover, sessionIdentifier, amount }: { clover: 
       mounted = mountApplePay({
         win: window,
         clover,
+        elements,
         mountSelector: `#${MOUNT_ID}`,
         sessionIdentifier,
         amountCents: current(),
@@ -79,7 +90,7 @@ export function ApplePayButton({ clover, sessionIdentifier, amount }: { clover: 
       control.current = null;
       diag.stop();
     };
-  }, [available, clover, sessionIdentifier]);
+  }, [available, clover, elements, sessionIdentifier]);
 
   // A new total from the server (Pickup / Ship, a bag line changed).
   useEffect(() => {
