@@ -245,6 +245,42 @@ export const trackingFields: Field = {
   ],
 };
 
+/** The Shippo label for a shipped order (D66). Set only by the label endpoints; staff use the button above it. */
+export const shippingLabelFields: Field[] = [
+  {
+    name: "labelTool",
+    type: "ui",
+    admin: { condition: (data) => data?.fulfillment?.method === "ship", components: { Field: "@/components/admin/ShippingLabel#ShippingLabel" } },
+  },
+  {
+    name: "shippingLabel",
+    label: "Shipping label",
+    type: "group",
+    access: frozen,
+    admin: { condition: (data) => !!data?.shippingLabel?.labelUrl },
+    fields: [
+      { name: "shipmentId", type: "text", admin: { hidden: true } },
+      { name: "transactionId", type: "text", admin: { hidden: true } },
+      {
+        type: "row",
+        fields: [
+          { name: "service", label: "Service", type: "text", admin: { readOnly: true } },
+          { name: "costCents", label: "Postage paid", type: "number", admin: { readOnly: true, components: centsComponents } },
+          { name: "labelTrackingNumber", label: "Label tracking number", type: "text", admin: { readOnly: true } },
+        ],
+      },
+      { name: "labelUrl", label: "Label PDF", type: "text", admin: { readOnly: true } },
+      {
+        type: "row",
+        fields: [
+          { name: "test", label: "Test label (not real postage)", type: "checkbox", admin: { readOnly: true } },
+          { name: "boughtAt", label: "Bought", type: "date", admin: { readOnly: true, date: { pickerAppearance: "dayAndTime" } } },
+        ],
+      },
+    ],
+  },
+];
+
 export const inquiryEmailFields: Field = {
   name: "emails",
   label: "Emails sent",
