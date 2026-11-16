@@ -1726,3 +1726,15 @@ called Clover:** the Clover side is tested against scripted fixtures only. One m
   and NY; reservations shipped to NY and MA, pickup unchanged), `tests/ship-tax-fields.test.ts` (the
   version shown per state, reward labels, no expected total from the server render) and
   `templates.test.ts` (labels in emails).
+
+## D66 — Shipping labels through Shippo (2026-11-15)
+
+- A shipped order's admin page has "Shipping label (Shippo)": box size and packed weight (prefilled from
+  the D60 box and weight), Get rates (cheapest first), pick one, Buy label, Print label (4×6 PDF).
+- `SHIPPO_API_TOKEN` switches it on. A `shippo_test_…` token makes sample labels: nothing is charged and
+  the order's status, carrier and tracking are not touched, so no customer gets a fake tracking number.
+- A `shippo_live_…` token buys real postage on Lody's Shippo billing, fills in carrier and tracking and
+  saves the order Shipped, which sends the D64 shipped email. Once per order; never for a TEST or unpaid
+  order. The rate bought must belong to the shipment this order asked about.
+- Ship-from is Settings → Store's street and "Town, state and ZIP". US addresses only, as at checkout.
+- Additive migration: eight nullable `shipping_label_*` columns on orders.

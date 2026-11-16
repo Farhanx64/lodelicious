@@ -8,6 +8,7 @@ import { settleRewardsAfterChange } from "../src/hooks/rewards";
 import { printPaidToClover } from "../src/hooks/clover-print";
 import { sendRecordEmails } from "../src/hooks/send-emails";
 import { guardStockStatus, releaseHoldOnCancel } from "../src/hooks/stock-status";
+import { labelEndpoints } from "../src/lib/shipping/label-endpoints";
 
 import {
   RECORD_DATA_NOTE,
@@ -20,6 +21,7 @@ import {
   paymentReference,
   paymentStatusAccess,
   pickupFields,
+  shippingLabelFields,
   rewardsFields,
   staffNotesField,
   stockDetailFields,
@@ -43,6 +45,7 @@ export const Orders: CollectionConfig = {
     listSearchableFields: ["number", "customer.name", "customer.email"],
   },
   defaultSort: "-createdAt",
+  endpoints: labelEndpoints,
   access: { read: isStaff, create: nobody, update: isStaff, delete: isOwner },
   hooks: {
     beforeChange: [guardStockStatus, advanceWhenPaid("orders")],
@@ -99,6 +102,7 @@ export const Orders: CollectionConfig = {
           fields: [
             customerFields,
             fulfillmentFields,
+            ...shippingLabelFields,
             trackingFields,
             pickupFields,
             { name: "summary", type: "ui", admin: { components: { Field: "@/components/admin/RecordSummary#OrderSummary" } } },
