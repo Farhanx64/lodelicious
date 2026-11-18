@@ -213,7 +213,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           <FulfillmentChoice path="/checkout" method={method} shipping={shipping} liveShipping={liveShipping} />
           <ContactFields prefix="checkout" defaults={member ? { name: member.name, email: member.email, phone: member.phone } : undefined} />
           {method === "ship" ? (
-            <ShippingAddressFields prefix="checkout" liveQuote />
+            <ShippingAddressFields prefix="checkout" liveQuote contentsKey={bag.payable.map((l) => `${l.unitId}:${l.quantity}`).join(",")} />
           ) : (
             <fieldset className="mb-6">
               <legend className="mb-3 text-base font-semibold text-ink">Pickup</legend>

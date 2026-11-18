@@ -188,7 +188,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
           {method === "ship" ? (
             <>
               <p className="mb-3 text-sm">We make your basket, then ship it. A shipped basket is paid in full now: {totalText}.</p>
-              <ShippingAddressFields prefix="reserve" liveQuote="basket" />
+              <ShippingAddressFields prefix="reserve" liveQuote="basket" contentsKey={basket.components.map((c) => `${c.productId}:${c.quantity}`).join(",") + `|${draft.request.size}`} />
             </>
           ) : (
             <>
