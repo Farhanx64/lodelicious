@@ -169,8 +169,10 @@ describe("live shipping at checkout (D67)", () => {
     };
     const from = { name: "Shop", street1: "1 Main St", city: "Plymouth", state: "MA", zip: "02360", country: "US" as const };
     const rater = liveRaterFrom(TEST, from, fakeFetch)!;
-    expect(await rater({ box: null, reason: "too_heavy", weightLbs: 9, heaviestLbs: 7 }, { zip: "12207", state: "NY" }, DEFAULT_BOXES)).toBe(4000);
+    expect(await rater({ box: null, reason: "too_heavy", weightLbs: 9, heaviestLbs: 7 }, { zip: "12207", state: "NY" }, DEFAULT_BOXES)).toBe(4000 + 200); // + $2 handling, inside the one shipping figure
     expect((sent[0] as { parcels: { length: string; weight: string }[] }).parcels[0]).toMatchObject({ length: "22", weight: "9" });
+    const { handlingCentsFrom } = await import("@/src/lib/shipping/live-rate");
+    expect([handlingCentsFrom({}), handlingCentsFrom({ SHIPPING_HANDLING_CENTS: "350" }), handlingCentsFrom({ SHIPPING_HANDLING_CENTS: "x" })]).toEqual([200, 350, 200]);
     expect(await rater({ box: null, reason: "missing_weight", missing: ["X"] }, { zip: "12207", state: "NY" }, DEFAULT_BOXES)).toBeNull();
   });
 });

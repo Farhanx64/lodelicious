@@ -1754,3 +1754,5 @@ called Clover:** the Clover side is tested against scripted fixtures only. One m
   Staff buy the top (cheapest) rate in the label panel (D66).
 - Orders only. Build a Basket reservations keep the basket-size rates.
 - All 58 shippable products have weights (23 estimated 2026-11-17, to be replaced by Lody's scale).
+- Handling: $2 (`SHIPPING_HANDLING_CENTS`, default 200) is added to every live shipping price for
+  packing. It is inside the "Shipping" figure, not a separate line (owner, 2026-11-17).

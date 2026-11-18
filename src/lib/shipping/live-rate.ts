@@ -22,6 +22,17 @@ export type LiveRater = (packing: Packing, to: { zip: string; state: string }, b
 const ZIP = /^\d{5}$/;
 const TIMEOUT_MS = 8_000;
 
+/**
+ * Packing and handling added to every live shipping price (owner, 2026-11-17): part of the one
+ * "Shipping" figure the customer sees, never a separate line. `SHIPPING_HANDLING_CENTS` overrides it.
+ */
+export const DEFAULT_HANDLING_CENTS = 200;
+
+export function handlingCentsFrom(env: Record<string, string | undefined>): number {
+  const raw = (env.SHIPPING_HANDLING_CENTS ?? "").trim();
+  return /^\d{1,5}$/.test(raw) ? Number(raw) : DEFAULT_HANDLING_CENTS;
+}
+
 export async function shopFromAddress(payload: Payload): Promise<Address | null> {
   const store = (await payload.findGlobal({ slug: "store-settings", depth: 0, overrideAccess: true })) as { name?: string; street?: string; locality?: string; phone?: string; email?: string };
   const where = parseLocality(store.locality ?? "");
@@ -33,6 +44,7 @@ export async function shopFromAddress(payload: Payload): Promise<Address | null>
 export function liveRaterFrom(env: Record<string, string | undefined>, from: Address | null, fetchImpl: Fetch = fetch): LiveRater | null {
   const setting = shippoSettingFrom(env);
   if (setting.kind !== "on" || !from || (env.SHIPPO_CHECKOUT_RATES ?? "").trim().toLowerCase() === "off") return null;
+  const handling = handlingCentsFrom(env);
   return async (packing, to, boxes = []) => {
     const zip = String(to.zip ?? "").trim().slice(0, 5);
     const largest = [...boxes].sort((a, b) => b.maxWeightLbs - a.maxWeightLbs)[0];
@@ -48,7 +60,8 @@ export function liveRaterFrom(env: Record<string, string | undefined>, from: Add
         reference: "checkout quote",
       });
       if (!result.ok) return null;
-      return checkoutRate(result.value.rates)?.amountCents ?? null;
+      const rate = checkoutRate(result.value.rates);
+      return rate ? rate.amountCents + handling : null;
     } catch {
       return null;
     }
