@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+
+import { formatCents } from "@/src/lib/money";
 
 import { US_STATES } from "@/src/lib/shipping/rates";
 
@@ -15,14 +17,38 @@ const rowLabel = "block text-xs font-semibold text-ink-soft";
 const rowInput = "block min-h-8 w-full bg-transparent text-base text-ink focus-visible:outline-none";
 
 /** The ship-to address (D54), grouped in one box. US only. Keeps what the customer typed after an error. */
-export function ShippingAddressFields({ prefix }: { prefix: string }) {
+export function ShippingAddressFields({ prefix, liveQuote = false }: { prefix: string; liveQuote?: boolean }) {
   const v = useFormValues();
   // Sales tax follows the state (D65): tell the page's totals which state is chosen, now and after an error refills the form.
-  const { setState } = useShipTax();
+  const { setState, state, quote, setQuote } = useShipTax();
   const stateRef = useRef<HTMLSelectElement>(null);
   useEffect(() => {
     if (stateRef.current) setState?.(stateRef.current.value);
   }, [setState, v.shipState]);
+  // Live shipping (D67): once a 5-digit ZIP is typed, ask the server what this bag costs to ship there.
+  const [zip, setZip] = useState((v.shipZip ?? "").slice(0, 5));
+  useEffect(() => {
+    if (!liveQuote || !setQuote) return;
+    if (!/^\d{5}$/.test(zip) || !state) {
+      setQuote({ status: "idle", cents: null });
+      return;
+    }
+    const abort = new AbortController();
+    setQuote({ status: "loading", cents: null });
+    const timer = setTimeout(() => {
+      fetch("/checkout/ship-quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ zip, state }), signal: abort.signal })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((q: { cents?: number; live?: boolean } | null) => {
+          if (abort.signal.aborted) return;
+          setQuote(q && Number.isSafeInteger(q.cents) ? { status: q.live ? "live" : "fallback", cents: q.cents as number } : { status: "fallback", cents: null });
+        })
+        .catch(() => !abort.signal.aborted && setQuote({ status: "fallback", cents: null }));
+    }, 350);
+    return () => {
+      clearTimeout(timer);
+      abort.abort();
+    };
+  }, [liveQuote, setQuote, zip, state]);
   const input = (name: string, text: string, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <div className={row}>
       <label htmlFor={`${prefix}-${name}`} className={rowLabel}>
@@ -70,9 +96,25 @@ export function ShippingAddressFields({ prefix }: { prefix: string }) {
         </div>
         <div className="grid grid-cols-[minmax(0,3fr)_minmax(0,2fr)] divide-x divide-ink-soft/40">
           {input("shipCity", "Town or city", { autoComplete: "shipping address-level2", required: true, maxLength: 60 })}
-          {input("shipZip", "ZIP code", { autoComplete: "shipping postal-code", required: true, inputMode: "numeric", pattern: "\\d{5}(-\\d{4})?", maxLength: 10 })}
+          {input("shipZip", "ZIP code", {
+            autoComplete: "shipping postal-code",
+            required: true,
+            inputMode: "numeric",
+            pattern: "\\d{5}(-\\d{4})?",
+            maxLength: 10,
+            onInput: (event) => setZip(event.currentTarget.value.trim().slice(0, 5)),
+          })}
         </div>
       </div>
+      {liveQuote && (
+        <p aria-live="polite" className="mt-2 text-sm text-ink-soft">
+          {quote.status === "loading"
+            ? "Working out shipping for your ZIP code…"
+            : quote.status === "live" && quote.cents !== null
+              ? `Shipping to ${zip}: ${formatCents(quote.cents)} (ground shipping).`
+              : "Shipping is worked out from your ZIP code and the weight of your order."}
+        </p>
+      )}
     </fieldset>
   );
 }

@@ -9,7 +9,7 @@ import type { BrowserPaymentConfig } from "@/src/lib/payments/types";
 import { usePreparer } from "./ActionForm";
 import { ApplePayButton } from "./ApplePayButton";
 import { GooglePayButton } from "./GooglePayButton";
-import { useShipTax } from "./ShipTax";
+import { shiftAmount, useShipTax } from "./ShipTax";
 
 /** The parts of Clover's iframe SDK this page uses (D54, D59, D63). The card is typed into Clover's frames, never ours. */
 type FieldEvent = Record<string, { error?: string; touched?: boolean }>;
@@ -113,8 +113,8 @@ export function CardFields({
   /** One amount per ship-to tax version (D65); the chosen state's is used, so the sheet follows the page. */
   walletAmounts?: Record<string, ApplePayAmount>;
 }) {
-  const { variant } = useShipTax();
-  const amount = (walletAmounts && walletAmounts[variant]) ?? walletAmount;
+  const { variant, deltaCents } = useShipTax();
+  const amount = shiftAmount((walletAmounts && walletAmounts[variant]) ?? walletAmount, deltaCents);
   if (config.kind !== "clover") {
     return (
       <CardFieldset>

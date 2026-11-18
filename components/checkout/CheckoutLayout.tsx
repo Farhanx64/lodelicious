@@ -6,6 +6,7 @@ import type { Media } from "@/payload-types";
 import { formatCents } from "@/src/lib/money";
 
 import { InfoTip, SummaryDisclosure } from "./OrderSummaryParts";
+import { ShipMoney } from "./ShipTax";
 
 /**
  * The checkout and reserve pages' two-column panel (D56): the order on a soft pink panel on the
@@ -146,14 +147,16 @@ export function TotalsCard({ subtotalCents, taxCents, totalCents, taxApproved, t
         <dt className="font-semibold">Subtotal</dt>
         <dd className="text-right font-semibold">{formatCents(subtotalCents)}</dd>
         <dt className="text-ink-soft">{shipping.method === "ship" ? "Shipping" : "Pickup in store"}</dt>
-        <dd className="text-right text-ink-soft">{shipping.method === "ship" ? formatCents(shipping.cents) : "Free"}</dd>
+        <dd className="text-right text-ink-soft">{shipping.method === "ship" ? <ShipMoney cents={shipping.cents} /> : "Free"}</dd>
         <dt className="flex items-center text-ink-soft">
           {taxLabel ?? (taxApproved ? "Tax" : "Estimated tax (to be confirmed)")}
           <InfoTip label="About tax" text={taxNote} />
         </dt>
         <dd className="text-right text-ink-soft">{formatCents(taxCents)}</dd>
         <dt className="mt-2 border-t border-line pt-3 text-lg font-semibold">Total</dt>
-        <dd className="mt-2 border-t border-line pt-3 text-right text-lg font-semibold">{formatCents(totalCents)}</dd>
+        <dd className="mt-2 border-t border-line pt-3 text-right text-lg font-semibold">
+          <ShipMoney cents={totalCents} />
+        </dd>
         {extra}
       </dl>
     </div>
@@ -161,13 +164,15 @@ export function TotalsCard({ subtotalCents, taxCents, totalCents, taxApproved, t
 }
 
 /** The short repeat of the totals right above the Pay button. */
-export function PayTotals({ subtotalCents, totalCents, rows }: { subtotalCents: number; totalCents: number; rows?: { label: string; value: string }[] }) {
+export function PayTotals({ subtotalCents, totalCents, rows }: { subtotalCents: number; totalCents: number; rows?: { label: string; value: React.ReactNode }[] }) {
   return (
     <dl className="mt-6 mb-4 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 border-t border-line pt-4">
       <dt className="text-ink-soft">Subtotal</dt>
       <dd className="text-right text-ink-soft">{formatCents(subtotalCents)}</dd>
       <dt className="font-semibold">Total</dt>
-      <dd className="text-right font-semibold">{formatCents(totalCents)}</dd>
+      <dd className="text-right font-semibold">
+        <ShipMoney cents={totalCents} />
+      </dd>
       {rows?.map((r) => (
         <Fragment key={r.label}>
           <dt className="text-sm text-ink-soft">{r.label}</dt>

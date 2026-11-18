@@ -127,3 +127,31 @@ describe("labels", () => {
     expect((await ratesHandler(req(pickup.id, PARCEL), { env: TEST, fetch: s.fetch })).status).toBe(400);
   });
 });
+
+describe("live shipping at checkout (D67)", () => {
+  it("charges the live rate for the box, weight and ZIP; the page's quote is the same figure; Shippo failing falls back", async () => {
+    const { checkoutRate } = await import("@/src/lib/shipping/shippo");
+    const rate = (serviceToken: string, carrier: string, amountCents: number) => ({ id: serviceToken, carrier, service: serviceToken, serviceToken, amountCents, days: 3 });
+    expect(checkoutRate([rate("usps_priority", "USPS", 1500), rate("ups_ground", "UPS", 900), rate("usps_ground_advantage", "USPS", 1104)])?.amountCents).toBe(900);
+    expect(checkoutRate([])).toBeNull();
+
+    const { quoteLiveShipping } = await import("@/src/lib/checkout/service");
+    const p = await makeProduct(w, { stock: 20, priceCents: 1000 });
+    await payload.update({ collection: "products", id: p.id, data: { shippable: true, shippingWeightLbs: 2 }, overrideAccess: true });
+    const seen: { zip: string; weight: number }[] = [];
+    const ctx = { ...w.ctx, liveShipping: async (packing: { box: unknown; weightLbs?: number }, to: { zip: string }) => (seen.push({ zip: to.zip, weight: packing.weightLbs ?? 0 }), packing.box ? 1192 : null) };
+    const token = await bagWith({ payload, ctx }, p.id);
+    expect(await quoteLiveShipping(payload, token, ctx as never, { zip: "12207", state: "NY" })).toEqual({ cents: 1192, live: true });
+    const form = { ...FORM, method: "ship", shipLine1: "9 Ocean Ave", shipCity: "Albany", shipState: "NY", shipZip: "12207" };
+    const r = await placeOrder(payload, { cartToken: token, form, now: NOW }, ctx as never);
+    if (!r.ok) throw new Error(r.error);
+    const order = (await findByToken(payload, "orders", r.number, r.token)) as Order;
+    expect(order.totals).toMatchObject({ subtotalCents: 1000, shippingCents: 1192, totalCents: 1000 + 63 + 1192 });
+    expect(order.fulfillment).toMatchObject({ shippingCents: 1192, box: expect.stringContaining("Small box"), weightLbs: 2 });
+    expect(seen.at(-1)).toEqual({ zip: "12207", weight: 2 });
+
+    const down = { ...w.ctx, liveShipping: async () => null };
+    const t2 = await bagWith({ payload, ctx: down }, p.id);
+    expect(await quoteLiveShipping(payload, t2, down as never, { zip: "12207", state: "NY" })).toEqual({ cents: 895, live: false });
+  });
+});

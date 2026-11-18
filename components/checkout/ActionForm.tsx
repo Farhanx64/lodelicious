@@ -4,6 +4,8 @@ import { createContext, startTransition, useActionState, useCallback, useContext
 
 import type { WalletOutcome } from "@/src/lib/payments/apple-pay";
 
+import { formatCents } from "@/src/lib/money";
+
 import { useShipTax } from "./ShipTax";
 import { primaryButton } from "./styles";
 
@@ -61,6 +63,7 @@ export function ActionForm({
   action,
   submitLabel,
   submitLabels,
+  submitTotals,
   pendingLabel,
   disabled,
   children,
@@ -77,6 +80,8 @@ export function ActionForm({
   submitLabel: string;
   /** The button's label for each ship-to tax version (D65), when it shows a total that depends on the state. */
   submitLabels?: Record<string, string>;
+  /** A label with "{total}" filled in from the version's total plus live shipping (D67); wins over submitLabels. */
+  submitTotals?: { template: string; cents: Record<string, number> };
   pendingLabel: string;
   disabled?: boolean;
   children: React.ReactNode;
@@ -119,8 +124,9 @@ export function ActionForm({
     if (shown.error) errorRef.current?.focus();
   }, [shown]);
   const busy = pending || preparing;
-  const { variant } = useShipTax();
-  const label = submitLabels?.[variant] ?? submitLabel;
+  const { variant, deltaCents } = useShipTax();
+  const totalFor = submitTotals?.cents[variant];
+  const label = submitTotals && totalFor !== undefined ? submitTotals.template.replace("{total}", formatCents(totalFor + deltaCents)) : (submitLabels?.[variant] ?? submitLabel);
 
   // The server answered: tell a waiting wallet first (Apple's sheet shows the tick or the failure), then go on to the receipt.
   useEffect(() => {

@@ -1738,3 +1738,16 @@ called Clover:** the Clover side is tested against scripted fixtures only. One m
   order. The rate bought must belong to the shipment this order asked about.
 - Ship-from is Settings → Store's street and "Town, state and ZIP". US addresses only, as at checkout.
 - Additive migration: eight nullable `shipping_label_*` columns on orders.
+
+## D67 — Live shipping prices at checkout (2026-11-17)
+
+- A shipped order is charged what Shippo says the cheapest carrier rate is for the bag's box and
+  weight (D60) from the shop to the customer's ZIP. The page asks `/checkout/ship-quote` as soon as a
+  5-digit ZIP is typed and moves every total (summary, Pay button, Apple/Google Pay sheet, expected
+  charge) by the difference; placeOrder prices it again the same way and charges that.
+- Falls back to the D54 rules (flat $8.95 / basket size) when Shippo is off (`SHIPPO_CHECKOUT_RATES=off`
+  or no token), the bag has no box (missing weight or over 7 lb), or Shippo errors or takes over 8 s.
+- Cheapest rate, not USPS only: big boxes are priced by size, and UPS Ground can be a third of USPS.
+  Staff buy the top (cheapest) rate in the label panel (D66).
+- Orders only. Build a Basket reservations keep the basket-size rates.
+- All 58 shippable products have weights (23 estimated 2026-11-17, to be replaced by Lody's scale).

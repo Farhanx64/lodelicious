@@ -34,6 +34,8 @@ export type Rate = {
   id: string;
   carrier: string;
   service: string;
+  /** Shippo's service code, e.g. "usps_ground_advantage". */
+  serviceToken: string;
   amountCents: number;
   days: number | null;
 };
@@ -109,23 +111,26 @@ async function call(fetch: Fetch, config: ShippoConfig, path: string, method: "G
   return { status: res.status, body: parsed };
 }
 
-const addressBody = (a: Address) => ({
-  name: clean(a.name, 100),
-  street1: clean(a.street1, 120),
-  street2: clean(a.street2, 120),
-  city: clean(a.city, 60),
-  state: clean(a.state, 2),
-  zip: clean(a.zip, 10),
-  country: "US",
-  phone: clean(a.phone, 30),
-  email: clean(a.email, 200),
-});
+/** The address as Shippo takes it; empty parts are left out (a checkout quote knows only the ZIP and state). */
+const addressBody = (a: Partial<Address>) => {
+  const parts = {
+    name: clean(a.name, 100),
+    street1: clean(a.street1, 120),
+    street2: clean(a.street2, 120),
+    city: clean(a.city, 60),
+    state: clean(a.state, 2),
+    zip: clean(a.zip, 10),
+    phone: clean(a.phone, 30),
+    email: clean(a.email, 200),
+  };
+  return { ...Object.fromEntries(Object.entries(parts).filter(([, v]) => v)), country: "US" };
+};
 
 /** Asks Shippo for rates for one parcel. Cheapest first. */
 export async function getRates(
   fetch: Fetch,
   config: ShippoConfig,
-  input: { from: Address; to: Address; parcel: Parcel; reference: string },
+  input: { from: Address; to: Partial<Address>; parcel: Parcel; reference: string },
 ): Promise<ShippoResult<{ shipmentId: string; rates: Rate[] }>> {
   const { status, body } = await call(fetch, config, "/shipments/", "POST", {
     address_from: addressBody(input.from),
@@ -147,10 +152,10 @@ export async function getRates(
   const b = (body ?? {}) as { object_id?: unknown; rates?: unknown[] };
   if (typeof b.object_id !== "string") return { ok: false, error: "Shippo didn't return a shipment." };
   const rates = (b.rates ?? []).flatMap((r): Rate[] => {
-    const x = (r ?? {}) as { object_id?: unknown; provider?: unknown; servicelevel?: { name?: unknown }; amount?: unknown; currency?: unknown; estimated_days?: unknown };
+    const x = (r ?? {}) as { object_id?: unknown; provider?: unknown; servicelevel?: { name?: unknown; token?: unknown }; amount?: unknown; currency?: unknown; estimated_days?: unknown };
     const cents = toCents(x.amount);
     if (typeof x.object_id !== "string" || cents === null || (x.currency && x.currency !== "USD")) return [];
-    return [{ id: x.object_id, carrier: clean(x.provider, 40), service: clean(x.servicelevel?.name, 80), amountCents: cents, days: typeof x.estimated_days === "number" ? x.estimated_days : null }];
+    return [{ id: x.object_id, carrier: clean(x.provider, 40), service: clean(x.servicelevel?.name, 80), serviceToken: clean(x.servicelevel?.token, 60), amountCents: cents, days: typeof x.estimated_days === "number" ? x.estimated_days : null }];
   });
   rates.sort((a, b) => a.amountCents - b.amountCents);
   if (rates.length === 0) return { ok: false, error: `No rates for this address and parcel. ${messageOf(body, "Check the address, box size and weight.")}` };
@@ -181,4 +186,12 @@ export async function buyLabel(fetch: Fetch, config: ShippoConfig, input: { rate
       amountCents: toCents(r.amount) ?? 0,
     },
   };
+}
+
+/**
+ * The rate checkout charges: the cheapest of any carrier. Big boxes are priced by size (dimensional
+ * weight), where UPS Ground can be a fraction of USPS; staff buy the top (cheapest) rate in the admin.
+ */
+export function checkoutRate(rates: readonly Rate[]): Rate | null {
+  return [...rates].sort((a, b) => a.amountCents - b.amountCents)[0] ?? null;
 }
