@@ -1752,7 +1752,9 @@ called Clover:** the Clover side is tested against scripted fixtures only. One m
   only where Shippo isn't set up (local, tests, `SHIPPO_CHECKOUT_RATES=off`).
 - Cheapest rate, not USPS only: big boxes are priced by size, and UPS Ground can be a third of USPS.
   Staff buy the top (cheapest) rate in the label panel (D66).
-- Orders only. Build a Basket reservations keep the basket-size rates.
+- Build a Basket reservations too (2026-11-17): the basket's own price (contents + packaging) never
+  changes; only the shipping line is priced live from the basket's box and weight (contents + the
+  size's empty-basket weight: estimated 1 / 1.5 / 2 / 2.5 lb for S/M/L/XL).
 - All 58 shippable products have weights (23 estimated 2026-11-17, to be replaced by Lody's scale).
 - Handling: $2 (`SHIPPING_HANDLING_CENTS`, default 200) is added to every live shipping price for
   packing. It is inside the "Shipping" figure, not a separate line (owner, 2026-11-17).

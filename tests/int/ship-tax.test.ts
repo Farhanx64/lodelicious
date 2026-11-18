@@ -232,6 +232,24 @@ describe("basket reservations", () => {
     expect(priced.taxCents).toBeGreaterThan(0);
   });
 
+  it("live shipping (D67): the basket's own price is unchanged, shipping is the live figure, and no rate means no charge", async () => {
+    const { priceBasket, quoteLiveBasketShipping } = await import("@/src/lib/checkout/service");
+    const priced = await priceBasket(payload, draft, w.ctx, { now: NOW });
+    if (!priced.ok) throw new Error(priced.error);
+    const liveCtx = { ...w.ctx, liveShipping: async () => 1777 };
+    expect(await quoteLiveBasketShipping(payload, draft, liveCtx as never, { zip: "12207", state: "NY" })).toEqual({ cents: 1777, live: true });
+    const total = priced.totalCents + 1777;
+    const ok = scriptedFetch({ status: 200, body: createdOrder(total, "ORDRLIVE1") }, { status: 200, body: paidOrder(total, "ORDRLIVE1") });
+    const res = reserveBasket(payload, { draft, form: { ...FORM, ...NY, name: "Liv Live", email: "liv@example.test", cardToken: CARD }, submission: newSubmission("reservation"), now: NOW }, { ...withClover(w.ctx, ok.fetch), liveShipping: liveCtx.liveShipping } as never);
+    const r = await reservationOf(await res);
+    expect(r).toMatchObject({ taxCents: priced.taxCents, totalCents: total }); // basket price + tax unchanged, plus live shipping
+    expect(r.fulfillment).toMatchObject({ shippingCents: 1777 });
+
+    const down = { ...withClover(w.ctx, scriptedFetch().fetch), liveShipping: async () => null };
+    const refused = await reserveBasket(payload, { draft, form: { ...FORM, ...NY, name: "Dee Down", email: "dee@example.test", cardToken: CARD }, submission: newSubmission("reservation"), now: NOW }, down as never);
+    expect(refused).toMatchObject({ ok: false, error: expect.stringMatching(/couldn't work out shipping/) });
+  });
+
   it("refuses a shown total that doesn't match the address before charging", async () => {
     const { fetch, calls } = scriptedFetch();
     const result = await reserve({ ...NY, name: "Pia", email: "pia@example.test", expectedCents: "1" }, fetch);

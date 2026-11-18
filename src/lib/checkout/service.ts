@@ -271,6 +271,23 @@ export async function quoteLiveShipping(
   to: { zip: string; state: string },
 ): Promise<{ cents: number; live: boolean } | { error: "not_shippable" | "no_rate" }> {
   const { shipping } = await priceBagForCheckout(payload, token, ctx);
+  return liveQuoteFor(ctx, shipping, to);
+}
+
+/** The reserve page's live shipping figure for the basket being built (D67): what reserveBasket will charge. */
+export async function quoteLiveBasketShipping(
+  payload: Payload,
+  draft: BasketDraft | null,
+  ctx: CheckoutContext,
+  to: { zip: string; state: string },
+): Promise<{ cents: number; live: boolean } | { error: "not_shippable" | "no_rate" }> {
+  if (!draft) return { error: "not_shippable" };
+  const priced = await priceBasket(payload, draft, ctx);
+  if (!priced.ok) return { error: "not_shippable" };
+  return liveQuoteFor(ctx, priced.shipping, to);
+}
+
+async function liveQuoteFor(ctx: CheckoutContext, shipping: ShippingQuote, to: { zip: string; state: string }): Promise<{ cents: number; live: boolean } | { error: "not_shippable" | "no_rate" }> {
   if (!shipping.available) return { error: "not_shippable" };
   // Not set up (local, tests): the rules' figure. Set up: Shippo's, or none.
   if (!ctx.liveShipping) return { cents: shipping.cents, live: false };
@@ -969,7 +986,10 @@ export async function reserveBasket(
   if (!orderingState(provider, priced.taxApproved).open) return { ok: false, error: RESERVE_SOON };
   const how = chooseFulfillment(ctx, now, input.form, ctx.reservationLeadHours, priced.shipping, contact.contact.name);
   if (!how.ok) return how;
-  const fulfillment = how.value;
+  // Shipping priced live for the basket's box and weight (D67); the basket's own price is unchanged.
+  const live = await withLiveShipping(ctx, how.value);
+  if (!live.ok) return live;
+  const fulfillment = live.value;
   // Taxed for where it goes (D65), exactly as the reserve page shows it.
   const taxBasis = taxBasisOf(ctx, fulfillment);
   const basket = retaxBasket(priced, taxBasis);
