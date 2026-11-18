@@ -24,7 +24,7 @@ import { NotesField } from "@/components/checkout/FormFields";
 import { FulfillmentChoice } from "@/components/checkout/FulfillmentChoice";
 import { AddOnButton, QtyStepper, RemoveLine } from "@/components/checkout/OrderSummaryParts";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
-import { ExpectedCharge, ForShipTax, ShipMoney, ShipTaxMoney, ShipTaxProvider, ShipToState } from "@/components/checkout/ShipTax";
+import { ExpectedCharge, ForShipTax, ShipLine, ShipTaxMoney, ShipTaxProvider, ShipToState } from "@/components/checkout/ShipTax";
 import { ShippingAddressFields } from "@/components/checkout/ShippingFields";
 import { SubmissionField } from "@/components/checkout/SubmissionField";
 import { TestModeNote } from "@/components/checkout/Summary";
@@ -64,7 +64,10 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
   if (bag.payable.length === 0 || bag.blocking) redirect("/cart");
   // Pickup unless the customer chose shipping and this bag can ship (D54).
   const method = query.method === "ship" && shipping.available ? "ship" : "pickup";
-  const shippingCents = method === "ship" && shipping.available ? shipping.cents : 0;
+  // Live shipping (D67): the page is rendered without shipping and priced once a ZIP is typed. Only
+  // where Shippo isn't set up (local, tests) do the Settings → Shipping rules give a figure.
+  const liveShipping = !!ctx.liveShipping;
+  const shippingCents = method === "ship" && shipping.available && !liveShipping ? shipping.cents : 0;
   const state = orderingState(ctx.provider, bag.taxApproved);
   const slots = availableSlots(ctx.pickup, new Date());
   const [member, looks, addOn] = await Promise.all([
@@ -199,7 +202,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
                 totalCents={v.totalCents}
                 rows={[
                   { label: "Includes tax", value: formatCents(v.bag.taxCents) },
-                  ...(method === "ship" ? [{ label: "Includes shipping", value: <ShipMoney cents={shippingCents} /> }] : []),
+                  ...(method === "ship" ? [{ label: "Includes shipping", value: <ShipLine cents={shippingCents} /> }] : []),
                 ]}
               />
             </ForShipTax>
@@ -207,7 +210,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
           afterSubmit={<PolicyLine />}
         >
           <SubmissionField kind="order" />
-          <FulfillmentChoice path="/checkout" method={method} shipping={shipping} />
+          <FulfillmentChoice path="/checkout" method={method} shipping={shipping} liveShipping={liveShipping} />
           <ContactFields prefix="checkout" defaults={member ? { name: member.name, email: member.email, phone: member.phone } : undefined} />
           {method === "ship" ? (
             <ShippingAddressFields prefix="checkout" liveQuote />
@@ -246,7 +249,7 @@ export default async function CheckoutPage({ searchParams }: { searchParams: Pro
     </div>
   );
   // Shipped: the totals follow the state chosen in the address (D65).
-  return method === "ship" ? <ShipTaxProvider listed={ctx.shipTaxRules.map((r) => r.state)} baseShippingCents={shippingCents}>
+  return method === "ship" ? <ShipTaxProvider listed={ctx.shipTaxRules.map((r) => r.state)} baseShippingCents={shippingCents} requiresQuote={liveShipping}>
       {page}
     </ShipTaxProvider> : page;
 }

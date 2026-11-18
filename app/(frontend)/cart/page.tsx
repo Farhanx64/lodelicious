@@ -80,7 +80,7 @@ export default async function CartPage() {
           />
           <p className="mt-4 text-sm text-ink-soft">
             Free pickup in our Plymouth shop
-            {shipping.available ? `, or shipping for ${formatCents(shipping.cents)} (one charge for the whole order)` : ""}. Choose at checkout. Custom baskets
+            {shipping.available ? ", or shipping (priced at checkout from your ZIP code and the order's weight)" : ""}. Choose at checkout. Custom baskets
             are reserved separately from Build a Basket.
           </p>
           {bag.blocking ? (

@@ -124,7 +124,7 @@ export function ActionForm({
     if (shown.error) errorRef.current?.focus();
   }, [shown]);
   const busy = pending || preparing;
-  const { variant, deltaCents } = useShipTax();
+  const { variant, deltaCents, needsQuote } = useShipTax();
   const totalFor = submitTotals?.cents[variant];
   const label = submitTotals && totalFor !== undefined ? submitTotals.template.replace("{total}", formatCents(totalFor + deltaCents)) : (submitLabels?.[variant] ?? submitLabel);
 
@@ -195,14 +195,14 @@ export function ActionForm({
   const button = (
     <button
       type="submit"
-      disabled={disabled}
+      disabled={disabled || needsQuote}
       aria-disabled={busy || undefined}
       onClick={(event) => {
         if (busy) event.preventDefault();
       }}
       className={`${primaryButton} w-full gap-2`}
     >
-      {busy ? pendingLabel : label}
+      {busy ? pendingLabel : needsQuote ? "Enter your ZIP code to price shipping" : label}
       {submitIcon}
     </button>
   );

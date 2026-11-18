@@ -254,11 +254,14 @@ function chooseFulfillment(
 }
 
 /** A shipped order's charge from Shippo for its box, weight and ZIP (D67), or the rules' figure when there is none. */
-async function withLiveShipping(ctx: CheckoutContext, f: Fulfillment): Promise<Fulfillment> {
-  if (f.method !== "ship" || !ctx.liveShipping) return f;
-  const cents = await ctx.liveShipping(f.packing, { zip: f.address.zip, state: f.address.state });
-  return cents === null ? f : { ...f, shippingCents: cents };
+async function withLiveShipping(ctx: CheckoutContext, f: Fulfillment): Promise<{ ok: true; value: Fulfillment } | { ok: false; error: string }> {
+  if (f.method !== "ship" || !ctx.liveShipping) return { ok: true, value: f };
+  const cents = await ctx.liveShipping(f.packing, { zip: f.address.zip, state: f.address.state }, ctx.shipping.boxes);
+  if (cents === null) return { ok: false, error: NO_LIVE_RATE };
+  return { ok: true, value: { ...f, shippingCents: cents } };
 }
+
+export const NO_LIVE_RATE = "We couldn't work out shipping to this address right now. Nothing was charged. Please check the ZIP code and try again, or choose pickup.";
 
 /** The checkout page's live shipping figure for a ZIP (D67): what placeOrder will charge for this bag. */
 export async function quoteLiveShipping(
@@ -266,11 +269,13 @@ export async function quoteLiveShipping(
   token: string | undefined,
   ctx: CheckoutContext,
   to: { zip: string; state: string },
-): Promise<{ cents: number; live: boolean } | null> {
+): Promise<{ cents: number; live: boolean } | { error: "not_shippable" | "no_rate" }> {
   const { shipping } = await priceBagForCheckout(payload, token, ctx);
-  if (!shipping.available) return null;
-  const live = ctx.liveShipping ? await ctx.liveShipping(shipping.packing, to) : null;
-  return live === null ? { cents: shipping.cents, live: false } : { cents: live, live: true };
+  if (!shipping.available) return { error: "not_shippable" };
+  // Not set up (local, tests): the rules' figure. Set up: Shippo's, or none.
+  if (!ctx.liveShipping) return { cents: shipping.cents, live: false };
+  const live = await ctx.liveShipping(shipping.packing, to, ctx.shipping.boxes);
+  return live === null ? { error: "no_rate" } : { cents: live, live: true };
 }
 
 const SHIPPED_LABEL = "Ships by mail (no pickup)";
@@ -585,7 +590,9 @@ export async function placeOrder(
   const shippingQuote = quoteShipping(shipItemsOfBag(bag, products, ctx.basketCategoryId), ctx.shipping);
   const how = chooseFulfillment(ctx, now, input.form, ctx.pickup.leadTimeHours, shippingQuote, contact.contact.name);
   if (!how.ok) return how;
-  const fulfillment = await withLiveShipping(ctx, how.value);
+  const live = await withLiveShipping(ctx, how.value);
+  if (!live.ok) return live;
+  const fulfillment = live.value;
   const slot = fulfillment.slot;
   const notes = String(input.form.notes ?? "").trim().slice(0, 500);
   const card = cardSource(provider, input.form);

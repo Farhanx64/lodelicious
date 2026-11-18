@@ -6,7 +6,7 @@ import type { Media } from "@/payload-types";
 import { formatCents } from "@/src/lib/money";
 
 import { InfoTip, SummaryDisclosure } from "./OrderSummaryParts";
-import { ShipMoney } from "./ShipTax";
+import { ShipLine, ShipMoney } from "./ShipTax";
 
 /**
  * The checkout and reserve pages' two-column panel (D56): the order on a soft pink panel on the
@@ -147,7 +147,7 @@ export function TotalsCard({ subtotalCents, taxCents, totalCents, taxApproved, t
         <dt className="font-semibold">Subtotal</dt>
         <dd className="text-right font-semibold">{formatCents(subtotalCents)}</dd>
         <dt className="text-ink-soft">{shipping.method === "ship" ? "Shipping" : "Pickup in store"}</dt>
-        <dd className="text-right text-ink-soft">{shipping.method === "ship" ? <ShipMoney cents={shipping.cents} /> : "Free"}</dd>
+        <dd className="text-right text-ink-soft">{shipping.method === "ship" ? <ShipLine cents={shipping.cents} /> : "Free"}</dd>
         <dt className="flex items-center text-ink-soft">
           {taxLabel ?? (taxApproved ? "Tax" : "Estimated tax (to be confirmed)")}
           <InfoTip label="About tax" text={taxNote} />

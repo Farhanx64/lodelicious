@@ -113,8 +113,9 @@ export function CardFields({
   /** One amount per ship-to tax version (D65); the chosen state's is used, so the sheet follows the page. */
   walletAmounts?: Record<string, ApplePayAmount>;
 }) {
-  const { variant, deltaCents } = useShipTax();
-  const amount = shiftAmount((walletAmounts && walletAmounts[variant]) ?? walletAmount, deltaCents);
+  const { variant, deltaCents, needsQuote } = useShipTax();
+  // No wallet sheet until shipping has a live price (D67): the sheet must show the real total.
+  const amount = needsQuote ? undefined : shiftAmount((walletAmounts && walletAmounts[variant]) ?? walletAmount, deltaCents);
   if (config.kind !== "clover") {
     return (
       <CardFieldset>

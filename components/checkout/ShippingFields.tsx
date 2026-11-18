@@ -40,9 +40,9 @@ export function ShippingAddressFields({ prefix, liveQuote = false }: { prefix: s
         .then((r) => (r.ok ? r.json() : null))
         .then((q: { cents?: number; live?: boolean } | null) => {
           if (abort.signal.aborted) return;
-          setQuote(q && Number.isSafeInteger(q.cents) ? { status: q.live ? "live" : "fallback", cents: q.cents as number } : { status: "fallback", cents: null });
+          setQuote(q && Number.isSafeInteger(q.cents) ? { status: q.live ? "live" : "fallback", cents: q.cents as number } : { status: "error", cents: null });
         })
-        .catch(() => !abort.signal.aborted && setQuote({ status: "fallback", cents: null }));
+        .catch(() => !abort.signal.aborted && setQuote({ status: "error", cents: null }));
     }, 350);
     return () => {
       clearTimeout(timer);
@@ -112,7 +112,9 @@ export function ShippingAddressFields({ prefix, liveQuote = false }: { prefix: s
             ? "Working out shipping for your ZIP code…"
             : quote.status === "live" && quote.cents !== null
               ? `Shipping to ${zip}: ${formatCents(quote.cents)} (ground shipping).`
-              : "Shipping is worked out from your ZIP code and the weight of your order."}
+              : quote.status === "error"
+                ? "We couldn't price shipping to that ZIP code. Please check it and try again, or choose pickup."
+                : "Enter your ZIP code: shipping is priced from it and the weight of your order."}
         </p>
       )}
     </fieldset>
