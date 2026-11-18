@@ -21,7 +21,7 @@ import { ContactFields } from "@/components/checkout/ContactFields";
 import { PaymentChoice } from "@/components/checkout/FormFields";
 import { FulfillmentChoice } from "@/components/checkout/FulfillmentChoice";
 import { PickupSelect } from "@/components/checkout/PickupSelect";
-import { ExpectedCharge, ForShipTax, ShipTaxProvider, ShipTaxText, ShipToState } from "@/components/checkout/ShipTax";
+import { ExpectedCharge, ForShipTax, ShipLine, ShipTaxMoney, ShipTaxProvider, ShipToState } from "@/components/checkout/ShipTax";
 import { ShippingAddressFields } from "@/components/checkout/ShippingFields";
 import { SubmissionField } from "@/components/checkout/SubmissionField";
 import { primaryButton } from "@/components/checkout/styles";
@@ -58,7 +58,9 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
 
   // Pickup unless the customer chose shipping and every item in the basket can ship (D54). A shipped basket is paid in full.
   const method = query.method === "ship" && basket.shipping.available ? "ship" : "pickup";
-  const shippingCents = method === "ship" && basket.shipping.available ? basket.shipping.cents : 0;
+  // Live shipping (D67): rendered without shipping, priced once a ZIP is typed. The basket's own price never changes.
+  const liveShipping = !!ctx.liveShipping;
+  const shippingCents = method === "ship" && basket.shipping.available && !liveShipping ? basket.shipping.cents : 0;
   const deposit = paymentPlan(basket.totalCents, ctx.deposit, false);
   const slots = availableSlots(ctx.pickup, new Date(), ctx.reservationLeadHours);
   const state = orderingState(ctx.provider, basket.taxApproved);
@@ -78,7 +80,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
   const first = views[0];
   const byKey = <T,>(pick: (v: (typeof views)[number]) => T) => byView(views, pick);
   const grandTotal = first.grandTotal;
-  const totalText = <ShipTaxText texts={byKey((v) => formatCents(v.grandTotal))} />;
+  const totalText = <ShipTaxMoney cents={byKey((v) => v.grandTotal)} />;
   const depositLabel = ctx.deposit.type === "percent" ? `${ctx.deposit.percentBasisPoints / 100}% deposit` : "Deposit";
   const looks = await bagLineLooks(
     payload,
@@ -151,7 +153,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
         <ActionForm
           action={submitReservation}
           submitLabel={ctx.provider?.test ? "Reserve with test payment" : method === "ship" ? `Pay ${formatCents(grandTotal)}` : "Reserve and pay"}
-          submitLabels={ctx.provider?.test || method !== "ship" ? undefined : byKey((v) => `Pay ${formatCents(v.grandTotal)}`)}
+          submitTotals={ctx.provider?.test || method !== "ship" ? undefined : { template: "Pay {total}", cents: byKey((v) => v.grandTotal) }}
           submitIcon={<LockIcon />}
           pendingLabel="Reserving…"
           disabled={method === "pickup" && slots.length === 0}
@@ -166,7 +168,10 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
                 totalCents={v.grandTotal}
                 rows={
                   method === "ship"
-                    ? [{ label: "Paid in full now (shipped baskets)", value: formatCents(v.grandTotal) }]
+                    ? [
+                        { label: "Includes shipping", value: <ShipLine cents={shippingCents} /> },
+                        { label: "Paid in full now (shipped baskets)", value: <ShipLine cents={v.grandTotal} /> },
+                      ]
                     : [
                         { label: `${depositLabel} now`, value: formatCents(deposit.chargeNowCents) },
                         { label: "Balance at pickup", value: formatCents(deposit.balanceDueCents) },
@@ -178,12 +183,12 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
           afterSubmit={<PolicyLine />}
         >
           <SubmissionField kind="reservation" />
-          <FulfillmentChoice path="/reserve" method={method} shipping={basket.shipping} />
+          <FulfillmentChoice path="/reserve" method={method} shipping={basket.shipping} liveShipping={liveShipping} />
           <ContactFields prefix="reserve" />
           {method === "ship" ? (
             <>
               <p className="mb-3 text-sm">We make your basket, then ship it. A shipped basket is paid in full now: {totalText}.</p>
-              <ShippingAddressFields prefix="reserve" />
+              <ShippingAddressFields prefix="reserve" liveQuote="basket" />
             </>
           ) : (
             <>
@@ -219,5 +224,7 @@ export default async function ReservePage({ searchParams }: { searchParams: Prom
     </div>
   );
   // Shipped: the totals follow the state chosen in the address (D65).
-  return method === "ship" ? <ShipTaxProvider listed={ctx.shipTaxRules.map((r) => r.state)}>{page}</ShipTaxProvider> : page;
+  return method === "ship" ? <ShipTaxProvider listed={ctx.shipTaxRules.map((r) => r.state)} baseShippingCents={shippingCents} requiresQuote={liveShipping}>
+      {page}
+    </ShipTaxProvider> : page;
 }

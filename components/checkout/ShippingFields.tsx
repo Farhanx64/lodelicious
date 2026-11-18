@@ -17,7 +17,8 @@ const rowLabel = "block text-xs font-semibold text-ink-soft";
 const rowInput = "block min-h-8 w-full bg-transparent text-base text-ink focus-visible:outline-none";
 
 /** The ship-to address (D54), grouped in one box. US only. Keeps what the customer typed after an error. */
-export function ShippingAddressFields({ prefix, liveQuote = false }: { prefix: string; liveQuote?: boolean }) {
+/** `liveQuote`: price shipping from the ZIP (D67) for the checkout bag ("order") or the reserve page's basket ("basket"). */
+export function ShippingAddressFields({ prefix, liveQuote = false }: { prefix: string; liveQuote?: false | true | "order" | "basket" }) {
   const v = useFormValues();
   // Sales tax follows the state (D65): tell the page's totals which state is chosen, now and after an error refills the form.
   const { setState, state, quote, setQuote } = useShipTax();
@@ -36,7 +37,7 @@ export function ShippingAddressFields({ prefix, liveQuote = false }: { prefix: s
     const abort = new AbortController();
     setQuote({ status: "loading", cents: null });
     const timer = setTimeout(() => {
-      fetch("/checkout/ship-quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ zip, state }), signal: abort.signal })
+      fetch("/checkout/ship-quote", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ zip, state, kind: liveQuote === "basket" ? "basket" : "order" }), signal: abort.signal })
         .then((r) => (r.ok ? r.json() : null))
         .then((q: { cents?: number; live?: boolean } | null) => {
           if (abort.signal.aborted) return;
