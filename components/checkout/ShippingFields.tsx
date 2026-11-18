@@ -18,7 +18,16 @@ const rowInput = "block min-h-8 w-full bg-transparent text-base text-ink focus-v
 
 /** The ship-to address (D54), grouped in one box. US only. Keeps what the customer typed after an error. */
 /** `liveQuote`: price shipping from the ZIP (D67) for the checkout bag ("order") or the reserve page's basket ("basket"). */
-export function ShippingAddressFields({ prefix, liveQuote = false }: { prefix: string; liveQuote?: false | true | "order" | "basket" }) {
+export function ShippingAddressFields({
+  prefix,
+  liveQuote = false,
+  contentsKey = "",
+}: {
+  prefix: string;
+  liveQuote?: false | true | "order" | "basket";
+  /** Changes whenever what's being shipped changes (quantities, items): shipping is priced again (D67). */
+  contentsKey?: string;
+}) {
   const v = useFormValues();
   // Sales tax follows the state (D65): tell the page's totals which state is chosen, now and after an error refills the form.
   const { setState, state, quote, setQuote } = useShipTax();
@@ -49,7 +58,7 @@ export function ShippingAddressFields({ prefix, liveQuote = false }: { prefix: s
       clearTimeout(timer);
       abort.abort();
     };
-  }, [liveQuote, setQuote, zip, state]);
+  }, [liveQuote, setQuote, zip, state, contentsKey]);
   const input = (name: string, text: string, extra: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <div className={row}>
       <label htmlFor={`${prefix}-${name}`} className={rowLabel}>
