@@ -64,6 +64,8 @@ import { formatSlot, isAvailableSlot, SHOP_TZ, type PickupSettings, type Slot } 
 import { providerTaxFor, shipTaxRulesFrom, taxBasisFor, taxLabelFor, type ShipTaxRule, type TaxBasis } from "./ship-tax";
 import { computeTax, resolveTaxClass, type TaxClass } from "./tax";
 import { retaxBasket } from "./tax-views";
+import { liveRaterFrom, shopFromAddress, type LiveRater } from "../shipping/live-rate";
+import { shippoSettingFrom } from "../shipping/shippo";
 
 export type CheckoutContext = {
   taxClasses: TaxClass[];
@@ -86,6 +88,8 @@ export type CheckoutContext = {
   shipping: ShippingRates;
   /** The id of the Gift baskets category: its products ship at the basket rate for their size. */
   basketCategoryId: string | null;
+  /** Live Shippo prices for shipped orders (D67); null keeps the Settings → Shipping rules. */
+  liveShipping?: LiveRater | null;
 };
 
 const relId = (v: unknown): string | null => (v === null || v === undefined ? null : typeof v === "object" ? String((v as { id: unknown }).id) : String(v));
@@ -93,13 +97,14 @@ const relId = (v: unknown): string | null => (v === null || v === undefined ? nu
 const SOLD_OUT = "Some items in your bag aren't available any more. Please review your bag.";
 
 export async function loadCheckoutContext(payload: Payload, env: Record<string, string | undefined> = process.env): Promise<CheckoutContext> {
-  const [settings, classes, inventory, rewards, shipping, basketCategory] = await Promise.all([
+  const [settings, classes, inventory, rewards, shipping, basketCategory, shipFrom] = await Promise.all([
     payload.findGlobal({ slug: "checkout-settings", depth: 0, overrideAccess: true }) as Promise<CheckoutSetting>,
     payload.find({ collection: "tax-classes", limit: 100, depth: 0, overrideAccess: true }),
     loadInventoryConfig(payload),
     loadRewardsConfig(payload),
     payload.findGlobal({ slug: "shipping-settings", depth: 0, overrideAccess: true }) as Promise<ShippingSetting>,
     payload.find({ collection: "categories", where: { slug: { equals: GIFT_BASKET_CATEGORY } }, limit: 1, depth: 0, overrideAccess: true }),
+    shippoSettingFrom(env).kind === "on" ? shopFromAddress(payload).catch(() => null) : Promise.resolve(null),
   ]);
   const taxClasses = classes.docs.map((c) => ({ id: String(c.id), name: c.name, rateBasisPoints: c.rateBasisPoints, approved: Boolean(c.approved) }));
   const defaultTaxClassId = relId(settings.defaultTaxClass);
@@ -128,6 +133,7 @@ export async function loadCheckoutContext(payload: Payload, env: Record<string, 
     rewards: { config: rewards, active: rewardsState(rewards, env).active },
     shipping: ratesFrom(shipping),
     basketCategoryId: basketCategory.docs[0] ? String((basketCategory.docs[0] as Category).id) : null,
+    liveShipping: liveRaterFrom(env, shipFrom),
   };
 }
 
@@ -247,6 +253,26 @@ function chooseFulfillment(
   return { ok: true, value: { method: "pickup", slot, shippingCents: 0, address: null } };
 }
 
+/** A shipped order's charge from Shippo for its box, weight and ZIP (D67), or the rules' figure when there is none. */
+async function withLiveShipping(ctx: CheckoutContext, f: Fulfillment): Promise<Fulfillment> {
+  if (f.method !== "ship" || !ctx.liveShipping) return f;
+  const cents = await ctx.liveShipping(f.packing, { zip: f.address.zip, state: f.address.state });
+  return cents === null ? f : { ...f, shippingCents: cents };
+}
+
+/** The checkout page's live shipping figure for a ZIP (D67): what placeOrder will charge for this bag. */
+export async function quoteLiveShipping(
+  payload: Payload,
+  token: string | undefined,
+  ctx: CheckoutContext,
+  to: { zip: string; state: string },
+): Promise<{ cents: number; live: boolean } | null> {
+  const { shipping } = await priceBagForCheckout(payload, token, ctx);
+  if (!shipping.available) return null;
+  const live = ctx.liveShipping ? await ctx.liveShipping(shipping.packing, to) : null;
+  return live === null ? { cents: shipping.cents, live: false } : { cents: live, live: true };
+}
+
 const SHIPPED_LABEL = "Ships by mail (no pickup)";
 
 function fulfillmentData(f: Fulfillment) {
@@ -280,7 +306,7 @@ export function taxBasisOf(ctx: Pick<CheckoutContext, "shipTaxRules">, f: { meth
 function shownTotalMismatch(form: Record<string, unknown>, chargeCents: number): string | null {
   const raw = String(form.expectedCents ?? "").trim();
   if (!/^\d{1,9}$/.test(raw) || Number(raw) === chargeCents) return null;
-  return `Your total is ${formatCents(chargeCents)} for this address (sales tax depends on the ship-to state). Nothing was charged. Please check the total and pay again.`;
+  return `Your total is ${formatCents(chargeCents)} for this address (shipping depends on the ZIP code). Nothing was charged. Please check the total and pay again.`;
 }
 
 // ---------------------------------------------------------------- card token (D54)
@@ -559,7 +585,7 @@ export async function placeOrder(
   const shippingQuote = quoteShipping(shipItemsOfBag(bag, products, ctx.basketCategoryId), ctx.shipping);
   const how = chooseFulfillment(ctx, now, input.form, ctx.pickup.leadTimeHours, shippingQuote, contact.contact.name);
   if (!how.ok) return how;
-  const fulfillment = how.value;
+  const fulfillment = await withLiveShipping(ctx, how.value);
   const slot = fulfillment.slot;
   const notes = String(input.form.notes ?? "").trim().slice(0, 500);
   const card = cardSource(provider, input.form);

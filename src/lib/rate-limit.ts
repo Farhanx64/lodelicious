@@ -74,6 +74,8 @@ export const ACTION_LIMITS = {
   checkBasket: { limit: 20, windowMs: MINUTE },
   startReservation: { limit: 20, windowMs: MINUTE },
   submitOrder: { limit: 6, windowMs: MINUTE },
+  // Live shipping quotes while a ZIP is typed (D67).
+  shipQuote: { limit: 20, windowMs: MINUTE },
   submitReservation: { limit: 6, windowMs: MINUTE },
   contact: { limit: 5, windowMs: MINUTE },
   fountain: { limit: 5, windowMs: MINUTE },

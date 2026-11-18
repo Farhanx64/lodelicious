@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useMemo, useState, useSyncExternalStore } from "react";
 
+import { formatCents } from "@/src/lib/money";
 import { amountFor, type ApplePayAmount } from "@/src/lib/payments/apple-pay";
 
 /**
@@ -14,20 +15,85 @@ import { amountFor, type ApplePayAmount } from "@/src/lib/payments/apple-pay";
  *
  * Outside a provider (pickup) the variant is "pickup".
  */
-type ShipTaxState = { state: string; variant: string; setState(state: string): void };
+/**
+ * Live shipping (D67): the page is rendered with the usual shipping figure; once a ZIP is typed the
+ * address fields fetch the live price and every total on the page moves by the difference.
+ */
+export type ShipQuote = { status: "idle" | "loading" | "live" | "fallback"; cents: number | null };
+type ShipTaxState = {
+  state: string;
+  variant: string;
+  setState(state: string): void;
+  baseShippingCents: number;
+  quote: ShipQuote;
+  setQuote(quote: ShipQuote): void;
+  /** What to add to every server-rendered total: live shipping minus the shipping it was rendered with. */
+  deltaCents: number;
+};
 
 const ShipTaxContext = createContext<ShipTaxState | null>(null);
 
-export function ShipTaxProvider({ listed, initialState = "MA", children }: { listed: readonly string[]; initialState?: string; children?: React.ReactNode }) {
+export function ShipTaxProvider({
+  listed,
+  initialState = "MA",
+  baseShippingCents = 0,
+  children,
+}: {
+  listed: readonly string[];
+  initialState?: string;
+  baseShippingCents?: number;
+  children?: React.ReactNode;
+}) {
   const [state, setState] = useState(initialState);
-  const value = useMemo(() => ({ state, variant: listed.includes(state) ? state : "none", setState }), [state, listed]);
+  const [quote, setQuote] = useState<ShipQuote>({ status: "idle", cents: null });
+  const value = useMemo(
+    () => ({
+      state,
+      variant: listed.includes(state) ? state : "none",
+      setState,
+      baseShippingCents,
+      quote,
+      setQuote,
+      deltaCents: quote.cents === null ? 0 : quote.cents - baseShippingCents,
+    }),
+    [state, listed, baseShippingCents, quote],
+  );
   return <ShipTaxContext value={value}>{children}</ShipTaxContext>;
 }
 
 /** The chosen ship-to state and which version of the totals applies. */
-export function useShipTax(): { state: string | null; variant: string; setState: ((state: string) => void) | null } {
+export function useShipTax(): {
+  state: string | null;
+  variant: string;
+  setState: ((state: string) => void) | null;
+  deltaCents: number;
+  quote: ShipQuote;
+  setQuote: ((quote: ShipQuote) => void) | null;
+  baseShippingCents: number;
+} {
   const ctx = useContext(ShipTaxContext);
-  return ctx ? ctx : { state: null, variant: "pickup", setState: null };
+  return ctx ? ctx : { state: null, variant: "pickup", setState: null, deltaCents: 0, quote: { status: "idle", cents: null }, setQuote: null, baseShippingCents: 0 };
+}
+
+/** A wallet amount moved by the live-shipping difference (every choice pays the same shipping). */
+export function shiftAmount(spec: ApplePayAmount | undefined, delta: number): ApplePayAmount | undefined {
+  if (!spec || delta === 0) return spec;
+  return {
+    cents: spec.cents + delta,
+    ...(spec.byChoice ? { byChoice: { field: spec.byChoice.field, cents: Object.fromEntries(Object.entries(spec.byChoice.cents).map(([k, v]) => [k, v + delta])) } } : {}),
+  };
+}
+
+/** A server-rendered amount that includes shipping, moved by the live-shipping difference. Outside checkout it is just the amount. */
+export function ShipMoney({ cents }: { cents: number }) {
+  return <>{formatCents(cents + useShipTax().deltaCents)}</>;
+}
+
+/** The chosen version's total (or any per-version amount that includes shipping). */
+export function ShipTaxMoney({ cents }: { cents: Record<string, number> }) {
+  const { variant, deltaCents } = useShipTax();
+  const base = cents[variant];
+  return <>{base === undefined ? "" : formatCents(base + deltaCents)}</>;
 }
 
 /** Renders its children only for the chosen version (server-rendered totals for one state, or for no tax). */
@@ -66,8 +132,8 @@ function useChoice(field: string | undefined): string | null {
  * state change) never sends a figure it didn't update; the server then simply charges its own.
  */
 export function ExpectedCharge({ amounts }: { amounts: Record<string, ApplePayAmount> }) {
-  const { variant } = useShipTax();
-  const spec = amounts[variant];
+  const { variant, deltaCents } = useShipTax();
+  const spec = shiftAmount(amounts[variant], deltaCents);
   const choice = useChoice(spec?.byChoice?.field);
   // False on the server and before hydration, true once the page is interactive.
   const ready = useSyncExternalStore(
