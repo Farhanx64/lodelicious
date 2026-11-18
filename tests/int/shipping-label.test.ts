@@ -150,8 +150,27 @@ describe("live shipping at checkout (D67)", () => {
     expect(order.fulfillment).toMatchObject({ shippingCents: 1192, box: expect.stringContaining("Small box"), weightLbs: 2 });
     expect(seen.at(-1)).toEqual({ zip: "12207", weight: 2 });
 
+    // No flat-rate fallback: Shippo can't price it, so the quote says so and nothing is charged.
     const down = { ...w.ctx, liveShipping: async () => null };
     const t2 = await bagWith({ payload, ctx: down }, p.id);
-    expect(await quoteLiveShipping(payload, t2, down as never, { zip: "12207", state: "NY" })).toEqual({ cents: 895, live: false });
+    expect(await quoteLiveShipping(payload, t2, down as never, { zip: "12207", state: "NY" })).toEqual({ error: "no_rate" });
+    const refused = await placeOrder(payload, { cartToken: t2, form, now: NOW }, down as never);
+    expect(refused).toMatchObject({ ok: false, error: expect.stringMatching(/couldn't work out shipping.*Nothing was charged/) });
+    // Without Shippo set up at all (local, tests) the Settings → Shipping rules still apply.
+    expect(await quoteLiveShipping(payload, t2, w.ctx, { zip: "12207", state: "NY" })).toEqual({ cents: 895, live: false });
+
+    // Heavier than every box: priced in the largest box at its real weight.
+    const { liveRaterFrom } = await import("@/src/lib/shipping/live-rate");
+    const { DEFAULT_BOXES } = await import("@/src/lib/shipping/boxes");
+    const sent: unknown[] = [];
+    const fakeFetch = async (_url: string, init: RequestInit) => {
+      sent.push(JSON.parse(String(init.body)));
+      return Response.json({ object_id: SHIPMENT, rates: [{ object_id: RATE, provider: "UPS", servicelevel: { name: "Ground", token: "ups_ground" }, amount: "40.00", currency: "USD" }] });
+    };
+    const from = { name: "Shop", street1: "1 Main St", city: "Plymouth", state: "MA", zip: "02360", country: "US" as const };
+    const rater = liveRaterFrom(TEST, from, fakeFetch)!;
+    expect(await rater({ box: null, reason: "too_heavy", weightLbs: 9, heaviestLbs: 7 }, { zip: "12207", state: "NY" }, DEFAULT_BOXES)).toBe(4000);
+    expect((sent[0] as { parcels: { length: string; weight: string }[] }).parcels[0]).toMatchObject({ length: "22", weight: "9" });
+    expect(await rater({ box: null, reason: "missing_weight", missing: ["X"] }, { zip: "12207", state: "NY" }, DEFAULT_BOXES)).toBeNull();
   });
 });

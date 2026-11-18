@@ -9,7 +9,7 @@ import { whyNoShipping, type FulfillmentMethod, type ShippingQuote } from "@/src
  * without JavaScript; the current one is marked `aria-current`. Shipping that this order can't have
  * is shown greyed out, with the reason under the switch.
  */
-export function FulfillmentChoice({ path, method, shipping }: { path: string; method: FulfillmentMethod; shipping: ShippingQuote }) {
+export function FulfillmentChoice({ path, method, shipping, liveShipping = false }: { path: string; method: FulfillmentMethod; shipping: ShippingQuote; liveShipping?: boolean }) {
   const option = (value: FulfillmentMethod, title: string, detail: string, enabled: boolean) => {
     const current = method === value;
     const base = "flex min-h-12 flex-1 flex-col items-center justify-center rounded-md px-3 py-1.5 text-center no-underline";
@@ -40,7 +40,7 @@ export function FulfillmentChoice({ path, method, shipping }: { path: string; me
       </p>
       <div role="group" aria-labelledby="fulfillment-heading" className="flex gap-1 rounded-lg bg-coastal-pale p-1">
         {option("pickup", "Pickup", "Free, in our shop", true)}
-        {option("ship", "Ship", shipping.available ? formatCents(shipping.cents) : "Not available", shipping.available)}
+        {option("ship", "Ship", shipping.available ? (liveShipping ? "Priced by ZIP code" : formatCents(shipping.cents)) : "Not available", shipping.available)}
       </div>
       {!shipping.available && shipping.reason === "not_shippable" && <p className="mt-2 text-sm text-ink-soft">{whyNoShipping(shipping)}</p>}
       <input type="hidden" name="method" value={method} />

@@ -1745,8 +1745,11 @@ called Clover:** the Clover side is tested against scripted fixtures only. One m
   weight (D60) from the shop to the customer's ZIP. The page asks `/checkout/ship-quote` as soon as a
   5-digit ZIP is typed and moves every total (summary, Pay button, Apple/Google Pay sheet, expected
   charge) by the difference; placeOrder prices it again the same way and charges that.
-- Falls back to the D54 rules (flat $8.95 / basket size) when Shippo is off (`SHIPPO_CHECKOUT_RATES=off`
-  or no token), the bag has no box (missing weight or over 7 lb), or Shippo errors or takes over 8 s.
+- No flat-rate fallback (2026-11-17, at the owner's request): until a ZIP is priced the page shows
+  "Enter ZIP code" for shipping, and Pay and the wallet buttons are locked. If Shippo can't price it
+  (missing weight, error, over 8 s) nothing is charged and the customer retries or picks up. An order
+  over the largest box's maximum is priced in the largest box at its real weight. The D54 rules apply
+  only where Shippo isn't set up (local, tests, `SHIPPO_CHECKOUT_RATES=off`).
 - Cheapest rate, not USPS only: big boxes are priced by size, and UPS Ground can be a third of USPS.
   Staff buy the top (cheapest) rate in the label panel (D66).
 - Orders only. Build a Basket reservations keep the basket-size rates.

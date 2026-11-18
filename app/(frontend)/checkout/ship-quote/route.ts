@@ -15,6 +15,6 @@ export async function POST(request: Request): Promise<Response> {
   if (!/^\d{5}$/.test(zip) || !/^[A-Z]{2}$/.test(state)) return Response.json({ error: "zip" }, { status: 400 });
   const { payload, ctx } = await checkoutPayload();
   const quote = await quoteLiveShipping(payload, await bagToken(), ctx, { zip, state });
-  if (!quote) return Response.json({ error: "not_shippable" }, { status: 409 });
+  if ("error" in quote) return Response.json(quote, { status: quote.error === "no_rate" ? 503 : 409 });
   return Response.json(quote, { headers: { "Cache-Control": "no-store" } });
 }
