@@ -1,9 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { faqJsonLd, jsonLdText, metaText, productJsonLd, storeJsonLd } from "./index";
+import { faqJsonLd, jsonLdText, metaText, productJsonLd, siteUrlFrom, storeJsonLd } from "./index";
 import { OCCASIONS, occasionBySlug } from "./occasions";
 
 describe("seo helpers (D68)", () => {
+  it("uses the first address when NEXT_PUBLIC_SITE_URL lists several", () => {
+    expect(siteUrlFrom("https://shoplodelicious.com,https://www.shoplodelicious.com")).toBe("https://shoplodelicious.com");
+    expect(siteUrlFrom(" https://a.test/ ")).toBe("https://a.test");
+    expect(siteUrlFrom(undefined)).toBe("https://shoplodelicious.com");
+  });
+
   it("never ships placeholder meta text and trims at a word", () => {
     expect(metaText("From the allergen chart; price, size and photo still needed.")).toBeUndefined();
     const long = "word ".repeat(60);

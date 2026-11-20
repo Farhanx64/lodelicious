@@ -4,8 +4,13 @@
  */
 import type { Product, StoreSetting } from "@/payload-types";
 
-/** The one canonical address. http:// and www. redirect here (next.config.ts). */
-export const SITE_URL = (process.env.NEXT_PUBLIC_SITE_URL || "https://shoplodelicious.com").replace(/\/+$/, "");
+/** The first entry of NEXT_PUBLIC_SITE_URL: on the live store it lists the apex and www for CSRF. */
+export function siteUrlFrom(raw: string | undefined): string {
+  const first = (raw ?? "").split(",").map((s) => s.trim()).find((s) => /^https?:\/\//.test(s));
+  return (first || "https://shoplodelicious.com").replace(/\/+$/, "");
+}
+
+export const SITE_URL = siteUrlFrom(process.env.NEXT_PUBLIC_SITE_URL);
 export const CANONICAL_HOST = new URL(SITE_URL).host;
 
 export const absoluteUrl = (path: string) => `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
