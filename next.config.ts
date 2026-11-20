@@ -13,21 +13,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Evaluated at build time (D41): HSTS only for a production build (APP_ENV not local, staging or test).
   headers: async () => securityHeaders({ hsts: process.env.NODE_ENV === "production" && !isPreviewEnv() }),
-  // One canonical host for search (D68): www. and plain http:// go to https://shoplodelicious.com.
-  // Only on the live domain, so local, tunnel and staging hosts are untouched.
+  // One canonical host for search (D68): www. goes to https://shoplodelicious.com. Plain http is not
+  // matched here: behind Cloudflare every request reaches the Worker marked http, so a rule on
+  // x-forwarded-proto redirects HTTPS to itself (loop, 2026-11-20). HSTS and canonical links cover http.
   redirects: async () => [
     {
       source: "/:path*",
       has: [{ type: "host", value: "www.shoplodelicious.com" }],
-      destination: "https://shoplodelicious.com/:path*",
-      permanent: true,
-    },
-    {
-      source: "/:path*",
-      has: [
-        { type: "host", value: "shoplodelicious.com" },
-        { type: "header", key: "x-forwarded-proto", value: "http" },
-      ],
       destination: "https://shoplodelicious.com/:path*",
       permanent: true,
     },
