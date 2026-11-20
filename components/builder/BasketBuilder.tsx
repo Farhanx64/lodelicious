@@ -123,7 +123,17 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
   }.`;
 
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+    <div className="flex flex-col gap-8">
+      {/* The basket being built sits at the top, so it fills up in view as items are added (owner, 2026-11-20). */}
+      <section aria-label="Basket preview" className="relative">
+        <BasketPreview3D items={previewItems} size={size} />
+        <p aria-hidden="true" className="pointer-events-none absolute bottom-3 left-4 rounded-full bg-paper/85 px-3 py-1 text-sm text-ink">
+          {result.totals.itemCount === 0
+            ? "Add items below and watch your basket fill"
+            : `${result.totals.itemCount} of ${result.countRange.min}–${result.countRange.max} items · ${formatCents(result.totals.totalCents)}`}
+        </p>
+      </section>
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
       <div className="flex flex-col gap-10">
         {previewStock && (
           <p role="note" className="border border-gold bg-blush p-4 text-ink">
@@ -373,7 +383,6 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         <p className="sr-only" aria-live="polite">
           {liveSummary}
         </p>
-        <BasketPreview3D items={previewItems} size={size} />
         <dl className="mb-4 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
           <dt>Items</dt>
           <dd className={result.totals.itemCount > result.countRange.max ? "font-semibold text-error" : ""}>
@@ -478,6 +487,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
           )}
         </div>
       </aside>
+      </div>
     </div>
   );
 }

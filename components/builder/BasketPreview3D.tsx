@@ -285,5 +285,5 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
     api.current?.setSize(size);
   }, [size]);
 
-  return <div ref={mount} aria-hidden="true" className="mb-4 h-72 w-full cursor-grab touch-pan-y rounded-lg bg-gradient-to-b from-coastal-pale to-cream active:cursor-grabbing" />;
+  return <div ref={mount} aria-hidden="true" className="h-[min(62vh,28rem)] w-full cursor-grab touch-pan-y rounded-lg bg-gradient-to-b from-coastal-pale to-cream active:cursor-grabbing" />;
 }
