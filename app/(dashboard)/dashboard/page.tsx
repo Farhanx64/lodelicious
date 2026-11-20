@@ -29,13 +29,22 @@ export default async function DashboardPage() {
           <p className="text-sm tracking-[0.2em] text-gold-text uppercase">Lodelicious</p>
           <h1 className="font-display text-[clamp(2rem,5vw,3rem)] leading-tight">Shop dashboard</h1>
         </div>
-        <nav className="flex gap-3 text-sm">
-          <Link className="rounded-full border border-gold px-4 py-2 hover:bg-ivory" href="/admin/collections/orders">
-            Orders
-          </Link>
-          <Link className="rounded-full bg-coastal-deep px-4 py-2 text-white hover:opacity-90" href="/admin">
-            Open admin
-          </Link>
+        <nav className="flex flex-wrap gap-2 text-sm" aria-label="Admin">
+          {[
+            ["Orders", "/admin/collections/orders"],
+            ["Reservations", "/admin/collections/reservations"],
+            ["Inquiries", "/admin/collections/inquiries"],
+            ["Products", "/admin/collections/products"],
+            ["Store details", "/admin/globals/store-settings"],
+          ].map(([label, href], i) => (
+            <Link
+              key={href}
+              className={i === 0 ? "rounded-full bg-coastal-deep px-4 py-2 text-white hover:opacity-90" : "rounded-full border border-gold bg-paper px-4 py-2 hover:bg-ivory"}
+              href={href}
+            >
+              {label}
+            </Link>
+          ))}
         </nav>
       </header>
 

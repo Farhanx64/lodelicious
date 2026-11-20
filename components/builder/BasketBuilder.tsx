@@ -21,6 +21,8 @@ import {
 } from "@/src/lib/gifts";
 import { formatCents, parseCents } from "@/src/lib/money";
 
+import { BasketPreview3D, type PreviewItem } from "./BasketPreview3D";
+
 const GIFT_TYPE_OPTIONS: { value: GiftType; label: string; hint: string }[] = [
   { value: "sweet", label: "Sweet", hint: "Chocolates, fudge and candy" },
   { value: "savory", label: "Savory", hint: "Crackers, nuts and snacks" },
@@ -104,7 +106,16 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
     });
   }
 
-  const liveSummary = `${result.totals.itemCount} of ${result.countRange.min} to ${result.countRange.max} items. Total ${formatCents(result.totals.totalCents)}${
+  const previewItems = useMemo<PreviewItem[]>(
+    () =>
+      Object.entries(chosen).map(([id, quantity]) => {
+        const d = displayById.get(id);
+        return { id, quantity, title: d?.title ?? "Item", imageUrl: d?.imageUrl ?? null, premium: !!catalog.get(id)?.premium };
+      }),
+    [chosen, displayById, catalog],
+  );
+
+  const liveSummary =`${result.totals.itemCount} of ${result.countRange.min} to ${result.countRange.max} items. Total ${formatCents(result.totals.totalCents)}${
     result.totals.remainingBudgetCents !== null ? `, ${formatCents(result.totals.remainingBudgetCents)} of budget left` : ""
   }.`;
 
@@ -348,6 +359,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         <p className="sr-only" aria-live="polite">
           {liveSummary}
         </p>
+        <BasketPreview3D items={previewItems} size={size} />
         <dl className="mb-4 grid grid-cols-[1fr_auto] gap-x-4 gap-y-1">
           <dt>Items</dt>
           <dd className={result.totals.itemCount > result.countRange.max ? "font-semibold text-error" : ""}>
