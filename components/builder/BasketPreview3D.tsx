@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
+import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
 import { createProductModels, type ModelProduct } from "./product-models";
 
@@ -11,27 +12,43 @@ const SIZE_SCALE: Record<string, number> = { small: 0.8, medium: 0.92, large: 1.
 
 /** A woven-look band texture drawn on a canvas: no image files to load. */
 function wickerTexture(): THREE.CanvasTexture {
+  // Over-under weave: horizontal reeds passing in front of and behind upright stakes.
   const c = document.createElement("canvas");
-  c.width = 256;
-  c.height = 128;
+  c.width = 512;
+  c.height = 256;
   const g = c.getContext("2d")!;
-  g.fillStyle = "#b99870";
-  g.fillRect(0, 0, 256, 128);
-  for (let y = 0; y < 128; y += 16) {
-    for (let x = 0; x < 256; x += 32) {
-      const shift = (y / 16) % 2 ? 16 : 0;
-      const grad = g.createLinearGradient(x + shift, y, x + shift + 28, y + 14);
-      grad.addColorStop(0, "#d2b58e");
-      grad.addColorStop(1, "#8e6f4c");
+  g.fillStyle = "#6f5233";
+  g.fillRect(0, 0, 512, 256);
+  const row = 16;
+  const stake = 32;
+  for (let y = 0; y < 256; y += row) {
+    const odd = (y / row) % 2;
+    for (let x = -stake; x < 512 + stake; x += stake) {
+      const sx = x + (odd ? stake / 2 : 0);
+      const grad = g.createLinearGradient(0, y + 1, 0, y + row - 1);
+      grad.addColorStop(0, "#c9a477");
+      grad.addColorStop(0.45, "#e4c9a0");
+      grad.addColorStop(1, "#9c7a52");
       g.fillStyle = grad;
       g.beginPath();
-      g.roundRect(x + shift + 2, y + 2, 28, 12, 6);
+      g.ellipse(sx + stake / 2, y + row / 2, stake / 2 + 3, row / 2 - 1.5, 0, 0, Math.PI * 2);
       g.fill();
     }
   }
+  // Fine grain on the reeds
+  g.globalAlpha = 0.12;
+  g.strokeStyle = "#5a4128";
+  for (let y = 2; y < 256; y += 3) {
+    g.beginPath();
+    g.moveTo(0, y);
+    g.lineTo(512, y + ((y * 7) % 3) - 1);
+    g.stroke();
+  }
+  g.globalAlpha = 1;
   const t = new THREE.CanvasTexture(c);
   t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  t.repeat.set(6, 2);
+  t.repeat.set(5, 1.6);
+  t.anisotropy = 4;
   t.colorSpace = THREE.SRGBColorSpace;
   return t;
 }
@@ -57,19 +74,32 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(el.clientWidth, el.clientHeight);
     renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 0.92;
     el.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, el.clientWidth / el.clientHeight, 0.1, 100);
-    camera.position.set(0, 5.2, 9);
-    camera.lookAt(0, 1, 0);
-    scene.add(new THREE.HemisphereLight(0xffffff, 0xeadccf, 1.7));
-    const sun = new THREE.DirectionalLight(0xffffff, 1.6);
-    sun.position.set(4, 9, 5);
+    // Soft studio reflections so foil, satin and cellophane read as what they are.
+    const pmrem = new THREE.PMREMGenerator(renderer);
+    const envMap = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    scene.environment = envMap;
+    scene.environmentIntensity = 0.45;
+    const camera = new THREE.PerspectiveCamera(32, el.clientWidth / el.clientHeight, 0.1, 100);
+    camera.position.set(0, 4.6, 7.4);
+    camera.lookAt(0, 1.9, 0);
+    scene.add(new THREE.HemisphereLight(0xfff6f0, 0xefd5ce, 0.6));
+    const sun = new THREE.DirectionalLight(0xfff1e6, 1.4);
+    sun.position.set(3, 8, 6);
     sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.radius = 4;
     scene.add(sun);
+    const rimLight = new THREE.DirectionalLight(0xf8e6e8, 0.6);
+    rimLight.position.set(-5, 4, -4);
+    scene.add(rimLight);
 
-    const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 48), new THREE.ShadowMaterial({ opacity: 0.12 }));
+    const floor = new THREE.Mesh(new THREE.CircleGeometry(6, 48), new THREE.ShadowMaterial({ opacity: 0.1 }));
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
@@ -88,21 +118,47 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
     const handle = new THREE.Mesh(new THREE.TorusGeometry(2.3, 0.08, 10, 48, Math.PI), new THREE.MeshStandardMaterial({ color: 0x8e6f4c, roughness: 0.8 }));
     handle.position.y = 1.65;
     basket.add(handle);
+    // Satin bow with tails on the handle, the shop's signature.
     const bow = new THREE.Group();
-    const ribbon = new THREE.MeshStandardMaterial({ color: 0x9c4459, roughness: 0.5 });
+    const ribbon = new THREE.MeshPhysicalMaterial({ color: 0x9c4459, roughness: 0.4, sheen: 1, sheenColor: new THREE.Color(0xffffff), sheenRoughness: 0.3 });
     [-1, 1].forEach((s) => {
-      const loop = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.07, 8, 24), ribbon);
-      loop.position.x = s * 0.3;
-      loop.scale.set(1, 0.6, 1);
+      const loop = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.09, 10, 28), ribbon);
+      loop.position.x = s * 0.32;
+      loop.rotation.z = s * 0.25;
+      loop.scale.set(1, 0.62, 0.8);
       bow.add(loop);
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.7, 0.03), ribbon);
+      tail.position.set(s * 0.18, -0.38, 0.02);
+      tail.rotation.z = s * 0.35;
+      bow.add(tail);
     });
-    bow.add(new THREE.Mesh(new THREE.SphereGeometry(0.12, 12, 12), ribbon));
+    bow.add(new THREE.Mesh(new THREE.SphereGeometry(0.13, 16, 12), ribbon));
     bow.position.set(0, 3.95, 0);
+    bow.traverse((o) => (o.castShadow = true));
     basket.add(bow);
-    // Tissue paper the items sit in
-    const tissue = new THREE.Mesh(new THREE.CylinderGeometry(2.15, 1.85, 0.4, 32), new THREE.MeshStandardMaterial({ color: 0xf8e6e8, roughness: 1 }));
+    // Blush tissue, then a crinkle-paper bed the treats nestle into.
+    const tissue = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 1.85, 0.4, 40), new THREE.MeshStandardMaterial({ color: 0xf8e6e8, roughness: 1 }));
     tissue.position.y = 1.2;
     basket.add(tissue);
+    // A scalloped collar of puffed tissue paper just inside the rim, blush and ivory.
+    const PETALS = 28;
+    const petalGeo = new THREE.SphereGeometry(0.34, 16, 10);
+    petalGeo.scale(1, 0.42, 0.62);
+    const petals = new THREE.InstancedMesh(petalGeo, new THREE.MeshStandardMaterial({ roughness: 0.95 }), PETALS);
+    const dummy = new THREE.Object3D();
+    for (let i = 0; i < PETALS; i++) {
+      const a = (i / PETALS) * Math.PI * 2 + (i % 2) * 0.08;
+      const r = 2.1 - (i % 2) * 0.05;
+      dummy.position.set(Math.cos(a) * r, 1.62 + (i % 3) * 0.03, Math.sin(a) * r);
+      dummy.rotation.set(0, -a + Math.PI / 2, 0);
+      dummy.rotateX(-0.35);
+      dummy.updateMatrix();
+      petals.setMatrixAt(i, dummy.matrix);
+      petals.setColorAt(i, new THREE.Color(i % 2 ? 0xf7f0ea : 0xf3d3d0));
+    }
+    petals.castShadow = true;
+    petals.receiveShadow = true;
+    basket.add(petals);
 
     const models = createProductModels();
     const placed = new Map<string, THREE.Group>();
@@ -112,10 +168,12 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
       // Wider baskets of contents use four compact columns; keep corners inside the rim.
       const columns = count > 12 ? 4 : 3;
       const row = Math.floor((i % (columns * 4)) / columns);
+      // Rows step down toward the viewer and sink into the shred, like a hand-packed basket.
+      const jitter = ((i * 37) % 7) / 7 - 0.5;
       return new THREE.Vector3(
-        ((i % columns) - (columns - 1) / 2) * (columns === 4 ? 0.92 : 1.05),
-        1.43 + Math.floor(i / (columns * 4)) * 1.5,
-        -1.15 + row * 0.85,
+        ((i % columns) - (columns - 1) / 2) * (columns === 4 ? 0.92 : 1.02) + jitter * 0.12 + (row % 2) * 0.22,
+        1.36 - row * 0.05 + Math.floor(i / (columns * 4)) * 1.3,
+        -1.05 + row * 0.72,
       );
     };
 
@@ -141,9 +199,9 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
       const arranged = [...placed.values()].sort((a, b) => b.userData.height - a.userData.height);
       arranged.forEach((mesh, i) => {
         const p = slot(i, units.length);
-        mesh.scale.setScalar(units.length > 12 ? 0.82 : 1);
+        mesh.scale.setScalar(units.length > 12 ? 1.08 : 1.3);
         mesh.userData.target = p;
-        mesh.rotation.y = p.x * 0.12;
+        mesh.rotation.y = p.x * 0.18 + (((i * 53) % 9) / 9 - 0.5) * 0.25;
         if (reduce) mesh.position.copy(p);
       });
     };
@@ -210,6 +268,8 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
       geometries.forEach((g) => g.dispose());
       materials.forEach((m) => m.dispose());
       wicker.dispose();
+      envMap.dispose();
+      pmrem.dispose();
       renderer.dispose();
       el.removeChild(renderer.domElement);
       api.current = null;
