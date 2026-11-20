@@ -110,7 +110,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
     () =>
       Object.entries(chosen).map(([id, quantity]) => {
         const d = displayById.get(id);
-        return { id, quantity, title: d?.title ?? "Item", imageUrl: d?.imageUrl ?? null, premium: !!catalog.get(id)?.premium };
+        return { id, quantity, title: d?.title ?? "Item", categoryName: d?.categoryName, brand: d?.brand, premium: !!catalog.get(id)?.premium };
       }),
     [chosen, displayById, catalog],
   );

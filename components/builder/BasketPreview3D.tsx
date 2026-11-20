@@ -3,10 +3,11 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-export type PreviewItem = { id: string; title: string; quantity: number; imageUrl: string | null; premium: boolean };
+import { createProductModels, type ModelProduct } from "./product-models";
+
+export type PreviewItem = ModelProduct & { quantity: number };
 
 const SIZE_SCALE: Record<string, number> = { small: 0.8, medium: 0.92, large: 1.05, extra_large: 1.2 };
-const FILL = [0xd58f9c, 0xb99870, 0xefd5ce, 0x9c4459, 0xeadccf];
 
 /** A woven-look band texture drawn on a canvas: no image files to load. */
 function wickerTexture(): THREE.CanvasTexture {
@@ -37,7 +38,7 @@ function wickerTexture(): THREE.CanvasTexture {
 
 /**
  * A live 3D picture of the basket being built: the basket grows with the chosen size and each item
- * drops in as a box wearing its product photo. Decorative only; the list beside it is the record.
+ * drops in as a locally modelled product. Decorative only; the list beside it is the record.
  */
 export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: string }) {
   const mount = useRef<HTMLDivElement>(null);
@@ -103,18 +104,19 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
     tissue.position.y = 1.2;
     basket.add(tissue);
 
-    const loader = new THREE.TextureLoader();
-    const textures = new Map<string, THREE.Texture>();
-    const placed = new Map<string, THREE.Mesh>();
+    const models = createProductModels();
+    const placed = new Map<string, THREE.Group>();
     let targetScale = SIZE_SCALE[size] ?? 1;
 
-    const slot = (i: number) => {
-      const ring = i < 6 ? 0 : 1;
-      const k = ring ? i - 6 : i;
-      const n = ring ? 10 : 6;
-      const r = ring ? 1.5 : 0.75;
-      const a = (k / n) * Math.PI * 2 + ring * 0.3;
-      return new THREE.Vector3(Math.cos(a) * r * (i === 0 ? 0 : 1), 1.75 + (ring ? 0 : 0.35) + Math.floor(i / 16) * 0.6, Math.sin(a) * r * (i === 0 ? 0 : 1));
+    const slot = (i: number, count: number) => {
+      // Wider baskets of contents use four compact columns; keep corners inside the rim.
+      const columns = count > 12 ? 4 : 3;
+      const row = Math.floor((i % (columns * 4)) / columns);
+      return new THREE.Vector3(
+        ((i % columns) - (columns - 1) / 2) * (columns === 4 ? 0.92 : 1.05),
+        1.43 + Math.floor(i / (columns * 4)) * 1.5,
+        -1.15 + row * 0.85,
+      );
     };
 
     const setItems = (list: PreviewItem[]) => {
@@ -123,38 +125,25 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
       for (const [key, mesh] of placed) {
         if (!keep.has(key)) {
           basket.remove(mesh);
-          (mesh.material as THREE.Material[]).forEach((m) => m.dispose());
-          mesh.geometry.dispose();
           placed.delete(key);
         }
       }
       units.forEach(({ key, it }, i) => {
         let mesh = placed.get(key);
         if (!mesh) {
-          const color = FILL[[...it.id].reduce((n, ch) => n + ch.charCodeAt(0), 0) % FILL.length];
-          const side = new THREE.MeshStandardMaterial({ color, roughness: 0.6, metalness: it.premium ? 0.35 : 0 });
-          const front = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.6 });
-          if (it.imageUrl) {
-            let tex = textures.get(it.imageUrl);
-            if (!tex) {
-              tex = loader.load(it.imageUrl);
-              tex.colorSpace = THREE.SRGBColorSpace;
-              textures.set(it.imageUrl, tex);
-            }
-            front.map = tex;
-          } else front.color.set(color);
-          const h = it.premium ? 1.05 : 0.85;
-          mesh = new THREE.Mesh(new THREE.BoxGeometry(0.75, h, 0.35), [side, side, side, side, front, front]);
-          mesh.castShadow = true;
-          mesh.position.copy(slot(i)).add(new THREE.Vector3(0, reduce ? 0 : 3, 0));
-          mesh.userData.drop = !reduce;
+          mesh = models.create(it);
+          mesh.position.copy(slot(i, units.length)).add(new THREE.Vector3(0, reduce ? 0 : 3, 0));
           basket.add(mesh);
           placed.set(key, mesh);
         }
-        const p = slot(i);
+      });
+      // Tall bars and plush gifts at the back, short trays at the front.
+      const arranged = [...placed.values()].sort((a, b) => b.userData.height - a.userData.height);
+      arranged.forEach((mesh, i) => {
+        const p = slot(i, units.length);
+        mesh.scale.setScalar(units.length > 12 ? 0.82 : 1);
         mesh.userData.target = p;
-        mesh.rotation.y = Math.atan2(p.x, p.z) || 0;
-        mesh.rotation.x = -0.15;
+        mesh.rotation.y = p.x * 0.12;
         if (reduce) mesh.position.copy(p);
       });
     };
@@ -207,13 +196,19 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
       el.removeEventListener("pointerdown", down);
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      // Product resources are shared and owned by their pool, including removed items.
+      placed.forEach((model) => basket.remove(model));
+      models.dispose();
+      const geometries = new Set<THREE.BufferGeometry>();
+      const materials = new Set<THREE.Material>();
       scene.traverse((o) => {
         if (o instanceof THREE.Mesh) {
-          o.geometry.dispose();
-          [o.material].flat().forEach((m: THREE.Material) => m.dispose());
+          geometries.add(o.geometry);
+          [o.material].flat().forEach((m: THREE.Material) => materials.add(m));
         }
       });
-      textures.forEach((t) => t.dispose());
+      geometries.forEach((g) => g.dispose());
+      materials.forEach((m) => m.dispose());
       wicker.dispose();
       renderer.dispose();
       el.removeChild(renderer.domElement);
@@ -230,5 +225,5 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
     api.current?.setSize(size);
   }, [size]);
 
-  return <div ref={mount} aria-hidden="true" className="mb-4 h-56 w-full cursor-grab touch-pan-y rounded-lg bg-gradient-to-b from-coastal-pale to-cream active:cursor-grabbing" />;
+  return <div ref={mount} aria-hidden="true" className="mb-4 h-72 w-full cursor-grab touch-pan-y rounded-lg bg-gradient-to-b from-coastal-pale to-cream active:cursor-grabbing" />;
 }
