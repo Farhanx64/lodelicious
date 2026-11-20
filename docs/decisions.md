@@ -1762,7 +1762,7 @@ called Clover:** the Clover side is tested against scripted fixtures only. One m
 ## D68 — Search basics (2026-11-20)
 
 From the SEO research of 2026-11-20 (competitors and national gift-basket stores):
-- One canonical host: www. and http:// redirect (301) to https://shoplodelicious.com (`next.config.ts`); every page sets a canonical link through `metadataBase`.
+- One canonical host: www. redirects to https://shoplodelicious.com (`next.config.ts`); http is covered by HSTS and canonicals (a rule on x-forwarded-proto looped behind Cloudflare and was removed); every page sets a canonical link through `metadataBase`.
 - `sitemap.xml` (static pages, occasion pages, every visible product) and a `Sitemap:` line in robots.txt; checkout, cart, account and the dashboard are disallowed.
 - Structured data (`src/lib/seo`): the shop as `ConfectioneryStore` on every page; `Product` + `Offer`/`AggregateOffer` + `BreadcrumbList` on product pages (price only when approved); `FAQPage` on occasion, delivery and corporate pages.
 - Titles name the product or occasion and the town: template `%s | Lodelicious Plymouth, MA`. Meta descriptions never ship placeholder text.
