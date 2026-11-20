@@ -1,0 +1,129 @@
+/*
+ * Lodelicious brand for the admin. Payload's own styles sit in @layer payload-default, so these
+ * unlayered rules win. The warm cream→ink ramp replaces Payload's grey one; Payload maps it to
+ * elevations itself, so light and dark mode both follow. Accent ("success") = the shop's rose.
+ */
+@font-face {
+  font-family: "Lodelicious Display";
+  src: url("../fonts/cormorant-garamond-latin.woff2") format("woff2");
+  font-weight: 500 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Lodelicious Sans";
+  src: url("../fonts/source-sans-3-latin.woff2") format("woff2");
+  font-weight: 400 600;
+  font-display: swap;
+}
+
+:root {
+  --font-body: "Lodelicious Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --style-radius-s: 6px;
+  --style-radius-m: 10px;
+  --style-radius-l: 16px;
+
+  --color-base-0: #ffffff;
+  --color-base-50: #fbf8f5;
+  --color-base-100: #f7f2ee;
+  --color-base-150: #f1e9e2;
+  --color-base-200: #eadccf;
+  --color-base-250: #e3d8cc;
+  --color-base-300: #d9c9b9;
+  --color-base-350: #cbb7a4;
+  --color-base-400: #b99870;
+  --color-base-450: #a68760;
+  --color-base-500: #8e765c;
+  --color-base-550: #7b6652;
+  --color-base-600: #665a4e;
+  --color-base-650: #5a4d41;
+  --color-base-700: #4d4137;
+  --color-base-750: #43382f;
+  --color-base-800: #3b2f25;
+  --color-base-850: #30261e;
+  --color-base-900: #261e17;
+  --color-base-950: #1a1410;
+  --color-base-1000: #0f0b08;
+
+  --color-success-50: #fbf2f3;
+  --color-success-100: #f8e6e8;
+  --color-success-150: #f2d3d7;
+  --color-success-200: #ebc0c6;
+  --color-success-250: #e3abb4;
+  --color-success-300: #d58f9c;
+  --color-success-350: #c97b8a;
+  --color-success-400: #bb6779;
+  --color-success-450: #ad5569;
+  --color-success-500: #9c4459;
+  --color-success-550: #8b3c4f;
+  --color-success-600: #7a3445;
+  --color-success-650: #692c3b;
+  --color-success-700: #582531;
+  --color-success-750: #481e28;
+  --color-success-800: #39171f;
+  --color-success-850: #2b1118;
+  --color-success-900: #1e0c10;
+  --color-success-950: #12070a;
+}
+
+/* Cream page, like the shop, in light mode */
+html[data-theme="light"] {
+  --theme-bg: #f7f2ee;
+}
+html[data-theme="light"] body,
+html[data-theme="light"] .template-default {
+  background: #f7f2ee;
+}
+
+/* Headings in the shop's serif */
+.payload__app h1,
+.payload__app h2,
+.payload__app h3,
+.render-title,
+.doc-header__title,
+.list-header h1,
+.collection-list__header h1 {
+  font-family: "Lodelicious Display", "Iowan Old Style", Georgia, serif;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+/* Primary buttons in the brand rose, pill-shaped like the shop */
+.btn--style-primary {
+  background-color: #9c4459;
+  color: #fff;
+  border-radius: 999px;
+}
+.btn--style-primary:hover,
+.btn--style-primary:focus-visible {
+  background-color: #7a3445;
+}
+.btn--style-secondary {
+  border-radius: 999px;
+}
+
+/* Sidebar: a soft linen panel with gold group labels */
+[data-theme="light"] .nav {
+  background: #f7f0ea;
+  border-right: 1px solid #e3d8cc;
+}
+.nav-group__toggle {
+  color: #735a39;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.75rem;
+}
+
+/* Login: cream page with the logo centred */
+[data-theme="light"] .template-minimal {
+  background: radial-gradient(ellipse at top, #f8e6e8, #f7f2ee 60%);
+}
+.login__brand img {
+  max-width: 220px;
+  height: auto;
+}
+
+/* Cards and table rows lift off the cream */
+[data-theme="light"] .card,
+[data-theme="light"] .table table {
+  background: #ffffff;
+}

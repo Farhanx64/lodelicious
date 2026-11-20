@@ -60,6 +60,12 @@ export default buildConfig({
     meta: {
       titleSuffix: " — Lodelicious admin",
     },
+    // Brand (logo, colours in app/(payload)/brand.css) and the 3D shop dashboard as the admin home.
+    components: {
+      graphics: { Logo: "@/components/admin/Brand#BrandLogo", Icon: "@/components/admin/Brand#BrandIcon" },
+      beforeNavLinks: ["@/components/admin/Brand#DashboardNavLink"],
+      views: { dashboard: { Component: "@/components/admin/Brand#DashboardRedirect" } },
+    },
   },
   // The admin sidebar and dashboard list groups in the order their first collection appears here, then
   // the globals inside them, so the order below is the order staff see:
