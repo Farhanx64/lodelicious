@@ -1758,3 +1758,14 @@ called Clover:** the Clover side is tested against scripted fixtures only. One m
 - All 58 shippable products have weights (23 estimated 2026-11-17, to be replaced by Lody's scale).
 - Handling: $2 (`SHIPPING_HANDLING_CENTS`, default 200) is added to every live shipping price for
   packing. It is inside the "Shipping" figure, not a separate line (owner, 2026-11-17).
+
+## D68 — Search basics (2026-11-20)
+
+From the SEO research of 2026-11-20 (competitors and national gift-basket stores):
+- One canonical host: www. and http:// redirect (301) to https://shoplodelicious.com (`next.config.ts`); every page sets a canonical link through `metadataBase`.
+- `sitemap.xml` (static pages, occasion pages, every visible product) and a `Sitemap:` line in robots.txt; checkout, cart, account and the dashboard are disallowed.
+- Structured data (`src/lib/seo`): the shop as `ConfectioneryStore` on every page; `Product` + `Offer`/`AggregateOffer` + `BreadcrumbList` on product pages (price only when approved); `FAQPage` on occasion, delivery and corporate pages.
+- Titles name the product or occasion and the town: template `%s | Lodelicious Plymouth, MA`. Meta descriptions never ship placeholder text.
+- Occasion pages `/gift-baskets/<sympathy|birthday|thank-you|cape-cod|christmas>`, plus `/gift-basket-delivery` (one service-area page, not one per town) and `/corporate-gifts`. Copy promises only what the shop does (pickup, DoorDash delivery, US shipping); no delivery dates or fees.
+- Card photos keep their alt text (for image search) and stay `aria-hidden` (so screen readers don't read the title twice).
+Not done here: WebP images and page caching (both need hosting changes), reviews on the site.

@@ -13,6 +13,25 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   // Evaluated at build time (D41): HSTS only for a production build (APP_ENV not local, staging or test).
   headers: async () => securityHeaders({ hsts: process.env.NODE_ENV === "production" && !isPreviewEnv() }),
+  // One canonical host for search (D68): www. and plain http:// go to https://shoplodelicious.com.
+  // Only on the live domain, so local, tunnel and staging hosts are untouched.
+  redirects: async () => [
+    {
+      source: "/:path*",
+      has: [{ type: "host", value: "www.shoplodelicious.com" }],
+      destination: "https://shoplodelicious.com/:path*",
+      permanent: true,
+    },
+    {
+      source: "/:path*",
+      has: [
+        { type: "host", value: "shoplodelicious.com" },
+        { type: "header", key: "x-forwarded-proto", value: "http" },
+      ],
+      destination: "https://shoplodelicious.com/:path*",
+      permanent: true,
+    },
+  ],
 };
 
 export default withPayload(nextConfig, { devBundleServerPackages: false });

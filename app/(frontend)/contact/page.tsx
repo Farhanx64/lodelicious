@@ -13,7 +13,8 @@ import { getStoreSettings } from "@/src/lib/store";
 import { submitContact } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Contact",
+  title: "Contact Us",
+  alternates: { canonical: "/contact" },
   description: "Ask us about a product, a gift or a special order. Find our address, phone, email and hours.",
 };
 

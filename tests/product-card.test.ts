@@ -67,11 +67,10 @@ describe("ProductCard", () => {
     expect(render(basket({ priceApproved: true, priceCents: null }))).toContain("Price on request");
   });
 
-  it("gives the card photo an empty alt, so the title is not read twice, and hides the placeholder tile (A18)", () => {
+  it("hides the card photo from screen readers so the title is not read twice, but keeps its alt for image search (A18, D68)", () => {
     const media = { id: 3, alt: "Large Gift Basket", approvedForLaunch: true, url: "/api/media/file/a.jpg", sizes: {}, updatedAt: "", createdAt: "" } as unknown as Media;
     const withPhoto = render(basket({ images: [{ image: media }] }));
-    expect(withPhoto).toContain('alt=""');
-    expect(withPhoto).not.toContain('alt="Large Gift Basket"');
+    expect(withPhoto).toMatch(/alt="Large Gift Basket" aria-hidden="true"/);
     expect(render(basket())).toMatch(/aria-hidden="true"[^>]*>Photo coming soon/);
   });
 });

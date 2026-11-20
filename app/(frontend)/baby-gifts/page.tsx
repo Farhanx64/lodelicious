@@ -12,7 +12,7 @@ import { contactHref } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
 
-export const metadata: Metadata = { title: "Baby Gifts" };
+export const metadata: Metadata = { title: "Baby Gift Baskets & New Baby Gifts", alternates: { canonical: "/baby-gifts" } };
 
 export default async function BabyGiftsPage() {
   const payload = await getPayload({ config });

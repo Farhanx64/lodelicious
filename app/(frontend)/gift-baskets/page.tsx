@@ -6,10 +6,12 @@ import { primaryButton, secondaryButton } from "@/components/checkout/styles";
 import { GIFT_BASKET_CATEGORY, groupGiftBaskets } from "@/src/lib/catalog/gift-baskets";
 import { listProducts } from "@/src/lib/catalog/queries";
 import { telHref } from "@/src/lib/phone";
+import { OCCASIONS } from "@/src/lib/seo/occasions";
 import { getStoreSettings } from "@/src/lib/store";
 
 export const metadata: Metadata = {
-  title: "Gift Baskets",
+  title: "Gift Baskets Made by Hand",
+  alternates: { canonical: "/gift-baskets" },
   description: "Ready-made gift baskets assembled by hand in our Plymouth shop. The price includes the basket and presentation.",
 };
 
@@ -32,6 +34,17 @@ export default async function GiftBasketsPage() {
         Our curated baskets are assembled by hand in our Plymouth shop. The price of a curated basket already includes
         the basket and its presentation, with nothing added for packaging.
       </p>
+      <nav aria-label="Gift baskets by occasion" className="mb-6">
+        <ul className="flex flex-wrap gap-2">
+          {[...OCCASIONS.map((o) => ({ href: `/gift-baskets/${o.slug}`, label: o.name })), { href: "/corporate-gifts", label: "Corporate" }, { href: "/gift-basket-delivery", label: "Delivery & shipping" }].map((l) => (
+            <li key={l.href}>
+              <Link href={l.href} className="inline-flex min-h-11 items-center rounded-full border border-gold bg-paper px-4 no-underline hover:bg-ivory">
+                {l.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
       <div className="mb-10 max-w-[68ch] border-l-4 border-gold bg-paper p-4">
         <p className="mb-2">
           {inquiryNote && `${inquiryNote} `}

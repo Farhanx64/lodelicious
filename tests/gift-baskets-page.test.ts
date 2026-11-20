@@ -49,7 +49,7 @@ beforeEach(() => {
 
 describe("/gift-baskets", () => {
   it("has a title and one h1", async () => {
-    expect(metadata.title).toBe("Gift Baskets");
+    expect(metadata.title).toBe("Gift Baskets Made by Hand");
     mocks.products = [basket("small-gift-basket", "Small Gift Basket")];
     expect((await render()).match(/<h1[ >]/g)).toHaveLength(1);
   });
@@ -104,7 +104,7 @@ describe("/gift-baskets", () => {
   it("has an empty state that still offers the other routes", async () => {
     const html = await render();
     expect(html).toContain("Our gift baskets will be listed here soon.");
-    expect(html).not.toContain("<ul");
+    expect(html).not.toContain("group relative");
     for (const href of ["/build-a-basket", "/contact?topic=gift_basket", "/contact?topic=gift_box"]) expect(html).toContain(`href="${href}"`);
   });
 });

@@ -4,7 +4,11 @@ import Link from "next/link";
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { listCategories, listProducts } from "@/src/lib/catalog/queries";
 
-export const metadata: Metadata = { title: "Shop" };
+export const metadata: Metadata = {
+  title: "Shop Chocolates, Fudge, Candy & Gifts",
+  description: "Phillips chocolates, Cape Cod fudge, candy and gifts from our family-owned shop in Manomet, Plymouth MA. Order online for pickup or shipping.",
+  alternates: { canonical: "/shop" },
+};
 
 type Props = { searchParams: Promise<{ q?: string; category?: string }> };
 

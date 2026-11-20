@@ -13,7 +13,8 @@ import { getStoreSettings } from "@/src/lib/store";
 import { submitFountain } from "./actions";
 
 export const metadata: Metadata = {
-  title: "Chocolate fountain rentals",
+  title: "Chocolate Fountain Rental for Events on the South Shore",
+  alternates: { canonical: "/events" },
   description: "Add a chocolate fountain to your event. See the price, work out an estimate and send us your request.",
 };
 

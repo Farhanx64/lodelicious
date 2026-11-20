@@ -5,6 +5,8 @@ import "../globals.css";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { ReceiptBar } from "@/components/receipt/ReceiptBar";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { SITE_URL, storeJsonLd } from "@/src/lib/seo";
 import { isPreviewEnv } from "@/src/lib/app-env";
 import { bagCount } from "@/src/lib/checkout/session";
 import { brandColor } from "@/src/lib/brand-color";
@@ -29,12 +31,24 @@ const sourceSans = localFont({
 // Titles follow the shop name in Website → Store details, so a rename reaches every tab title.
 export async function generateMetadata(): Promise<Metadata> {
   const { name } = await getStoreSettings();
+  const description =
+    "Hand-made gift baskets, Phillips chocolates, fudge and candy from a family-owned shop in Manomet, Plymouth MA. Pickup, local delivery and US shipping.";
   return {
+    // Canonical links and Open Graph URLs resolve against the one live host (D68).
+    metadataBase: new URL(SITE_URL),
     title: {
-      default: `${name} — Sweets, Chocolates & Gifts · Plymouth, MA`,
-      template: `%s — ${name}`,
+      default: `Gift Baskets, Chocolates & Candy in Plymouth, MA | ${name}`,
+      template: `%s | ${name} Plymouth, MA`,
     },
-    description: "Gift baskets, chocolates and sweets from a family-owned shop in Plymouth, Massachusetts.",
+    description,
+    openGraph: {
+      type: "website",
+      siteName: name,
+      locale: "en_US",
+      description,
+      images: [{ url: "/brand/logo-1024.png", width: 1024, height: 1024, alt: name }],
+    },
+    twitter: { card: "summary", images: ["/brand/logo-1024.png"] },
     // Staging previews shared with the client must not end up in search results.
     robots: isPreviewEnv() ? { index: false, follow: false } : undefined,
   };
@@ -52,6 +66,7 @@ export default async function FrontendLayout({ children }: Readonly<{ children: 
       <head>
         {/* Brand colour from Website → Store details (validated there for readable white text). */}
         <style>{`:root{--color-coastal-deep:${brandColor(store.brandColor)}}`}</style>
+        <JsonLd data={storeJsonLd(store)} />
       </head>
       <body className="flex min-h-screen flex-col">
         <a href="#main" className="skip-link">

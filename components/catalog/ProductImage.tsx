@@ -43,7 +43,10 @@ export function ProductImage({
       src={src}
       srcSet={candidates.length ? candidates.join(", ") : undefined}
       sizes={size === "large" ? "(min-width: 768px) 50vw, 100vw" : "(min-width: 768px) 25vw, 50vw"}
-      alt={decorative ? "" : doc.alt}
+      // Decorative copies (next to the product name in a card) stay hidden from screen readers, but keep
+      // their alt text for image search (D68).
+      alt={doc.alt || ""}
+      aria-hidden={decorative || undefined}
       width={doc.width ?? undefined}
       height={doc.height ?? undefined}
       loading={priority ? "eager" : "lazy"}
