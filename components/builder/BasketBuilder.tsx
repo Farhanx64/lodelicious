@@ -256,7 +256,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
             4. Choose your items
           </h2>
           <p className="mb-3 text-sm text-ink-soft">
-            One of each item, unless it&rsquo;s sold as an assortment. Premium items (Phillips Chocolate, Cape Cod Fudge, OMNIYA, Swiss chocolate) count toward your total.
+            One of each item, unless it&rsquo;s sold as an assortment. Premium items (Phillips Chocolate, OMNIYA, Swiss chocolate) count toward your total.
           </p>
           <div role="group" aria-label="Filter items by category" className="mb-4 flex flex-wrap gap-2">
             {["", ...categories].map((c) => (

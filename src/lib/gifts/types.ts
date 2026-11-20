@@ -92,7 +92,7 @@ export type BuilderProduct = {
   priceCents: Cents | null;
   priceApproved: boolean;
   stock: StockState;
-  /** Verified premium brand (Phillips, Cape Cod Fudge, OMNIYA, Swiss Chocolate). Never inferred. */
+  /** Verified premium brand (Phillips, OMNIYA, Swiss Chocolate; fudge is never premium). Never inferred. */
   premium: boolean;
   giftTypes: GiftType[];
   basketEligible: boolean;
