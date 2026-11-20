@@ -1,6 +1,8 @@
 import * as THREE from "three";
 import { RoundedBoxGeometry } from "three/examples/jsm/geometries/RoundedBoxGeometry.js";
 
+import { buildLook, productLook } from "./product-looks";
+
 export type ProductKind = "bar" | "chocolates" | "fudge" | "candyJar" | "pouch" | "bottle" | "tin" | "lollipop" | "plush" | "gift";
 export type ModelProduct = { id: string; title: string; categoryName?: string | null; brand?: string | null; premium: boolean };
 
@@ -139,6 +141,31 @@ export function createProductModels() {
     return m;
   }
 
+  /** A cached material painted on a canvas sized to the face it covers (lettering keeps its shape). */
+  function paint(key: string, w: number, h: number, draw: (g: CanvasRenderingContext2D, W: number, H: number, serif: string) => void) {
+    const k = `paint:${key}`;
+    let m = materials.get(k);
+    if (m) return m;
+    m = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.55 });
+    if (typeof document !== "undefined") {
+      const W = 512;
+      const H = Math.max(64, Math.round((512 * h) / w));
+      const canvas = document.createElement("canvas");
+      canvas.width = W; canvas.height = H;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        const serifVar = getComputedStyle(document.documentElement).getPropertyValue("--font-cormorant").trim();
+        draw(ctx, W, H, `${serifVar ? `${serifVar}, ` : ""}"Cormorant Garamond", Georgia, serif`);
+        const texture = new THREE.CanvasTexture(canvas);
+        texture.colorSpace = THREE.SRGBColorSpace;
+        texture.anisotropy = 4;
+        textures.set(k, texture); m.map = texture;
+      }
+    }
+    materials.set(k, m);
+    return m;
+  }
+
   function create(product: ModelProduct): THREE.Group {
     const group = new THREE.Group();
     const kind = productKind(product);
@@ -156,7 +183,7 @@ export function createProductModels() {
     const ball = (m: THREE.Material, s: V3, p: V3) => part(group, "sphere", m, s, p);
     const tag = (w: number, hgt: number, p: V3, r?: V3) => part(group, "plane", label, [w, hgt, 1], p, r);
     /** Satin bow: two loops, a knot and two tails. */
-    const bow = (y: number, z: number, s = 1, m = ribbon) => {
+    const bow = (y: number, z: number, s = 1, m: THREE.Material = ribbon) => {
       [-1, 1].forEach((sign) => {
         part(group, "loop", m, [0.15 * s, 0.09 * s, 0.1 * s], [sign * 0.13 * s, y, z], [0, 0, sign * 0.35]);
         part(group, "box", m, [0.05 * s, 0.2 * s, 0.012], [sign * 0.06 * s, y - 0.1 * s, z + 0.01], [0, 0, sign * 0.4]);
@@ -259,7 +286,24 @@ export function createProductModels() {
         bow(0.82, 0, 1.1);
       },
     };
-    factories[kind]();
+    // The real packaging when we know the product (product-looks.ts); the generic model otherwise.
+    const look = productLook(product);
+    if (look) {
+      group.userData.look = look.id;
+      buildLook(look, {
+        group,
+        box,
+        hard: (m, s, p, r) => part(group, "box", m, s, p, r),
+        cyl,
+        ball,
+        ring: (m, s, p, r) => part(group, "loop", m, s, p, r),
+        bag: (m, s, p) => part(group, "bag", m, s, p),
+        plane: (m, s, p, r) => part(group, "plane", m, [s[0], s[1], 1], p, r),
+        mat: (color, finish) => material(color, finish ?? "paper"),
+        paint,
+        bow: (y, z, s, m) => bow(y, z, s, m),
+      });
+    } else factories[kind]();
     // Soft packaging leans into its neighbours; boxes sit a touch back so their fronts face the viewer.
     group.rotation.z = (h % 2 ? 1 : -1) * (kind === "pouch" ? 0.1 : kind === "bar" ? 0.08 : 0.02);
     group.rotation.x = kind === "bar" ? -0.18 : kind === "fudge" || kind === "chocolates" ? -0.1 : 0;
