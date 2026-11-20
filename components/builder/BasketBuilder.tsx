@@ -57,7 +57,10 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
 
   const catalog = useMemo(() => catalogOf(products), [products]);
   const displayById = useMemo(() => new Map(display.map((d) => [d.id, d])), [display]);
-  const categories = useMemo(() => [...new Set(display.map((d) => d.categoryName).filter(Boolean))].sort(), [display]);
+  // Only products tagged for the chosen gift type are offered (Products → Gift builder → Gift types).
+  const inType = (id: string, type: GiftType) => catalog.get(id)?.giftTypes.includes(type) ?? false;
+  const typeDisplay = useMemo(() => display.filter((d) => catalog.get(d.id)?.giftTypes.includes(giftType)), [display, catalog, giftType]);
+  const categories = useMemo(() => [...new Set(typeDisplay.map((d) => d.categoryName).filter(Boolean))].sort(), [typeDisplay]);
 
   let budgetCents: number | null = null;
   let budgetError: string | null = null;
@@ -79,7 +82,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
   const premiumRemaining = premiumCap === null ? null : premiumCap - result.totals.premiumCount;
   const blocking = result.violations.filter((v) => v.code !== "COUNT_BELOW_MIN");
 
-  const pickerItems = display
+  const pickerItems = typeDisplay
     .filter((d) => !category || d.categoryName === category)
     .map((d) => {
       const product = catalog.get(d.id)!;
@@ -92,7 +95,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
       });
       return { d, product, status };
     })
-    // Products that can never be in this gift type go last; nothing is hidden silently.
+    // Items out of stock or over budget stay visible with the reason, after the ones that can be added.
     .sort((a, b) => Number(!a.status.eligible) - Number(!b.status.eligible));
 
   function change(id: string, delta: number) {
@@ -141,6 +144,9 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                   onChange={() => {
                     setGiftType(o.value);
                     setServerResult(null);
+                    // Drop picks that aren't part of the new type, and a category it doesn't have.
+                    setChosen((current) => Object.fromEntries(Object.entries(current).filter(([id]) => inType(id, o.value))));
+                    if (category && !display.some((d) => d.categoryName === category && inType(d.id, o.value))) setCategory("");
                   }}
                   className="mt-1 size-5 accent-gold-text"
                 />
@@ -250,7 +256,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
             4. Choose your items
           </h2>
           <p className="mb-3 text-sm text-ink-soft">
-            One of each item, unless it&rsquo;s sold as an assortment. Premium items (Phillips Chocolate, Cape Cod Fudge, OMNIYA, Swiss chocolate) count toward your total.
+            One of each item, unless it&rsquo;s sold as an assortment. Premium items (Phillips Chocolate, OMNIYA, Swiss chocolate) count toward your total.
           </p>
           <div role="group" aria-label="Filter items by category" className="mb-4 flex flex-wrap gap-2">
             {["", ...categories].map((c) => (
@@ -266,7 +272,15 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
             ))}
           </div>
           {pickerItems.length === 0 ? (
-            <p className="border border-line bg-paper p-4">No items in this category right now.</p>
+            <p className="border border-line bg-paper p-4">
+              {typeDisplay.length === 0 ? (
+                <>
+                  No items for this kind of gift right now. Call <a href={phoneHref}>{phone}</a> and we&rsquo;ll put one together.
+                </>
+              ) : (
+                "No items in this category right now."
+              )}
+            </p>
           ) : (
             <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(14rem,100%),1fr))] gap-3">
               {pickerItems.map(({ d, product, status }) => {

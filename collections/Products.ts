@@ -256,7 +256,7 @@ export const Products: CollectionConfig = {
               defaultValue: false,
               admin: {
                 description:
-                  "Only for verified Phillips Chocolate, Cape Cod Fudge, OMNIYA Delicacy or Swiss Chocolate products. Counts toward the premium limit.",
+                  "Only for verified Phillips Chocolate, OMNIYA Delicacy or Swiss Chocolate products (never fudge). Counts toward the premium limit.",
               },
             },
             {
