@@ -11,7 +11,8 @@ import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
 
 export const metadata: Metadata = {
-  title: "Build a Basket",
+  title: "Build Your Own Custom Gift Basket",
+  alternates: { canonical: "/build-a-basket" },
   description: "Choose a size and fill a custom gift basket with chocolates, fudge and treats from our Plymouth shop.",
 };
 

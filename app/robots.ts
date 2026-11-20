@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { isPreviewEnv } from "@/src/lib/app-env";
+import { absoluteUrl, SITE_URL } from "@/src/lib/seo";
 
 // Read APP_ENV on each request. Without this Next builds robots.txt once, so a build made in a shell
 // with a different APP_ENV (CI, or the local .env) would fix the wrong rules into the live site (D41).
@@ -11,5 +12,9 @@ export default function robots(): MetadataRoute.Robots {
   if (isPreviewEnv()) {
     return { rules: { userAgent: "*", disallow: "/" } };
   }
-  return { rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/api", "/ops"] } };
+  return {
+    rules: { userAgent: "*", allow: "/", disallow: ["/admin", "/api", "/ops", "/dashboard", "/checkout", "/cart", "/reserve", "/account"] },
+    sitemap: absoluteUrl("/sitemap.xml"),
+    host: SITE_URL,
+  };
 }

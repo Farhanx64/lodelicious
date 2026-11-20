@@ -4,7 +4,7 @@ import { Bow } from "@/components/brand/Bow";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = { title: "About Our Family Candy & Gift Shop", alternates: { canonical: "/about" } };
 
 export default async function AboutPage() {
   const store = await getStoreSettings();

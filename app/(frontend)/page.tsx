@@ -20,6 +20,8 @@ const GRID = { "grid-2x2": "mx-auto max-w-[40rem]", "grid-3x2": "lg:grid-cols-3"
 
 const button = "caps inline-flex min-h-11 items-center px-7 text-[0.75rem] no-underline";
 
+export const metadata: import("next").Metadata = { alternates: { canonical: "/" } };
+
 export default async function HomePage() {
   const [store, home, reviews] = await Promise.all([getStoreSettings(), getHomePage(), getPayload({ config }).then(listReviews)]);
   const layout = favoritesLayout(home.favoritesLayout);

@@ -15,12 +15,37 @@ import { contactHref, topicForProduct } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
 import { getStoreSettings } from "@/src/lib/store";
 import { publishableProductImages } from "@/src/lib/media";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { breadcrumbJsonLd, metaText, productJsonLd } from "@/src/lib/seo";
 
 type Props = { params: Promise<{ slug: string }> };
 
+/** Price range of the options that have an approved price, or null. */
+function offerOf(product: NonNullable<Awaited<ReturnType<typeof getProduct>>>) {
+  if (!product.priceApproved) return null;
+  const units = sellableUnits(product).filter((u) => u.priceCents !== null);
+  if (!units.length) return null;
+  const cents = units.map((u) => u.priceCents as number);
+  return { lowCents: Math.min(...cents), highCents: Math.max(...cents), inStock: units.some((u) => u.availability.purchasable) };
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const product = await getProduct((await params).slug);
-  return product ? { title: product.title, description: product.shortDescription ?? undefined } : {};
+  if (!product) return {};
+  const category = typeof product.category === "object" ? (product.category as Category | null) : null;
+  const offer = offerOf(product);
+  const from = offer ? ` From $${(offer.lowCents / 100).toFixed(2)}.` : "";
+  // Title formula (D68): what it is, what kind of gift, where. Placeholder text never ships.
+  const kind = category?.name ? ` – ${category.name}` : "";
+  const description =
+    metaText(`${metaText(product.shortDescription, 110) ?? `${product.title}${product.brand ? ` by ${product.brand}` : ""}.`}${from} Pickup in Plymouth, MA, local delivery or US shipping.`) ?? undefined;
+  const image = publishableProductImages(product.images)[0];
+  return {
+    title: `${product.title}${kind}`,
+    description,
+    alternates: { canonical: `/shop/${product.slug}` },
+    openGraph: image?.url ? { images: [{ url: image.url, alt: image.alt || product.title }] } : undefined,
+  };
 }
 
 const NUT_FREE: Record<string, string> = {
@@ -50,6 +75,15 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <div className="mx-auto w-[min(100%-2rem,72rem)]">
+      <JsonLd
+        data={[
+          productJsonLd({ ...product, imageUrl: images[0]?.url ?? null }, offerOf(product)),
+          breadcrumbJsonLd([
+            { name: "Shop", path: "/shop" },
+            { name: product.title, path: `/shop/${product.slug}` },
+          ]),
+        ]}
+      />
       <nav aria-label="Breadcrumb" className="mb-6 text-sm">
         <ol className="flex flex-wrap gap-2">
           <li>
