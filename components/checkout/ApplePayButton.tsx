@@ -9,6 +9,13 @@ import { useWalletSubmit } from "./ActionForm";
 const MOUNT_ID = "apple-pay-button";
 const noSubscribe = () => () => {};
 
+/** Nothing is charged while the total is still being worked out; the sheet closes as failed. */
+function paymentWhilePaused(wallet: { showError(message: string): void } | null, name: string) {
+  const message = `Please wait for the shipping price, then pay with ${name} again. Nothing was charged.`;
+  wallet?.showError(message);
+  return { kind: "error" as const, message };
+}
+
 /** The current value of a radio group (inside the form or joined to it with `form="…"`). */
 function chosen(field: string): string | null {
   return document.querySelector<HTMLInputElement>(`input[type="radio"][name="${CSS.escape(field)}"]:checked`)?.value ?? null;
@@ -25,11 +32,14 @@ export function ApplePayButton({
   elements,
   sessionIdentifier,
   amount,
+  paused = false,
 }: {
   clover: CloverApplePay;
   elements: CloverElements;
   sessionIdentifier: string;
   amount: ApplePayAmount;
+  /** The total is being worked out (shipping not priced yet): the button stays mounted but can't be used. */
+  paused?: boolean;
 }) {
   const available = useSyncExternalStore(
     noSubscribe,
@@ -39,10 +49,12 @@ export function ApplePayButton({
   const wallet = useWalletSubmit();
   const walletRef = useRef(wallet);
   const amountRef = useRef(amount);
+  const pausedRef = useRef(paused);
   const control = useRef<ReturnType<typeof mountApplePay> | null>(null);
   useEffect(() => {
     walletRef.current = wallet;
     amountRef.current = amount;
+    pausedRef.current = paused;
   });
 
   useEffect(() => {
@@ -57,7 +69,10 @@ export function ApplePayButton({
         mountSelector: `#${MOUNT_ID}`,
         sessionIdentifier,
         amountCents: current(),
-        submit: (payment) => walletRef.current!.submit({ ...payment, wallet: "apple_pay" }),
+        submit: (payment) =>
+          pausedRef.current
+            ? Promise.resolve(paymentWhilePaused(walletRef.current, "Apple Pay"))
+            : walletRef.current!.submit({ ...payment, wallet: "apple_pay" }),
         showError: (message) => walletRef.current?.showError(message),
       });
     } catch {
@@ -85,7 +100,8 @@ export function ApplePayButton({
   if (!available || !wallet) return null;
   return (
     <div className="mb-5">
-      <div id={MOUNT_ID} className="h-12 w-full overflow-hidden rounded-lg" />
+      <div id={MOUNT_ID} className={`h-12 w-full overflow-hidden rounded-lg${paused ? " pointer-events-none opacity-40" : ""}`} aria-disabled={paused || undefined} />
+      {paused && <p className="mt-2 text-sm text-ink-soft">Apple Pay is ready once shipping is priced.</p>}
       <p className="mt-4 flex items-center gap-3 text-sm text-ink-soft" aria-hidden="true">
         <span className="h-px flex-1 bg-line" />
         or pay by card
