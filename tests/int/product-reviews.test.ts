@@ -71,7 +71,7 @@ describe("product reviews", () => {
   it("keeps the API closed to the public", async () => {
     const [doc] = (await payload.find({ collection: "product-reviews", overrideAccess: true })).docs;
     await expect(payload.find({ collection: "product-reviews", overrideAccess: false })).rejects.toThrow(FORBIDDEN);
-    await expect(payload.create({ collection: "product-reviews", data: { product: productId, name: "Bot", rating: 5, text: "Great great great" }, overrideAccess: false })).rejects.toThrow(FORBIDDEN);
+    await expect(payload.create({ collection: "product-reviews", data: { product: productId, name: "Bot", rating: 5, text: "Great great great", status: "approved" }, overrideAccess: false })).rejects.toThrow(FORBIDDEN);
     await expect(payload.update({ collection: "product-reviews", id: doc.id, data: { status: "approved" }, overrideAccess: false })).rejects.toThrow(FORBIDDEN);
   });
 
