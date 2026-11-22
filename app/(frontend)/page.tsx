@@ -62,7 +62,7 @@ export default async function HomePage() {
       </section>
 
       <section aria-label="From the shop" className="mb-12">
-        <PhotoStrip images={(home.stripImages ?? []).map((row) => row.image)} />
+        <PhotoStrip images={(home.stripImages ?? []).map((row) => row.image)} priority={!(hero && isImagePublishable(hero))} />
       </section>
 
       {featured.length > 0 && (

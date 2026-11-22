@@ -26,7 +26,7 @@ describe("product copy (D69)", () => {
     const pickupOnly = productFaqs(withPatch({ perishable: true }), "24 Manomet Point Rd., Plymouth, MA 02360");
     expect(pickupOnly.map((f) => f.q)).toEqual(["Can I pick this up in Plymouth?", "Can you ship it?"]);
     expect(pickupOnly[1].a).toMatch(/fresh item/);
-    expect(productFaqs(withPatch({ shippable: true, basketEligible: true }), "x").map((f) => f.a).join(" ")).toMatch(/within the US.*build a basket/s);
+    expect(productFaqs(withPatch({ shippable: true, basketEligible: true }), "x").map((f) => f.a).join(" ")).toMatch(/within the US[\s\S]*build a basket/);
     expect(productFaqs(withPatch({ channel: "inquiry_only" }), "x").map((f) => f.q)).toEqual(["How do I order this?"]);
   });
 
