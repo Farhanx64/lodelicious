@@ -18,11 +18,12 @@ const SHOP_LINKS = [
 
 /** Occasion and area landing pages (D68, D69), so every page links to them. */
 const GIFT_LINKS = [
-  ...["birthday", "sympathy", "new-baby", "get-well", "thank-you", "mothers-day", "valentines-day", "christmas"]
+  ...["birthday", "sympathy", "new-baby", "get-well", "thank-you", "thanksgiving", "christmas", "valentines-day"]
     .map(occasionBySlug)
     .filter((o): o is NonNullable<typeof o> => Boolean(o))
     .map((o) => ({ href: `/gift-baskets/${o.slug}`, label: o.name })),
   { href: "/corporate-gifts", label: "Corporate" },
+  { href: "/gift-baskets", label: "All occasions" },
 ];
 const AREA_LINKS = [...AREAS.map((a) => ({ href: `/gifts/${a.slug}`, label: a.linkLabel })), { href: "/gift-basket-delivery", label: "Delivery & shipping" }];
 

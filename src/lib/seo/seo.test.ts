@@ -44,7 +44,7 @@ describe("seo helpers (D68)", () => {
   });
 
   it("covers the round-2 occasions (D69)", () => {
-    for (const slug of ["mothers-day", "valentines-day", "new-baby", "get-well", "anniversary"]) expect(occasionBySlug(slug)?.faqs.length).toBeGreaterThan(0);
+    for (const slug of ["mothers-day", "valentines-day", "new-baby", "get-well", "anniversary", "thanksgiving", "easter", "fathers-day", "halloween", "hanukkah"]) expect(occasionBySlug(slug)?.faqs.length).toBeGreaterThan(0);
     expect(occasionBySlug("new-baby")?.categorySlugs).toContain("baby-gifts");
   });
 

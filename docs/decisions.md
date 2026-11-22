@@ -1774,6 +1774,7 @@ Not done here: WebP images and page caching (both need hosting changes), reviews
 
 **Landing pages.**
 - Five more occasions: `/gift-baskets/<mothers-day|valentines-day|new-baby|get-well|anniversary>` (copy in `src/lib/seo/occasions.ts`). New baby also lists the Baby gifts category and links `/baby-gifts`.
+- Holidays: `/gift-baskets/<thanksgiving|easter|fathers-day|halloween|hanukkah>`, next to the existing Christmas page. The Hanukkah page says plainly that we can't promise every item is kosher-certified. The footer lists eight occasions plus "All occasions" (`/gift-baskets`, which links every one).
 - Three service-area pages, one per area and not one per town: `/gifts/plymouth-ma`, `/gifts/south-shore-ma` (Kingston, Duxbury, Carver, Plympton), `/gifts/upper-cape-cod` (Bourne, Sandwich) (`src/lib/seo/areas.ts`). They say pickup in Manomet, DoorDash delivery "where DoorDash delivers" (DoorDash shows that at checkout) and US shipping. No delivery times, fees or radius.
 - Category pages `/shop/category/<slug>` with copy and FAQs for chocolate, fudge, candy, fresh treats and gift add-ons (`src/lib/seo/categories.ts`). Gift baskets and baby gifts redirect (308) to their own pages. `/shop?category=x` stays as the filter, with its canonical pointing at the category page.
 - All of them are in the sitemap, carry BreadcrumbList and FAQPage JSON-LD, and are linked from the footer ("Gift baskets for", "Local gifts"), `/gift-baskets` and `/gift-basket-delivery`.
