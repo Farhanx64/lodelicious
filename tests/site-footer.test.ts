@@ -31,7 +31,7 @@ describe("SiteFooter", () => {
   it("carries the board lockup and links to the shop sections not in the main nav", () => {
     const html = render();
     expect(html).toContain("Souset-Pink");
-    for (const href of ["/shop?category=fudge", "/shop?category=fresh-treats", "/baby-gifts", "/gift-baskets", "/events", "/contact"]) {
+    for (const href of ["/shop/category/fudge", "/shop/category/fresh-treats", "/baby-gifts", "/gift-baskets", "/events", "/contact", "/gift-baskets/sympathy", "/gift-baskets/new-baby", "/gifts/plymouth-ma", "/gift-basket-delivery"]) {
       expect(html).toContain(`href="${href}"`);
     }
     for (const href of ["/policies", "/policies/pickup-and-delivery", "/policies/cancellations-and-refunds", "/policies/privacy"]) {

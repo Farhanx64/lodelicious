@@ -1,8 +1,10 @@
 import type { MetadataRoute } from "next";
 
 import { isPreviewEnv } from "@/src/lib/app-env";
-import { listProducts } from "@/src/lib/catalog/queries";
+import { listCategories, listProducts } from "@/src/lib/catalog/queries";
 import { absoluteUrl } from "@/src/lib/seo";
+import { AREAS } from "@/src/lib/seo/areas";
+import { CATEGORY_PAGES_ELSEWHERE } from "@/src/lib/seo/categories";
 import { OCCASIONS } from "@/src/lib/seo/occasions";
 
 // Built per request, like robots.txt: products change in the admin and the sitemap must follow (D68).
@@ -24,10 +26,14 @@ const STATIC: { path: string; priority: number; changeFrequency: "daily" | "week
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   if (isPreviewEnv()) return [];
-  const products = await listProducts({ limit: 1000 });
+  const [products, categories] = await Promise.all([listProducts({ limit: 1000 }), listCategories()]);
   return [
     ...STATIC.map((s) => ({ url: absoluteUrl(s.path), changeFrequency: s.changeFrequency, priority: s.priority })),
     ...OCCASIONS.map((o) => ({ url: absoluteUrl(`/gift-baskets/${o.slug}`), changeFrequency: "weekly" as const, priority: 0.85 })),
+    ...AREAS.map((a) => ({ url: absoluteUrl(`/gifts/${a.slug}`), changeFrequency: "monthly" as const, priority: 0.8 })),
+    ...categories
+      .filter((c) => c.slug && !CATEGORY_PAGES_ELSEWHERE[c.slug])
+      .map((c) => ({ url: absoluteUrl(`/shop/category/${c.slug}`), changeFrequency: "weekly" as const, priority: 0.75 })),
     ...products
       .filter((p) => p.slug)
       .map((p) => ({ url: absoluteUrl(`/shop/${p.slug}`), lastModified: p.updatedAt ? new Date(p.updatedAt) : undefined, changeFrequency: "weekly" as const, priority: 0.6 })),

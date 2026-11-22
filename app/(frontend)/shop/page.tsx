@@ -3,14 +3,19 @@ import Link from "next/link";
 
 import { ProductCard } from "@/components/catalog/ProductCard";
 import { listCategories, listProducts } from "@/src/lib/catalog/queries";
-
-export const metadata: Metadata = {
-  title: "Shop Chocolates, Fudge, Candy & Gifts",
-  description: "Phillips chocolates, Cape Cod fudge, candy and gifts from our family-owned shop in Manomet, Plymouth MA. Order online for pickup or shipping.",
-  alternates: { canonical: "/shop" },
-};
+import { categoryHref } from "@/src/lib/seo/categories";
 
 type Props = { searchParams: Promise<{ q?: string; category?: string }> };
+
+/** A category filter here shows the same products as its category page, so that page is the canonical one (D69). */
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { category = "" } = await searchParams;
+  return {
+    title: "Shop Chocolates, Fudge, Candy & Gifts",
+    description: "Phillips chocolates, Cape Cod fudge, candy and gifts from our family-owned shop in Manomet, Plymouth MA. Order online for pickup or shipping.",
+    alternates: { canonical: /^[a-z0-9-]+$/.test(category) ? categoryHref(category) : "/shop" },
+  };
+}
 
 export default async function ShopPage({ searchParams }: Props) {
   const { q = "", category = "" } = await searchParams;

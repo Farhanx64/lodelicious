@@ -9,6 +9,7 @@ import { GIFT_BASKET_CATEGORY } from "@/src/lib/catalog/gift-baskets";
 import { listProducts } from "@/src/lib/catalog/queries";
 import { telHref } from "@/src/lib/phone";
 import { breadcrumbJsonLd, faqJsonLd } from "@/src/lib/seo";
+import { AREAS } from "@/src/lib/seo/areas";
 import { OCCASIONS, occasionBySlug } from "@/src/lib/seo/occasions";
 import { getStoreSettings } from "@/src/lib/store";
 
@@ -27,9 +28,13 @@ export default async function OccasionPage({ params }: Props) {
   const bySlug = new Map(baskets.map((p) => [p.slug, p]));
   const featured = o.basketSlugs.map((s) => bySlug.get(s)).filter((p): p is NonNullable<typeof p> => Boolean(p));
   const seen = new Set(featured.map((p) => p.id));
-  const more = o.match
-    ? all.filter((p) => !seen.has(p.id) && o.match!.test([p.title, p.brand, p.shortDescription].filter(Boolean).join(" "))).slice(0, 12)
-    : [];
+  const inCategory = (p: (typeof all)[number]) => {
+    const slug = typeof p.category === "object" && p.category ? p.category.slug : null;
+    return Boolean(slug && o.categorySlugs?.includes(slug));
+  };
+  const more = all
+    .filter((p) => !seen.has(p.id) && (inCategory(p) || (o.match?.test([p.title, p.brand, p.shortDescription].filter(Boolean).join(" ")) ?? false)))
+    .slice(0, 12);
   const others = OCCASIONS.filter((x) => x.slug !== o.slug);
 
   return (
@@ -55,6 +60,11 @@ export default async function OccasionPage({ params }: Props) {
         <a href={telHref(store.phone)} className={secondaryButton}>
           Call {store.phone}
         </a>
+        {o.related?.map((l) => (
+          <Link key={l.href} href={l.href} className={secondaryButton}>
+            {l.label}
+          </Link>
+        ))}
       </div>
 
       {featured.length > 0 && (
@@ -117,6 +127,11 @@ export default async function OccasionPage({ params }: Props) {
           <li>
             <Link href="/gift-basket-delivery">Delivery &amp; shipping</Link>
           </li>
+          {AREAS.map((a) => (
+            <li key={a.slug}>
+              <Link href={`/gifts/${a.slug}`}>{a.linkLabel}</Link>
+            </li>
+          ))}
         </ul>
       </nav>
     </div>

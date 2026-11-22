@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { faqJsonLd, jsonLdText, metaText, productJsonLd, siteUrlFrom, storeJsonLd } from "./index";
+import { AREAS, areaBySlug } from "./areas";
+import { CATEGORY_COPY, CATEGORY_PAGES_ELSEWHERE, categoryHref } from "./categories";
 import { OCCASIONS, occasionBySlug } from "./occasions";
 
 describe("seo helpers (D68)", () => {
@@ -39,5 +41,34 @@ describe("seo helpers (D68)", () => {
     for (const o of OCCASIONS) expect(o.faqs.length).toBeGreaterThan(0);
     expect(occasionBySlug("sympathy")?.h1).toBe("Sympathy Gift Baskets");
     expect(occasionBySlug("nope")).toBeNull();
+  });
+
+  it("covers the round-2 occasions (D69)", () => {
+    for (const slug of ["mothers-day", "valentines-day", "new-baby", "get-well", "anniversary"]) expect(occasionBySlug(slug)?.faqs.length).toBeGreaterThan(0);
+    expect(occasionBySlug("new-baby")?.categorySlugs).toContain("baby-gifts");
+  });
+
+  it("has one page per service area, each linking to real occasions (D69)", () => {
+    expect(new Set(AREAS.map((a) => a.slug)).size).toBe(AREAS.length);
+    for (const a of AREAS) {
+      expect(a.faqs.length).toBeGreaterThan(0);
+      for (const o of a.occasions) expect(occasionBySlug(o), `${a.slug} → ${o}`).not.toBeNull();
+    }
+    expect(areaBySlug("plymouth-ma")?.faqs.some((f) => f.a.includes("{address}"))).toBe(true);
+  });
+
+  it("category copy links to real occasions and sends baskets and baby gifts to their own pages (D69)", () => {
+    for (const c of CATEGORY_COPY) {
+      expect(CATEGORY_PAGES_ELSEWHERE[c.slug]).toBeUndefined();
+      for (const o of c.occasions) expect(occasionBySlug(o), `${c.slug} → ${o}`).not.toBeNull();
+    }
+    expect(categoryHref("gift-baskets")).toBe("/gift-baskets");
+    expect(categoryHref("fudge")).toBe("/shop/category/fudge");
+  });
+
+  it("never promises delivery dates, fees or times in landing copy (D68, D69)", () => {
+    const text = JSON.stringify([OCCASIONS.map((o) => ({ ...o, match: null })), AREAS.map((a) => ({ ...a, match: null })), CATEGORY_COPY]);
+    expect(text).not.toMatch(/same[- ]day|next[- ]day|free (delivery|shipping)|within \d+ (hours|days)|\$\d/i);
+    expect(text).not.toMatch(/placeholder|lorem|still needed|TODO/i);
   });
 });

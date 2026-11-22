@@ -6,13 +6,14 @@ import { primaryButton, secondaryButton } from "@/components/checkout/styles";
 import { GIFT_BASKET_CATEGORY, groupGiftBaskets } from "@/src/lib/catalog/gift-baskets";
 import { listProducts } from "@/src/lib/catalog/queries";
 import { telHref } from "@/src/lib/phone";
+import { AREAS } from "@/src/lib/seo/areas";
 import { OCCASIONS } from "@/src/lib/seo/occasions";
 import { getStoreSettings } from "@/src/lib/store";
 
 export const metadata: Metadata = {
   title: "Gift Baskets Made by Hand",
   alternates: { canonical: "/gift-baskets" },
-  description: "Ready-made gift baskets assembled by hand in our Plymouth shop. The price includes the basket and presentation.",
+  description: "Gift baskets put together by hand in our Plymouth, MA shop for birthdays, sympathy, new babies, holidays and thank-yous. Pickup, DoorDash delivery or US shipping.",
 };
 
 export default async function GiftBasketsPage() {
@@ -80,6 +81,23 @@ export default async function GiftBasketsPage() {
           </section>
         ))
       )}
+
+      <nav aria-labelledby="local-gifts" className="mb-10 max-w-[68ch]">
+        <h2 id="local-gifts" className="mb-2 text-2xl">
+          Gift baskets near you
+        </h2>
+        <p className="mb-3">
+          Pick up at our Manomet shop, order local delivery through DoorDash, or have it shipped anywhere in the US.{" "}
+          <Link href="/gift-basket-delivery">How delivery and shipping work</Link>.
+        </p>
+        <ul className="flex flex-wrap gap-3">
+          {AREAS.map((a) => (
+            <li key={a.slug}>
+              <Link href={`/gifts/${a.slug}`}>{a.h1}</Link>
+            </li>
+          ))}
+        </ul>
+      </nav>
 
       <div className="mb-8 grid gap-6 md:grid-cols-2">
         <section aria-labelledby="build-your-own" className="border-t-4 border-coastal-deep bg-coastal-pale p-5">
