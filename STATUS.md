@@ -12,6 +12,12 @@ WooCommerce build (commit 5c36c77, kept in history). SKU IQ replaced by an in-ho
 
 ## Where we left off
 
+**Search, round 2 (D69, 2026-11-22, PR open):**
+- New pages: 10 occasion and holiday pages (including Thanksgiving, Easter, Father's Day, Halloween and Hanukkah), 3 service-area pages (`/gifts/…`) and 5 category pages (`/shop/category/…`), all in the sitemap and the footer.
+- Product pages: unique descriptions, a short FAQ, "Pairs well with" and occasion links.
+- Photo sizes are WebP. Run `scripts/media-webp.ts` against R2 once after deploy: on a phone the home page photos go from 5.2 MB to 0.5 MB.
+- Customer product reviews, approved by staff in /admin → Website → Product reviews, with rating markup only from approved reviews. Needs the migration `20261122_070816_product_reviews` on D1.
+
 **Built (on `main` or the integration branch):**
 - **Admin:**
   - Every product, price, stock count, photo, basket rule, setting, policy, order, reservation and

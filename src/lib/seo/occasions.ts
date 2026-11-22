@@ -16,6 +16,10 @@ export type Occasion = {
   basketSlugs: readonly string[];
   /** Other products whose title, brand or description match (case-insensitive). */
   match: RegExp | null;
+  /** Whole shop categories whose products belong here too (e.g. baby-gifts for a new baby). */
+  categorySlugs?: readonly string[];
+  /** Extra internal links shown under the intro, e.g. the Baby Gifts page. */
+  related?: readonly { href: string; label: string }[];
   sections: readonly { heading: string; body: string }[];
   faqs: readonly { q: string; a: string }[];
 };
@@ -100,6 +104,199 @@ export const OCCASIONS: readonly Occasion[] = [
       { heading: "Ordering for a business?", body: "We make holiday baskets for teams and clients. See our corporate gifts page." },
     ],
     faqs: [{ q: "When should I order Christmas baskets?", a: "As early as you can in December, especially for several baskets or shipping. Custom baskets need notice before pickup." }],
+  },
+  {
+    slug: "mothers-day",
+    name: "Mother's Day",
+    title: "Mother's Day Gift Baskets in Plymouth, MA | Chocolates & Treats",
+    description: "Mother's Day gift baskets and chocolate gifts from a family-owned shop in Plymouth, MA. Phillips chocolates, sea salt caramels and treats. Pickup, delivery or shipping.",
+    h1: "Mother's Day Gift Baskets",
+    intro:
+      "For mom, grandma or anyone who has looked after you: a basket of chocolates and treats, put together by hand in our Plymouth shop. Choose one of our baskets, or build one around what she loves.",
+    basketSlugs: ["small-gift-basket", "medium-gift-basket", "large-gift-basket"],
+    match: /assortment|caramel|princess|rose|truffle/i,
+    sections: [
+      { heading: "Mother's Day gifts from the South Shore", body: PICKUP_DELIVERY },
+      { heading: "Plan ahead", body: "Custom baskets need notice before pickup, so order early, and call us if you need it on a particular day." },
+    ],
+    faqs: [
+      { q: "Can I send a Mother's Day basket to another state?", a: "Yes. We ship anywhere in the US, and shipping is priced at checkout from the ZIP code." },
+      { q: "Can I add a card?", a: "Yes. Add a gift message when you build a basket, or tell us the message when you order. Greeting cards are in the shop too." },
+      { q: "Can I choose what goes in the basket?", a: "Yes. Build a basket online: pick a size, set a budget if you like, and choose each item." },
+    ],
+  },
+  {
+    slug: "valentines-day",
+    name: "Valentine's Day",
+    title: "Valentine's Day Chocolates & Gift Baskets in Plymouth, MA",
+    description: "Valentine's Day chocolates and gift baskets from Plymouth, MA: Phillips assortment boxes, chocolate roses, caramels and sweets. Pickup, local delivery or US shipping.",
+    h1: "Valentine's Day Chocolates & Gifts",
+    intro:
+      "Chocolates are the classic Valentine's gift, and we keep plenty of them: Phillips assortment boxes, sea salt caramels and other sweets, alone or in a basket put together by hand in our Plymouth shop.",
+    basketSlugs: ["small-gift-basket", "medium-gift-basket"],
+    match: /assortment|caramel|princess|rose|truffle|cherr/i,
+    sections: [
+      { heading: "Valentine's gifts on the South Shore", body: PICKUP_DELIVERY },
+      { heading: "A basket for two", body: "Want something bigger than a box of chocolates? Build a basket with their favourite sweets and add a teddy bear or a card." },
+    ],
+    faqs: [
+      { q: "When should I order for Valentine's Day?", a: "As early as you can, especially for a custom basket or shipping. Call us if you need it on a particular day." },
+      { q: "Do you ship Valentine's chocolates?", a: "Yes, anywhere in the US. Shipping is priced at checkout from the ZIP code." },
+    ],
+  },
+  {
+    slug: "new-baby",
+    name: "New Baby",
+    title: "New Baby Gift Baskets in Plymouth, MA | Baby Keepsakes & Sweets",
+    description: "New baby and baby shower gift baskets from Plymouth, MA: keepsake ceramics in pink or blue, teddy bears, books and sweets for the new parents.",
+    h1: "New Baby Gift Baskets",
+    intro:
+      "Welcome a new arrival with keepsake ceramics in pink or blue, a teddy bear or a children's book, and sweets for the tired new parents. Put together by hand in our Plymouth shop.",
+    basketSlugs: [],
+    match: /baby|teddy|seuss/i,
+    categorySlugs: ["baby-gifts"],
+    related: [{ href: "/baby-gifts", label: "See all baby gifts" }],
+    sections: [
+      { heading: "For baby showers and new parents", body: `A gift for the shower, the hospital homecoming or the first visit. ${PICKUP_DELIVERY}` },
+      { heading: "Build a baby basket", body: "Choose the keepsakes and treats yourself when you build a basket online, or call us and we'll help you choose." },
+    ],
+    faqs: [
+      { q: "Do the baby ceramics come in pink and blue?", a: "The ceramic bowl, shoes and BABY block each come in pink or blue. Choose the colour on the product page." },
+      { q: "Can you deliver a baby gift in Plymouth?", a: `Yes. ${PICKUP_DELIVERY}` },
+    ],
+  },
+  {
+    slug: "get-well",
+    name: "Get Well",
+    title: "Get Well Soon Gift Baskets in Plymouth, MA | Treats & Comfort",
+    description: "Get well soon gift baskets from a family-owned Plymouth, MA shop: chocolates, snacks and comforting treats for someone recovering. Pickup, delivery or shipping.",
+    h1: "Get Well Soon Gift Baskets",
+    intro:
+      "A basket of favourite snacks and treats is a kind way to say \"thinking of you\" while someone recovers. We put each one together by hand in our Plymouth shop.",
+    basketSlugs: ["small-gift-basket", "medium-gift-basket", "large-savory-basket"],
+    match: /teddy|card|sugar-free/i,
+    sections: [
+      { heading: "Sending to a home or a hospital", body: `${PICKUP_DELIVERY} Hospitals have their own rules about deliveries and food, so check with them first; call us and we'll work out the best way.` },
+      { heading: "Sweet, savory or sugar-free", body: "Not everyone wants chocolate when they're unwell. We also have savory baskets and sugar-free sweets; tell us about dietary needs when you order." },
+    ],
+    faqs: [
+      { q: "Do you have sugar-free options?", a: "Yes, we carry sugar-free candy and chocolates. Ask us what's in stock, and tell us about any dietary needs when you order." },
+      { q: "Can I add a card message?", a: "Yes. Add a gift message when you build a basket, or tell us the message when you order." },
+    ],
+  },
+  {
+    slug: "anniversary",
+    name: "Anniversary",
+    title: "Anniversary Gift Baskets in Plymouth, MA | Chocolates & Sweets",
+    description: "Anniversary gift baskets and chocolates from Plymouth, MA: Phillips assortment boxes, sea salt caramels and treats for a couple or a work anniversary.",
+    h1: "Anniversary Gift Baskets",
+    intro:
+      "For a wedding anniversary, your parents' big year or a colleague's work milestone: chocolates and treats in a basket put together by hand in our Plymouth shop.",
+    basketSlugs: ["medium-gift-basket", "large-gift-basket", "extra-large-gift-basket"],
+    match: /assortment|caramel|princess|rose/i,
+    sections: [
+      { heading: "Anniversary gifts on the South Shore", body: PICKUP_DELIVERY },
+      { heading: "Work anniversaries", body: "Celebrating a team member's milestone? See our corporate gifts page for several baskets at once." },
+    ],
+    faqs: [
+      { q: "Can you make an anniversary basket for a couple?", a: "Yes. Build a basket online with sweets for two, or tell us what they like and we'll put one together." },
+      { q: "Can you ship an anniversary basket?", a: "Yes, anywhere in the US. Shipping is priced at checkout from the ZIP code." },
+    ],
+  },
+  {
+    slug: "thanksgiving",
+    name: "Thanksgiving",
+    title: "Thanksgiving Gift Baskets in Plymouth, MA | Hostess Gifts & Treats",
+    description: "Thanksgiving gift baskets and hostess gifts from Plymouth, MA: fudge, chocolates, Cranberry Bog Frogs and savory treats. Pickup, DoorDash delivery or US shipping.",
+    h1: "Thanksgiving Gift Baskets",
+    intro:
+      "Bringing something to the table, or sending thanks to family who can't make it? Our Thanksgiving baskets of fudge, chocolates and savory treats are put together by hand in Plymouth, a few miles from where the first Thanksgiving is remembered.",
+    basketSlugs: ["small-gift-basket", "medium-gift-basket", "large-savory-basket", "large-gift-basket"],
+    match: /cranberry|bog|fudge|caramel|bark/i,
+    sections: [
+      { heading: "A hostess gift for the holiday table", body: "A small basket or a box of chocolates is an easy thank-you for whoever is cooking. Build one around their favourites, or pick one of ours." },
+      { heading: "Pickup, delivery or shipping", body: `${PICKUP_DELIVERY} Thanksgiving week is busy for everyone, so order custom baskets early and call us if you need one on a particular day.` },
+    ],
+    faqs: [
+      { q: "Can I send a Thanksgiving basket to family in another state?", a: "Yes. We ship anywhere in the US, and shipping is priced at checkout from the ZIP code. Order early so it arrives in time." },
+      { q: "Do you have savory baskets for Thanksgiving?", a: "Yes. Our savory basket typically includes cheese, crackers, nuts, olives, pretzels and salami. Ask us what's in it today." },
+      { q: "Can I order several baskets for clients or staff?", a: "Yes. See our corporate gifts page or send us a message with how many you need and your budget." },
+    ],
+  },
+  {
+    slug: "easter",
+    name: "Easter",
+    title: "Easter Baskets in Plymouth, MA | Chocolates, Candy & Teddy Bears",
+    description: "Easter baskets from Plymouth, MA: chocolates, candy, Jordan almonds, lollipops and teddy bears for children and grown-ups. Pickup, DoorDash delivery or US shipping.",
+    h1: "Easter Baskets",
+    intro:
+      "Fill an Easter basket with chocolates, candy, Jordan almonds and lollipops, and add a teddy bear or a book for the little ones. Build your own online or ask us to put one together in our Plymouth shop.",
+    basketSlugs: ["small-gift-basket", "medium-gift-basket"],
+    match: /jordan|lollipop|pop|gumm|teddy|seuss|assortment/i,
+    sections: [
+      { heading: "For children and grown-ups", body: "Candy and a teddy bear for the kids, Phillips chocolates for the adults. Build a basket online and choose every item, or call us and we'll help." },
+      { heading: "Pickup, delivery or shipping", body: PICKUP_DELIVERY },
+    ],
+    faqs: [
+      { q: "Can I choose what goes in an Easter basket?", a: "Yes. Build a basket online: pick a size, set a budget if you like, and choose each item." },
+      { q: "Do you have sugar-free candy for Easter?", a: "We carry sugar-free candy such as sugar-free salt water taffy. Check each product's notes and ask us what's in stock." },
+    ],
+  },
+  {
+    slug: "fathers-day",
+    name: "Father's Day",
+    title: "Father's Day Gift Baskets in Plymouth, MA | Savory & Chocolate",
+    description: "Father's Day gift baskets from Plymouth, MA: savory snacks, dark chocolate, turtles, chocolate-covered nuts and coffee beans. Pickup, DoorDash delivery or US shipping.",
+    h1: "Father's Day Gift Baskets",
+    intro:
+      "For dad, grandpa or the father figure in your life: a savory basket, dark chocolate, turtles, chocolate-covered nuts or coffee beans, put together by hand in our Plymouth shop.",
+    basketSlugs: ["large-savory-basket", "medium-gift-basket", "large-gift-basket"],
+    match: /dark|turtle|hash|cashew|almond|coffee|bark/i,
+    sections: [
+      { heading: "Savory or sweet", body: "Not every dad wants chocolate. Our savory basket typically has cheese, crackers, nuts, olives, pretzels and salami; or build one around what he likes." },
+      { heading: "Pickup, delivery or shipping", body: PICKUP_DELIVERY },
+    ],
+    faqs: [
+      { q: "Can I ship a Father's Day basket?", a: "Yes, anywhere in the US. Shipping is priced at checkout from the ZIP code. Order early so it arrives in time." },
+      { q: "Can I add a card?", a: "Yes. Add a gift message when you build a basket, or tell us the message when you order." },
+    ],
+  },
+  {
+    slug: "halloween",
+    name: "Halloween",
+    title: "Halloween Candy & Treat Baskets in Plymouth, MA",
+    description: "Halloween candy and treat baskets from our Plymouth, MA candy shop: Swedish candy, taffy, gummy bears, lollipops and old-fashioned candy bars.",
+    h1: "Halloween Candy & Treat Baskets",
+    intro:
+      "Swedish candy, salt water taffy, gummy bears, lollipops and old-fashioned candy bars: treats for a party, a classroom or a Halloween basket, from our candy shelves in Manomet.",
+    basketSlugs: [],
+    match: /swedish|taffy|gumm|lollipop|pop|skybar|charleston|licorice|flush/i,
+    sections: [
+      { heading: "Treat baskets and party candy", body: "Build a basket of their favourite candy online, or come in and choose from the shelves." },
+      { heading: "Pickup, delivery or shipping", body: PICKUP_DELIVERY },
+    ],
+    faqs: [
+      { q: "Do you have allergy-friendly candy?", a: "Each product page lists the allergen and dietary notes we have for it. If a product has none yet, or a child has a serious allergy, please ask us before ordering." },
+      { q: "Can I build a Halloween basket?", a: "Yes. Build a basket online: pick a size, set a budget if you like, and choose the candy." },
+    ],
+  },
+  {
+    slug: "hanukkah",
+    name: "Hanukkah",
+    title: "Hanukkah Gift Baskets in Plymouth, MA | Chocolates & Sweets",
+    description: "Hanukkah gift baskets from Plymouth, MA: chocolates, fudge, Jordan almonds and sweets, put together by hand. Pickup, DoorDash delivery or US shipping.",
+    h1: "Hanukkah Gift Baskets",
+    intro: "Chocolates, fudge, Jordan almonds and other sweets for the eight nights, in a basket put together by hand in our Plymouth shop.",
+    basketSlugs: ["small-gift-basket", "medium-gift-basket", "large-gift-basket"],
+    match: /assortment|jordan|fudge|bark|coin/i,
+    sections: [
+      { heading: "Pickup, delivery or shipping", body: PICKUP_DELIVERY },
+      { heading: "Dietary needs", body: "We can't promise that every item is kosher-certified. Tell us what you need when you order, and ask us about specific products." },
+    ],
+    faqs: [
+      { q: "Are your Hanukkah baskets kosher?", a: "We can't promise kosher certification for every item. Ask us about specific products and we'll tell you what we know." },
+      { q: "Can I ship a Hanukkah basket?", a: "Yes, anywhere in the US. Shipping is priced at checkout from the ZIP code." },
+    ],
   },
 ];
 

@@ -102,9 +102,25 @@ function consoleLogger() {
   return logger;
 }
 
-export async function cloudflarePlatform(rootDir: string): Promise<Pick<Config, "db" | "logger" | "plugins">> {
+/** The R2 bucket, for scripts run with `payload run` (e.g. `scripts/media-webp.ts`). */
+export async function mediaBucket(): Promise<Bindings["R2"]> {
+  return (await bindings()).R2;
+}
+
+/**
+ * sharp only under the `payload` command line (D69): a Worker can't run it, but the WebP script
+ * run from a Mac against R2 can. Hidden from the bundler like wrangler.
+ */
+async function cliSharp(): Promise<Config["sharp"]> {
+  if (!isPayloadCli()) return undefined;
+  const mod = (await import(/* webpackIgnore: true */ `${"__sharp".replaceAll("_", "")}`)) as { default: Config["sharp"] };
+  return mod.default;
+}
+
+export async function cloudflarePlatform(rootDir: string): Promise<Pick<Config, "db" | "logger" | "plugins" | "sharp">> {
   const env = await bindings();
   return {
+    sharp: await cliSharp(),
     db: sqliteD1Adapter({
       binding: env.D1,
       migrationDir: path.resolve(rootDir, "migrations"),

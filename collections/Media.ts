@@ -44,6 +44,24 @@ export const mediaRead: Access = ({ req }) => {
  */
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 
+/**
+ * The resized copies the storefront serves (D69). Always WebP: a 720 px PNG card photo was about
+ * 1 MB, the same photo as WebP is a few dozen KB. The original is kept as uploaded. Made by sharp,
+ * so on Cloudflare they come from `scripts/media-webp.ts` rather than at upload time.
+ */
+export const IMAGE_SIZES = [
+  { name: "thumb", width: 320 },
+  { name: "card", width: 720 },
+  { name: "large", width: 1440 },
+] as const;
+export const WEBP_QUALITY = 80;
+
+/**
+ * Browsers keep a photo a day and may reuse it for a week while checking for a new one (D69).
+ * Private, so no shared cache keeps a copy: staff also load photos that aren't approved yet.
+ */
+export const MEDIA_CACHE_CONTROL = "private, max-age=86400, stale-while-revalidate=604800";
+
 /** Stops an oversized file before Payload decodes and resizes it (audit A23). Payload's own parser limit is 20 MB. */
 const limitUploadSize: CollectionBeforeOperationHook = ({ args, req }) => {
   const size = req.file?.size;
@@ -78,11 +96,11 @@ export const Media: CollectionConfig = {
     mimeTypes: ["image/jpeg", "image/png", "image/webp", "image/avif"],
     // Refuse to decode an image bigger than 64 megapixels (a 61 MP camera is 9504 x 6336); sharp's default allows 268 MP.
     constructorOptions: { limitInputPixels: 64_000_000 },
-    imageSizes: [
-      { name: "thumb", width: 320 },
-      { name: "card", width: 720 },
-      { name: "large", width: 1440 },
-    ],
+    imageSizes: IMAGE_SIZES.map((s) => ({ ...s, formatOptions: { format: "webp" as const, options: { quality: WEBP_QUALITY } } })),
+    modifyResponseHeaders: ({ headers }) => {
+      headers.set("Cache-Control", MEDIA_CACHE_CONTROL);
+      return headers;
+    },
   },
   fields: [
     {

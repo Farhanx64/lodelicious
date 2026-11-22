@@ -1,22 +1,31 @@
+import config from "@payload-config";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getPayload } from "payload";
 
-import { AvailabilityNote } from "@/components/catalog/ProductCard";
+import { AvailabilityNote, ProductCard } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
 import { AddToBag, type BagOption } from "@/components/checkout/AddToBag";
 import { primaryButton } from "@/components/checkout/styles";
 import type { Category } from "@/payload-types";
-import { getProduct } from "@/src/lib/catalog/queries";
+import { getProduct, listProducts } from "@/src/lib/catalog/queries";
 import { previewStockEnabled } from "@/src/lib/catalog/preview";
 import { PRICE_ON_REQUEST, priceLabel, sellableUnits, unitPriceLabel } from "@/src/lib/catalog/product";
 import { priceCart } from "@/src/lib/checkout/cart";
 import { contactHref, topicForProduct } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
+import { approvedReviews, reviewJsonLd } from "@/src/lib/reviews/product-reviews";
 import { getStoreSettings } from "@/src/lib/store";
+
+import { submitReview } from "./actions";
 import { publishableProductImages } from "@/src/lib/media";
+import { ProductReviews } from "@/components/reviews/ProductReviews";
+import { FaqList } from "@/components/seo/FaqList";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { breadcrumbJsonLd, metaText, productJsonLd } from "@/src/lib/seo";
+import { breadcrumbJsonLd, productJsonLd } from "@/src/lib/seo";
+import { categoryHref } from "@/src/lib/seo/categories";
+import { occasionsFor, pairedCategories, pickPairings, productFaqs, productMetaDescription } from "@/src/lib/seo/product-copy";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -34,11 +43,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!product) return {};
   const category = typeof product.category === "object" ? (product.category as Category | null) : null;
   const offer = offerOf(product);
-  const from = offer ? ` From $${(offer.lowCents / 100).toFixed(2)}.` : "";
-  // Title formula (D68): what it is, what kind of gift, where. Placeholder text never ships.
+  // Title formula (D68): what it is, what kind of gift, where. Placeholder text never ships, and the
+  // description names only the ways this product can really be had (D69).
   const kind = category?.name ? ` – ${category.name}` : "";
-  const description =
-    metaText(`${metaText(product.shortDescription, 110) ?? `${product.title}${product.brand ? ` by ${product.brand}` : ""}.`}${from} Pickup in Plymouth, MA, local delivery or US shipping.`) ?? undefined;
+  const description = productMetaDescription(product, category?.name, offer?.lowCents ?? null);
   const image = publishableProductImages(product.images)[0];
   return {
     title: `${product.title}${kind}`,
@@ -59,6 +67,15 @@ export default async function ProductPage({ params }: Props) {
   if (!product) notFound();
 
   const category = typeof product.category === "object" ? (product.category as Category) : null;
+  // "Pairs well with" (D69): a few products from the categories that go with this one.
+  const [pools, reviewData] = await Promise.all([
+    Promise.all(pairedCategories(category?.slug).map((slug) => listProducts({ category: slug, limit: 24 }))),
+    // Approved customer reviews only (D69): they alone feed the page and its Review / AggregateRating markup.
+    getPayload({ config }).then((payload) => approvedReviews(payload, product.id)),
+  ]);
+  const pairings = pickPairings(product, pools);
+  const occasions = occasionsFor(product, category?.slug);
+  const faqs = productFaqs(product, [store.street, store.locality].filter(Boolean).join(", "));
   const images = publishableProductImages(product.images);
   const units = sellableUnits(product);
   // Options that can go in the bag now (the bag re-checks everything at checkout).
@@ -77,9 +94,10 @@ export default async function ProductPage({ params }: Props) {
     <div className="mx-auto w-[min(100%-2rem,72rem)]">
       <JsonLd
         data={[
-          productJsonLd({ ...product, imageUrl: images[0]?.url ?? null }, offerOf(product)),
+          productJsonLd({ ...product, imageUrl: images[0]?.url ?? null }, offerOf(product), reviewJsonLd(reviewData.summary, reviewData.reviews)),
           breadcrumbJsonLd([
             { name: "Shop", path: "/shop" },
+            ...(category?.slug ? [{ name: category.name, path: categoryHref(category.slug) }] : []),
             { name: product.title, path: `/shop/${product.slug}` },
           ]),
         ]}
@@ -92,7 +110,7 @@ export default async function ProductPage({ params }: Props) {
           {category && (
             <li>
               <span aria-hidden="true">/ </span>
-              <Link href={`/shop?category=${category.slug}`}>{category.name}</Link>
+              <Link href={categoryHref(category.slug ?? "")}>{category.name}</Link>
             </li>
           )}
         </ol>
@@ -177,6 +195,51 @@ export default async function ProductPage({ params }: Props) {
             <p className="text-sm text-ink-soft">{store.allergyNotice}</p>
           </section>
         </div>
+      </div>
+
+      {pairings.length > 0 && (
+        <section aria-labelledby="pairs" className="mt-14 mb-12">
+          <h2 id="pairs" className="mb-4 text-3xl">
+            Pairs well with
+          </h2>
+          <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(10rem,100%),1fr))] gap-3 sm:grid-cols-[repeat(auto-fill,minmax(min(15rem,100%),1fr))] sm:gap-5">
+            {pairings.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {product.slug && <ProductReviews reviews={reviewData.reviews} summary={reviewData.summary} action={submitReview} productSlug={product.slug} productTitle={product.title} />}
+
+      <div className="mt-10 grid gap-8 md:grid-cols-2">
+        <FaqList id="product-faq" heading="Questions" faqs={faqs} />
+        <nav aria-labelledby="more-gifts" className="mb-10">
+          <h2 id="more-gifts" className="mb-3 text-2xl">
+            More gift ideas
+          </h2>
+          <ul className="flex flex-col gap-1">
+            {category?.slug && (
+              <li>
+                <Link href={categoryHref(category.slug)} className="inline-flex min-h-11 items-center">
+                  More {category.name.toLowerCase()}
+                </Link>
+              </li>
+            )}
+            {occasions.map((o) => (
+              <li key={o.slug}>
+                <Link href={`/gift-baskets/${o.slug}`} className="inline-flex min-h-11 items-center">
+                  {o.h1}
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link href="/build-a-basket" className="inline-flex min-h-11 items-center">
+                Build your own gift basket
+              </Link>
+            </li>
+          </ul>
+        </nav>
       </div>
     </div>
   );

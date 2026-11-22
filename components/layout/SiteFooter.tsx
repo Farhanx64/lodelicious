@@ -3,14 +3,29 @@ import Link from "next/link";
 import { Lockup } from "@/components/brand/Lockup";
 import type { StoreSetting } from "@/payload-types";
 import { telHref } from "@/src/lib/phone";
+import { AREAS } from "@/src/lib/seo/areas";
+import { occasionBySlug } from "@/src/lib/seo/occasions";
 
 const SHOP_LINKS = [
-  { href: "/shop?category=fudge", label: "Fudge" },
-  { href: "/shop?category=fresh-treats", label: "Fresh treats" },
+  { href: "/shop/category/chocolate", label: "Chocolates" },
+  { href: "/shop/category/fudge", label: "Fudge" },
+  { href: "/shop/category/candy", label: "Candy" },
+  { href: "/shop/category/fresh-treats", label: "Fresh treats" },
   { href: "/baby-gifts", label: "Baby gifts" },
   { href: "/gift-baskets", label: "Gift baskets" },
   { href: "/events", label: "Chocolate fountain" },
 ];
+
+/** Occasion and area landing pages (D68, D69), so every page links to them. */
+const GIFT_LINKS = [
+  ...["birthday", "sympathy", "new-baby", "get-well", "thank-you", "thanksgiving", "christmas", "valentines-day"]
+    .map(occasionBySlug)
+    .filter((o): o is NonNullable<typeof o> => Boolean(o))
+    .map((o) => ({ href: `/gift-baskets/${o.slug}`, label: o.name })),
+  { href: "/corporate-gifts", label: "Corporate" },
+  { href: "/gift-baskets", label: "All occasions" },
+];
+const AREA_LINKS = [...AREAS.map((a) => ({ href: `/gifts/${a.slug}`, label: a.linkLabel })), { href: "/gift-basket-delivery", label: "Delivery & shipping" }];
 
 const POLICY_LINKS = [
   { href: "/policies/pickup-and-delivery", label: "Pickup & delivery" },
@@ -121,6 +136,31 @@ export function SiteFooter({ store }: { store: StoreSetting }) {
             </p>
           )}
         </section>
+
+        <nav aria-labelledby="footer-gifts">
+          <h2 id="footer-gifts" className="mb-3 text-base">
+            Gift baskets for
+          </h2>
+          <ul className="flex flex-col gap-1">
+            {GIFT_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className={footerLink}>
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <h2 className="mt-4 mb-3 text-base">Local gifts</h2>
+          <ul className="flex flex-col gap-1">
+            {AREA_LINKS.map((l) => (
+              <li key={l.href}>
+                <Link href={l.href} className={footerLink}>
+                  {l.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
 
         <nav aria-labelledby="footer-policies">
           <h2 id="footer-policies" className="mb-3 text-base">

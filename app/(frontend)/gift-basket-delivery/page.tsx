@@ -5,6 +5,7 @@ import { primaryButton } from "@/components/checkout/styles";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { telHref } from "@/src/lib/phone";
 import { faqJsonLd, SERVICE_TOWNS } from "@/src/lib/seo";
+import { AREAS } from "@/src/lib/seo/areas";
 import { OCCASIONS } from "@/src/lib/seo/occasions";
 import { getStoreSettings } from "@/src/lib/store";
 
@@ -58,6 +59,13 @@ export default async function DeliveryPage() {
       <section className="mb-10 max-w-[68ch]">
         <h2 className="mb-2 text-2xl">Towns we serve</h2>
         <p className="mb-2">{SERVICE_TOWNS.join(", ")} and the rest of the South Shore, plus the Cape Cod canal towns.</p>
+        <ul className="mb-2 flex flex-wrap gap-3">
+          {AREAS.map((a) => (
+            <li key={a.slug}>
+              <Link href={`/gifts/${a.slug}`}>{a.h1}</Link>
+            </li>
+          ))}
+        </ul>
         <p>
           Need it on a particular day, or delivered to a funeral home or office? Call us at <a href={telHref(store.phone)}>{store.phone}</a> and we&rsquo;ll
           tell you what&rsquo;s possible.

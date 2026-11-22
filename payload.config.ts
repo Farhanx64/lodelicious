@@ -14,6 +14,7 @@ import { Orders } from "./collections/Orders";
 import { Outbox } from "./collections/Outbox";
 import { Products } from "./collections/Products";
 import { Reservations } from "./collections/Reservations";
+import { ProductReviews } from "./collections/ProductReviews";
 import { Reviews } from "./collections/Reviews";
 import { RewardAdjustments } from "./collections/RewardAdjustments";
 import { RewardEntries } from "./collections/RewardEntries";
@@ -90,6 +91,7 @@ export default buildConfig({
     // Website (then the Store details, Home page and Policies globals)
     Media,
     Reviews,
+    ProductReviews,
     // Settings (then the Checkout, Shipping, Gift builder, Events and Inventory globals)
     TaxClasses,
     // Staff
