@@ -307,7 +307,11 @@ export function createProductModels() {
     // Soft packaging leans into its neighbours; boxes sit a touch back so their fronts face the viewer.
     group.rotation.z = (h % 2 ? 1 : -1) * (kind === "pouch" ? 0.1 : kind === "bar" ? 0.08 : 0.02);
     group.rotation.x = kind === "bar" ? -0.18 : kind === "fudge" || kind === "chocolates" ? -0.1 : 0;
-    group.userData.height = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3()).y;
+    const extent = new THREE.Box3().setFromObject(group).getSize(new THREE.Vector3());
+    group.userData.height = extent.y;
+    // The footprint, so the basket can shrink wide items (fudge trays, Theatre box) to fit their slot.
+    group.userData.width = extent.x;
+    group.userData.depth = extent.z;
     return group;
   }
   return {
