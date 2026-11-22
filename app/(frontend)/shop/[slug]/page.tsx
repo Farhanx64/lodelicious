@@ -1,6 +1,8 @@
+import config from "@payload-config";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getPayload } from "payload";
 
 import { AvailabilityNote, ProductCard } from "@/components/catalog/ProductCard";
 import { ProductImage } from "@/components/catalog/ProductImage";
@@ -13,8 +15,12 @@ import { PRICE_ON_REQUEST, priceLabel, sellableUnits, unitPriceLabel } from "@/s
 import { priceCart } from "@/src/lib/checkout/cart";
 import { contactHref, topicForProduct } from "@/src/lib/inquiries/shared";
 import { telHref } from "@/src/lib/phone";
+import { approvedReviews, reviewJsonLd } from "@/src/lib/reviews/product-reviews";
 import { getStoreSettings } from "@/src/lib/store";
+
+import { submitReview } from "./actions";
 import { publishableProductImages } from "@/src/lib/media";
+import { ProductReviews } from "@/components/reviews/ProductReviews";
 import { FaqList } from "@/components/seo/FaqList";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { breadcrumbJsonLd, productJsonLd } from "@/src/lib/seo";
@@ -62,7 +68,11 @@ export default async function ProductPage({ params }: Props) {
 
   const category = typeof product.category === "object" ? (product.category as Category) : null;
   // "Pairs well with" (D69): a few products from the categories that go with this one.
-  const pools = await Promise.all(pairedCategories(category?.slug).map((slug) => listProducts({ category: slug, limit: 24 })));
+  const [pools, reviewData] = await Promise.all([
+    Promise.all(pairedCategories(category?.slug).map((slug) => listProducts({ category: slug, limit: 24 }))),
+    // Approved customer reviews only (D69): they alone feed the page and its Review / AggregateRating markup.
+    getPayload({ config }).then((payload) => approvedReviews(payload, product.id)),
+  ]);
   const pairings = pickPairings(product, pools);
   const occasions = occasionsFor(product, category?.slug);
   const faqs = productFaqs(product, [store.street, store.locality].filter(Boolean).join(", "));
@@ -84,7 +94,7 @@ export default async function ProductPage({ params }: Props) {
     <div className="mx-auto w-[min(100%-2rem,72rem)]">
       <JsonLd
         data={[
-          productJsonLd({ ...product, imageUrl: images[0]?.url ?? null }, offerOf(product)),
+          productJsonLd({ ...product, imageUrl: images[0]?.url ?? null }, offerOf(product), reviewJsonLd(reviewData.summary, reviewData.reviews)),
           breadcrumbJsonLd([
             { name: "Shop", path: "/shop" },
             ...(category?.slug ? [{ name: category.name, path: categoryHref(category.slug) }] : []),
@@ -199,6 +209,8 @@ export default async function ProductPage({ params }: Props) {
           </ul>
         </section>
       )}
+
+      {product.slug && <ProductReviews reviews={reviewData.reviews} summary={reviewData.summary} action={submitReview} productSlug={product.slug} productTitle={product.title} />}
 
       <div className="mt-10 grid gap-8 md:grid-cols-2">
         <FaqList id="product-faq" heading="Questions" faqs={faqs} />

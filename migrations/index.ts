@@ -26,6 +26,7 @@ import * as migration_20261114_035407_shipping_boxes from './20261114_035407_shi
 import * as migration_20261114_171155_status_emails from './20261114_171155_status_emails';
 import * as migration_20261114_175855_ship_tax from './20261114_175855_ship_tax';
 import * as migration_20261116_001318_shippo_labels from './20261116_001318_shippo_labels';
+import * as migration_20261122_070816_product_reviews from './20261122_070816_product_reviews';
 
 export const migrations = [
   {
@@ -166,6 +167,11 @@ export const migrations = [
   {
     up: migration_20261116_001318_shippo_labels.up,
     down: migration_20261116_001318_shippo_labels.down,
-    name: '20261116_001318_shippo_labels'
+    name: '20261116_001318_shippo_labels',
+  },
+  {
+    up: migration_20261122_070816_product_reviews.up,
+    down: migration_20261122_070816_product_reviews.down,
+    name: '20261122_070816_product_reviews'
   },
 ];

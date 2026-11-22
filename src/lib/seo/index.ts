@@ -74,8 +74,11 @@ export function faqJsonLd(faqs: readonly { q: string; a: string }[]): Json {
 
 type ProductLike = Pick<Product, "title" | "slug" | "brand" | "shortDescription"> & { imageUrl?: string | null };
 
-/** A product with its price range and stock, when the price is approved. */
-export function productJsonLd(p: ProductLike, offer: { lowCents: number; highCents: number; inStock: boolean } | null): Json {
+/**
+ * A product with its price range and stock, when the price is approved. `reviews` is the
+ * aggregateRating and review fields from approved customer reviews of this product (D69), or empty.
+ */
+export function productJsonLd(p: ProductLike, offer: { lowCents: number; highCents: number; inStock: boolean } | null, reviews: Json = {}): Json {
   const url = absoluteUrl(`/shop/${p.slug}`);
   return {
     "@context": "https://schema.org",
@@ -97,6 +100,7 @@ export function productJsonLd(p: ProductLike, offer: { lowCents: number; highCen
           seller: { "@id": `${SITE_URL}/#store` },
         }
       : undefined,
+    ...reviews,
   };
 }
 
