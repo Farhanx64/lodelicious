@@ -1769,3 +1769,32 @@ From the SEO research of 2026-11-20 (competitors and national gift-basket stores
 - Occasion pages `/gift-baskets/<sympathy|birthday|thank-you|cape-cod|christmas>`, plus `/gift-basket-delivery` (one service-area page, not one per town) and `/corporate-gifts`. Copy promises only what the shop does (pickup, DoorDash delivery, US shipping); no delivery dates or fees.
 - Card photos keep their alt text (for image search) and stay `aria-hidden` (so screen readers don't read the title twice).
 Not done here: WebP images and page caching (both need hosting changes), reviews on the site.
+
+## D69 — Search, round 2: landing pages, product copy, WebP photos, customer reviews (2026-11-22)
+
+**Landing pages.**
+- Five more occasions: `/gift-baskets/<mothers-day|valentines-day|new-baby|get-well|anniversary>` (copy in `src/lib/seo/occasions.ts`). New baby also lists the Baby gifts category and links `/baby-gifts`.
+- Three service-area pages, one per area and not one per town: `/gifts/plymouth-ma`, `/gifts/south-shore-ma` (Kingston, Duxbury, Carver, Plympton), `/gifts/upper-cape-cod` (Bourne, Sandwich) (`src/lib/seo/areas.ts`). They say pickup in Manomet, DoorDash delivery "where DoorDash delivers" (DoorDash shows that at checkout) and US shipping. No delivery times, fees or radius.
+- Category pages `/shop/category/<slug>` with copy and FAQs for chocolate, fudge, candy, fresh treats and gift add-ons (`src/lib/seo/categories.ts`). Gift baskets and baby gifts redirect (308) to their own pages. `/shop?category=x` stays as the filter, with its canonical pointing at the category page.
+- All of them are in the sitemap, carry BreadcrumbList and FAQPage JSON-LD, and are linked from the footer ("Gift baskets for", "Local gifts"), `/gift-baskets` and `/gift-basket-delivery`.
+- Copy names only kinds of products in the catalog. A test fails on delivery promises (same-day, free shipping, dollar amounts) and on placeholder text.
+
+**Product pages** (`src/lib/seo/product-copy.ts`).
+- The meta description is the product's own short description, or else its title, size, brand and category. It names only the ways the product can really be had: pickup, shipping only when "Can ship" is ticked, or inquiry.
+- A short FAQ answered from the product's pickup, shipping, perishable and basket settings. No FAQPage markup here: the questions repeat on every product, so they would add nothing for search.
+- "Pairs well with": four products from matching categories, picked the same way every time for each product. Links to the category page, matching occasions and Build a Basket. The breadcrumb and its markup include the category.
+
+**Photos and Core Web Vitals.**
+- Payload's resized sizes (320, 720 and 1440 px) are now WebP at quality 80. The original stays as uploaded.
+- A Worker can't run sharp (D51), so on Cloudflare `scripts/media-webp.ts` makes the WebP sizes from a Mac. It is a dry run unless `WRITE=1`, reads and writes R2 directly, never renames or deletes the original, and skips sizes that are already WebP. sharp is loaded only under the `payload` command line in Cloudflare mode.
+- Measured on the live home page (2026-11-22): its 10 photos are 5.18 MB on a phone (390 px at 3x, which loads the 720 px size) and 1.08 MB on a desktop (320 px size). The same pixels as WebP are 0.54 MB and 0.15 MB. The PNG card photos were about 1 MB each.
+- `/api/media/file` sends `Cache-Control: private, max-age=86400, stale-while-revalidate=604800`. Private, because staff also load photos that aren't approved yet.
+- A page's main photo loads eagerly with `fetchpriority="high"`. On the home page that is the hero photo, or the first strip photo when there is no hero.
+- **Not done (needs a Cloudflare setting).** Photos uploaded in /admin on Cloudflare still get no sizes until the script is run again. Making them at upload time needs Cloudflare Images (the `images` binding) or zone Image Transformations (`/cdn-cgi/image`, which returns 404 today because it is off). Both are free up to 5,000 transformations a month but must be turned on in the dashboard.
+
+**Customer reviews** (`collections/ProductReviews.ts`, `src/lib/reviews/product-reviews.ts`).
+- A new **Product reviews** collection in Website. Every review arrives as *Waiting for approval* and is shown only once staff set it to *Approved*. `approvedAt` is stamped when a review is approved and cleared if it is taken down.
+- The collection is staff-only over the API. The page reads approved reviews with override and an explicit `where`, as in D42. The customer's email is optional and never shown.
+- The form on every product page is checked again on the server: rating 1–5, name up to 40 characters, review of 10–1500 characters, no links. It has a honeypot and is rate limited to 5 a minute (`review`, on the RATE_LIMIT_5 binding).
+- The Product's JSON-LD gets `aggregateRating` and `review` only when approved reviews of that product exist, and only from them. The Store entity never carries review markup: Google treats reviews a business shows of itself as self-serving. The Google reviews of the shop (D52) stay a separate collection and never feed product ratings.
+- Nothing is seeded, generated or imported.
