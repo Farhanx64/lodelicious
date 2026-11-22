@@ -39,7 +39,7 @@ export const CATEGORY_COPY: readonly CategoryCopy[] = [
     description: "Phillips Chocolates bars, assortment boxes, turtles and bark, plus chocolate-covered nuts and fruit, from our gift shop in Manomet, Plymouth, MA.",
     h1: "Chocolates",
     intro:
-      "Our chocolate shelves are mostly Phillips Chocolates: bars, assortment boxes, turtles, caramels and bark. Alongside them are chocolate-covered nuts, fruit and coffee beans, and a few favourite bars from further away. Buy a single bar, a gift box, or add them to a basket.",
+      "Phillips Chocolates bars, assortment boxes, turtles, caramels and bark, alongside chocolate-covered nuts, fruit and coffee beans, sea salt caramels and a few favourite bars from further away. Buy a single bar, a gift box, or add them to a basket.",
     occasions: ["valentines-day", "mothers-day", "thank-you", "christmas", "anniversary"],
     faqs: [
       { q: "Do you have sugar-free or vegan chocolate?", a: "Look for products such as Phillips' Sugar-Free Theatre Box and Vegan Bark, and check each product's dietary notes before ordering. Ask us what's in stock." },
