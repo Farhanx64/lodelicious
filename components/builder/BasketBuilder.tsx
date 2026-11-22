@@ -1,9 +1,9 @@
 "use client";
 
-import { useId, useMemo, useState, useTransition } from "react";
+import { useEffect, useId, useMemo, useRef, useState, useTransition } from "react";
 
 import { checkBasket, startReservation } from "@/app/(frontend)/build-a-basket/actions";
-import type { BuilderDisplay } from "@/src/lib/catalog/builder-data";
+import { builderCards, type BuilderDisplay } from "@/src/lib/catalog/builder-cards";
 import { PRICE_TO_BE_CONFIRMED } from "@/src/lib/catalog/product";
 import {
   assessFeasibility,
@@ -54,6 +54,11 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
   const [reserving, startReserve] = useTransition();
   const [reserveError, setReserveError] = useState<string | null>(null);
   const [checking, startCheck] = useTransition();
+  /** The option each multi-option card currently shows, by product id (first option until changed). */
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  /** Phone only: the basket bar is compact until tapped. */
+  const [expanded, setExpanded] = useState(false);
+  const stageRef = useRef<HTMLDivElement>(null);
 
   const catalog = useMemo(() => catalogOf(products), [products]);
   const displayById = useMemo(() => new Map(display.map((d) => [d.id, d])), [display]);
@@ -82,9 +87,12 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
   const premiumRemaining = premiumCap === null ? null : premiumCap - result.totals.premiumCount;
   const blocking = result.violations.filter((v) => v.code !== "COUNT_BELOW_MIN");
 
-  const pickerItems = typeDisplay
-    .filter((d) => !category || d.categoryName === category)
-    .map((d) => {
+  // One card per product: a product sold in options (dark or milk) is one card with a chooser.
+  const cards = useMemo(() => builderCards(typeDisplay), [typeDisplay]);
+  const pickerItems = cards
+    .filter((card) => !category || card.options[0].categoryName === category)
+    .map((card) => {
+      const d = card.options.find((o) => o.id === picked[card.productId]) ?? card.options[0];
       const product = catalog.get(d.id)!;
       const status = checkForPicker(product, {
         settings,
@@ -93,7 +101,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         remainingBudgetCents: result.totals.remainingBudgetCents,
         premiumRemaining,
       });
-      return { d, product, status };
+      return { card, d, product, status };
     })
     // Items out of stock or over budget stay visible with the reason, after the ones that can be added.
     .sort((a, b) => Number(!a.status.eligible) - Number(!b.status.eligible));
@@ -109,6 +117,34 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
     });
   }
 
+  // On a phone the basket bar is pinned to the top of the screen. Keep focused controls clear of it
+  // (WCAG 2.4.11): the page's top scroll padding follows the bar's height. The floating bag receipt
+  // (D58) owns the bottom of the screen, so the bar never goes there.
+  useEffect(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    const phone = window.matchMedia("(max-width: 47.99rem)");
+    const root = document.documentElement;
+    const sync = () => {
+      root.style.scrollPaddingTop = phone.matches ? `${Math.ceil(stage.getBoundingClientRect().height) + 16}px` : "";
+    };
+    const ro = new ResizeObserver(sync);
+    ro.observe(stage);
+    phone.addEventListener("change", sync);
+    // Working in the steps shrinks an enlarged basket back to the bar, so it never covers the controls.
+    const shrink = (e: FocusEvent) => {
+      if (!stage.contains(e.target as Node)) setExpanded(false);
+    };
+    document.addEventListener("focusin", shrink);
+    sync();
+    return () => {
+      ro.disconnect();
+      phone.removeEventListener("change", sync);
+      document.removeEventListener("focusin", shrink);
+      root.style.scrollPaddingTop = "";
+    };
+  }, []);
+
   const previewItems = useMemo<PreviewItem[]>(
     () =>
       Object.entries(chosen).map(([id, quantity]) => {
@@ -122,19 +158,14 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
     result.totals.remainingBudgetCents !== null ? `, ${formatCents(result.totals.remainingBudgetCents)} of budget left` : ""
   }.`;
 
+  const countLine = `${result.totals.itemCount} of ${result.countRange.min}–${result.countRange.max} items`;
+
   return (
-    <div className="flex flex-col gap-8">
-      {/* The basket being built sits at the top, so it fills up in view as items are added (owner, 2026-11-20). */}
-      <section aria-label="Basket preview" className="relative">
-        <BasketPreview3D items={previewItems} size={size} />
-        <p aria-hidden="true" className="pointer-events-none absolute bottom-3 left-4 rounded-full bg-paper/85 px-3 py-1 text-sm text-ink">
-          {result.totals.itemCount === 0
-            ? "Add items below and watch your basket fill"
-            : `${result.totals.itemCount} of ${result.countRange.min}–${result.countRange.max} items · ${formatCents(result.totals.totalCents)}`}
-        </p>
-      </section>
-      <div className="grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
-      <div className="flex flex-col gap-10">
+    // Phone: one column, the basket pinned to the top as a compact bar, the summary after the steps.
+    // Tablet and up: the steps on the left, the basket and summary in a sticky column on the right,
+    // so the basket stays in view while the customer scrolls the picker (owner, 2026-11-22).
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-8 md:grid-cols-[minmax(0,1fr)_minmax(17rem,20rem)] lg:grid-cols-[minmax(0,1fr)_23rem]">
+      <div className="flex flex-col gap-10 md:col-start-1 md:row-start-1">
         {previewStock && (
           <p role="note" className="border border-gold bg-blush p-4 text-ink">
             Preview: stock hasn&rsquo;t been counted yet, so every item is shown as available for you to try the builder.
@@ -292,11 +323,12 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
               )}
             </p>
           ) : (
-            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(14rem,100%),1fr))] gap-3">
-              {pickerItems.map(({ d, product, status }) => {
+            <ul className="grid grid-cols-[repeat(auto-fill,minmax(min(11rem,100%),1fr))] gap-3 lg:grid-cols-[repeat(auto-fill,minmax(min(13rem,100%),1fr))]">
+              {pickerItems.map(({ card, d, product, status }) => {
                 const quantity = chosen[d.id] ?? 0;
+                const inBasket = card.options.filter((o) => chosen[o.id]);
                 return (
-                  <li key={d.id} className={`flex flex-col border bg-paper p-1 ${quantity ? "border-gold-text ring-1 ring-gold-text" : "border-gold"}`}>
+                  <li key={card.productId} className={`flex flex-col border bg-paper p-1 ${inBasket.length ? "border-gold-text ring-1 ring-gold-text" : "border-gold"}`}>
                     {d.imageUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element -- Payload's pre-sized thumbnail
                       <img src={d.imageUrl} alt={d.imageAlt} loading="lazy" className="aspect-[4/3] w-full bg-white object-contain" />
@@ -304,16 +336,40 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                       <div className="flex aspect-[4/3] items-center justify-center bg-linen text-sm text-ink-soft">Photo coming soon</div>
                     )}
                     <div className="flex flex-1 flex-col gap-1 p-3">
-                      <p className="font-semibold leading-snug">{d.title}</p>
+                      <p className="font-semibold leading-snug">{card.title}</p>
                       <p className="text-sm text-ink-soft">
                         {[d.brand, d.sizeLabel].filter(Boolean).join(" · ")}
                         {product.premium && <span className="ml-1 font-semibold text-gold-text">Premium</span>}
                       </p>
+                      {card.options.length > 1 && (
+                        <>
+                          <label htmlFor={`${ids}-opt-${card.productId}`} className="mt-1 text-sm font-semibold">
+                            Option<span className="sr-only"> for {card.title}</span>
+                          </label>
+                          <select
+                            id={`${ids}-opt-${card.productId}`}
+                            value={d.id}
+                            onChange={(e) => setPicked((current) => ({ ...current, [card.productId]: e.target.value }))}
+                            className="min-h-11 w-full border border-ink-soft bg-paper px-2"
+                          >
+                            {card.options.map((o) => (
+                              <option key={o.id} value={o.id}>
+                                {o.optionLabel ?? o.title}
+                              </option>
+                            ))}
+                          </select>
+                          {inBasket.length > 0 && (
+                            <p className="text-sm">
+                              In your basket: {inBasket.map((o) => `${o.optionLabel ?? o.title}${chosen[o.id] > 1 ? ` × ${chosen[o.id]}` : ""}`).join(", ")}
+                            </p>
+                          )}
+                        </>
+                      )}
                       <p className="mt-auto pt-1">{!product.priceApproved ? PRICE_TO_BE_CONFIRMED : product.priceCents !== null ? formatCents(product.priceCents) : ""}</p>
                       {!status.eligible && quantity === 0 && <p className="text-sm text-ink-soft">{status.message}</p>}
-                      <div className="flex items-center gap-2 pt-1">
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         {quantity > 0 && (
-                          <button type="button" onClick={() => change(d.id, -1)} className="min-h-11 flex-1 border border-gold-text px-3" aria-label={`Remove ${d.title}`}>
+                          <button type="button" onClick={() => change(d.id, -1)} className="min-h-11 flex-1 basis-24 whitespace-nowrap border border-gold-text px-3" aria-label={`Remove ${d.title}`}>
                             Remove
                           </button>
                         )}
@@ -326,7 +382,7 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
                             type="button"
                             onClick={() => change(d.id, 1)}
                             disabled={!status.eligible}
-                            className="min-h-11 flex-1 bg-coastal-deep px-3 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
+                            className="min-h-11 flex-1 basis-36 whitespace-nowrap bg-coastal-deep px-3 text-cream disabled:cursor-not-allowed disabled:bg-linen disabled:text-ink"
                             aria-label={quantity > 0 ? `Add another (${quantity}) ${d.title}` : `Add ${d.title}`}
                           >
                             {quantity > 0 ? `Add another (${quantity})` : "Add"}
@@ -376,7 +432,46 @@ export function BasketBuilder({ settings, products, display, budgetNotice, previ
         </section>
       </div>
 
-      <aside aria-labelledby={`${ids}-sum-h`} className="h-fit border border-line bg-paper p-5 lg:sticky lg:top-4">
+      {/* On a phone this wrapper dissolves (contents), so the basket bar can sit first and the summary last. */}
+      <div className="contents md:col-start-2 md:row-start-1 md:sticky md:top-4 md:flex md:max-h-[calc(100dvh-2rem)] md:flex-col md:gap-4 md:self-start md:overflow-y-auto md:overscroll-contain">
+      <div
+        ref={stageRef}
+        className="max-md:sticky max-md:top-0 max-md:z-30 max-md:order-first max-md:-mx-4 max-md:border-b max-md:border-gold max-md:bg-cream/95 max-md:px-4 max-md:pb-2 max-md:pt-[max(0.5rem,env(safe-area-inset-top))] max-md:shadow-sm max-md:backdrop-blur-sm"
+      >
+        <div className={`flex gap-3 md:flex-col md:items-stretch ${expanded ? "flex-col" : "items-center"}`}>
+          <div
+            onClick={() => {
+              if (!expanded && window.matchMedia("(max-width: 47.99rem)").matches) setExpanded(true);
+            }}
+            className={`shrink-0 overflow-hidden rounded-lg md:h-[min(44vh,21rem)] md:w-full ${expanded ? "h-[min(46vh,20rem)] w-full" : "h-20 w-28"}`}
+          >
+            <BasketPreview3D items={previewItems} size={size} className="h-full w-full" />
+          </div>
+          <div className="flex min-w-0 flex-1 flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <p aria-hidden="true" className="leading-snug">
+              {result.totals.itemCount === 0 ? (
+                <span className="text-sm text-ink-soft">Add items and watch your basket fill</span>
+              ) : (
+                <>
+                  <span className="block text-sm">{countLine}</span>
+                  <span className="block font-semibold">{formatCents(result.totals.totalCents)}</span>
+                </>
+              )}
+            </p>
+            <button
+              type="button"
+              aria-expanded={expanded}
+              onClick={() => setExpanded((e) => !e)}
+              className="min-h-11 min-w-11 max-w-full border border-gold-text bg-paper px-3 text-sm md:hidden"
+            >
+              {expanded ? "Smaller" : "Bigger"}
+              <span className="sr-only"> basket picture</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <aside aria-labelledby={`${ids}-sum-h`} className="h-fit border border-line bg-paper p-5">
         <h2 id={`${ids}-sum-h`} className="mb-3 font-display text-2xl">
           Your basket
         </h2>

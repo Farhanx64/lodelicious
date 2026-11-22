@@ -12,23 +12,27 @@ import type { ModelProduct } from "./product-models";
 export type Look =
   | { id: "phillipsBox"; name: string; w: number; h: number; d: number; window: "none" | "grid" | "turtles" | "oval" | "round" | "label"; ribbon: "white" | "gold" | null }
   | { id: "phillipsBar"; flavor: "DARK" | "MILK" | "S'MORES" }
-  | { id: "hashBar" }
+  | { id: "hashBar"; chocolate: "dark" | "milk" }
   | { id: "pouch"; color: "gold" | "white" | "pink"; fill: "gummies" | "caramels" | "raisins" | "candy"; name: string }
-  | { id: "clearBag"; fill: "pretzels" | "clusters" }
+  | { id: "pretzelBag"; chocolate: "dark" | "milk" }
+  | { id: "clearBag"; fill: "clusters" }
   | { id: "bogFrogs" }
   | { id: "dubaiBar" }
   | { id: "pbBark" }
-  | { id: "fudge"; flavor: "penuche" | "pistachio" | "chocolate" | "caramel" }
+  | { id: "fudge"; flavor: "penuche" | "pistachio" | "chocolate" | "caramel" | "chocolateCaramel" }
   | { id: "licorice" }
   | { id: "teddy" }
-  | { id: "book" };
+  | { id: "book" }
+  | { id: "salami" };
 
 /** The real packaging for a stocked product, or null to use the generic kind model. */
 export function productLook(p: Pick<ModelProduct, "title" | "brand" | "categoryName">): Look | null {
   const t = p.title.toLowerCase();
   const phillips = /phillips/i.test(`${p.title} ${p.brand ?? ""}`);
   if (/fudge/.test(t) && !/covered turtle fudge/.test(t)) {
-    return { id: "fudge", flavor: /penuche/.test(t) ? "penuche" : /pistachio/.test(t) ? "pistachio" : /caramel/.test(t) ? "caramel" : "chocolate" };
+    // Cape Cod's chocolate sea salt caramel is chocolate fudge with a caramel layer; plain sea salt caramel is caramel all through.
+    const flavor = /penuche/.test(t) ? "penuche" : /pistachio/.test(t) ? "pistachio" : /chocolate.*caramel/.test(t) ? "chocolateCaramel" : /caramel/.test(t) ? "caramel" : "chocolate";
+    return { id: "fudge", flavor };
   }
   if (/princess/.test(t)) return { id: "phillipsBox", name: "Princess Assortment", w: 1.0, h: 0.92, d: 0.24, window: "none", ribbon: "white" };
   if (/sea salt chocolate caramels/.test(t)) return { id: "phillipsBox", name: "Sea Salt Caramels", w: 0.86, h: 0.86, d: 0.24, window: "grid", ribbon: "white" };
@@ -40,12 +44,14 @@ export function productLook(p: Pick<ModelProduct, "title" | "brand" | "categoryN
   if (phillips && /s.?mores bar/.test(t)) return { id: "phillipsBar", flavor: "S'MORES" };
   if (phillips && /milk chocolate bar/.test(t)) return { id: "phillipsBar", flavor: "MILK" };
   if (phillips && /dark chocolate bar/.test(t)) return { id: "phillipsBar", flavor: "DARK" };
-  if (/hash/.test(t)) return { id: "hashBar" };
+  // Options come through in the title ("Hash Bar — Milk chocolate").
+  const milk = /milk chocolate/.test(t);
+  if (/hash/.test(t)) return { id: "hashBar", chocolate: milk ? "milk" : "dark" };
   if (/gummy/.test(t)) return { id: "pouch", color: "gold", fill: "gummies", name: "Chocolate Covered Gummy Bears" };
   if (/sea salt caramel/.test(t)) return { id: "pouch", color: "gold", fill: "caramels", name: /milk/.test(t) ? "Milk Chocolate Sea Salt Caramel" : "Dark Chocolate Sea Salt Caramel" };
   if (/raisin/.test(t)) return { id: "pouch", color: "white", fill: "raisins", name: "Milk Chocolate Covered Raisins" };
   if (/swedish/.test(t)) return { id: "pouch", color: "pink", fill: "candy", name: "Swedish Candy" };
-  if (/pretzel/.test(t)) return { id: "clearBag", fill: "pretzels" };
+  if (/pretzel/.test(t)) return { id: "pretzelBag", chocolate: milk ? "milk" : "dark" };
   if (/almond clusters?/.test(t)) return { id: "clearBag", fill: "clusters" };
   if (/bog frog/.test(t)) return { id: "bogFrogs" };
   if (/dubai|kunafa/.test(t)) return { id: "dubaiBar" };
@@ -53,6 +59,7 @@ export function productLook(p: Pick<ModelProduct, "title" | "brand" | "categoryN
   if (/licorice/.test(t)) return { id: "licorice" };
   if (/teddy/.test(t)) return { id: "teddy" };
   if (/seuss|\bbook\b/.test(t)) return { id: "book" };
+  if (/salami/.test(t)) return { id: "salami" };
   return null;
 }
 
@@ -91,6 +98,18 @@ function chocolates(g: CanvasRenderingContext2D, x: number, y: number, w: number
     g.fill();
     if (!turtles && (r * 3 + c) % 3 === 0) { g.strokeStyle = "#e8d2b0"; g.lineWidth = 2; g.beginPath(); g.moveTo(cx - rad * 0.6, cy); g.quadraticCurveTo(cx, cy - rad * 0.5, cx + rad * 0.6, cy); g.stroke(); }
   }
+}
+
+/** A chocolate pretzel seen from the front: two lobes and a twist, drizzled with white chocolate. */
+function drawPretzel(g: CanvasRenderingContext2D, x: number, y: number, r: number, tilt: number, choc: string, drizzle: string) {
+  g.save(); g.translate(x, y); g.rotate(tilt);
+  g.strokeStyle = choc; g.lineWidth = r * 0.34; g.lineCap = "round";
+  g.beginPath(); g.ellipse(0, 0, r, r * 0.78, 0, 0, Math.PI * 2); g.stroke();
+  g.beginPath(); g.moveTo(-r * 0.9, r * 0.3); g.quadraticCurveTo(0, -r * 0.9, r * 0.9, r * 0.3); g.stroke();
+  g.beginPath(); g.moveTo(-r * 0.15, -r * 0.5); g.lineTo(-r * 0.15, r * 0.75); g.moveTo(r * 0.15, -r * 0.5); g.lineTo(r * 0.15, r * 0.75); g.stroke();
+  g.strokeStyle = drizzle; g.lineWidth = r * 0.06;
+  for (let k = -1; k <= 1; k++) { g.beginPath(); g.moveTo(-r * 1.1, k * r * 0.3 - r * 0.2); g.lineTo(r * 1.1, k * r * 0.3 + r * 0.2); g.stroke(); }
+  g.restore();
 }
 
 function phillipsFront(look: Extract<Look, { id: "phillipsBox" }>) {
@@ -165,7 +184,7 @@ function pouchFront(look: Extract<Look, { id: "pouch" }>) {
 
 /** Builds the look into `kit.group` (base at y = 0, front facing +z). */
 export function buildLook(look: Look, kit: LookKit) {
-  const { box, hard, cyl, ball, ring, plane, mat, paint, bow } = kit;
+  const { box, hard, cyl, ball, plane, mat, paint, bow } = kit;
   switch (look.id) {
     case "phillipsBox": {
       const { w, h, d } = look;
@@ -209,7 +228,7 @@ export function buildLook(look: Look, kit: LookKit) {
         }
       });
       cyl(label, [0.21, 0.78, 0.21], [0, 0.22, 0], [0, 0, Math.PI / 2]);
-      const end = mat(CHOC.dark, "treat");
+      const end = mat(look.chocolate === "milk" ? CHOC.milk : CHOC.dark, "treat");
       cyl(end, [0.2, 0.16, 0.2], [-0.47, 0.22, 0], [0, 0, Math.PI / 2]);
       cyl(end, [0.2, 0.16, 0.2], [0.47, 0.22, 0], [0, 0, Math.PI / 2]);
       for (let k = 0; k < 4; k++) ball(mat(0xc9a06a, "treat"), [0.04, 0.03, 0.03], [(k % 2 ? 0.55 : -0.55), 0.16 + (k > 1 ? 0.12 : 0), 0.08]);
@@ -222,15 +241,31 @@ export function buildLook(look: Look, kit: LookKit) {
       plane(paint(`pouch:${look.color}:${look.fill}:${look.name}`, 0.62, 0.96, pouchFront(look)), [0.62, 0.96], [0, 0.5, 0.104]);
       return;
     }
+    case "pretzelBag": {
+      // The catalog photo: a tall, flat clear bag packed to the top with drizzled pretzels, heat-sealed, no ribbon.
+      const milk = look.chocolate === "milk";
+      const W = 0.62, H = 1.02, D = 0.2;
+      const pretzels = paint(`pretzels:${look.chocolate}`, W, H, (g, w, h) => {
+        g.fillStyle = milk ? "#4a2c1c" : "#1c100a"; g.fillRect(0, 0, w, h);
+        const r = w / 5.4;
+        for (let row = 0; row < 6; row++) for (let col = 0; col < 3; col++) {
+          const x = (col + (row % 2 ? 0.75 : 0.3)) * (w / 3), y = h * 0.08 + row * (h / 5.6), a = ((row * 3 + col) * 1.7) % 1 - 0.5;
+          drawPretzel(g, x, y, r, a, milk ? "#8a5634" : "#3f2416", "#f4ead8");
+        }
+      });
+      plane(pretzels, [W * 0.92, H * 0.88], [0, H * 0.47, D * 0.32]);
+      plane(pretzels, [W * 0.92, H * 0.88], [0, H * 0.47, -D * 0.32], [0, Math.PI, 0]);
+      hard(mat(milk ? 0x6e4129 : 0x2d1a10, "treat"), [W * 0.9, H * 0.86, D * 0.6], [0, H * 0.46, 0]);
+      kit.box(mat(0xffffff, "cello"), [W, H, D], [0, H / 2, 0]);
+      hard(mat(0xffffff, "cello"), [W * 1.02, 0.07, D * 0.4], [0, H + 0.01, 0]);
+      return;
+    }
     case "clearBag": {
       kit.bag(mat(0xffffff, "cello"), [0.42, 0.98, 0.3], [0, 0, 0]);
       const choc = mat(CHOC.dark, "treat");
-      const drizzle = mat(0xf2e6d4, "treat");
       for (let k = 0; k < 9; k++) {
         const a = k * 2.2;
-        const p: V3 = [Math.cos(a) * 0.2, 0.14 + Math.floor(k / 3) * 0.2, Math.sin(a) * 0.1];
-        if (look.fill === "pretzels") ring(k % 3 ? choc : drizzle, [0.1, 0.09, 0.1], p, [0.3 * k, 0.5, 0]);
-        else ball(choc, [0.1, 0.085, 0.09], p);
+        ball(choc, [0.1, 0.085, 0.09], [Math.cos(a) * 0.2, 0.14 + Math.floor(k / 3) * 0.2, Math.sin(a) * 0.1]);
       }
       cyl(mat(0xd4af6a, "foil"), [0.1, 0.05, 0.09], [0, 0.98, 0]);
       bow(1.0, 0.06, 0.8, mat(0xa3192b, "satin"));
@@ -268,43 +303,46 @@ export function buildLook(look: Look, kit: LookKit) {
     }
     case "pbBark": {
       const bark = paint("pbbark", 0.86, 0.5, (g, W, H, serif) => {
-        g.fillStyle = "#6b3f26"; g.fillRect(0, 0, W, H);
-        g.strokeStyle = "#d9a86a"; g.lineWidth = W * 0.012;
+        // Milk chocolate bark with dark chocolate drizzle, in a clear bag with Phillips's red-bordered label (catalog photo).
+        g.fillStyle = "#9a6440"; g.fillRect(0, 0, W, H);
+        g.strokeStyle = "#3a2318"; g.lineWidth = W * 0.012;
         for (let k = 0; k < 9; k++) { g.beginPath(); g.moveTo(W * (k / 9), 0); g.bezierCurveTo(W * (k / 9 + 0.1), H * 0.3, W * (k / 9 - 0.05), H * 0.6, W * (k / 9 + 0.08), H); g.stroke(); }
         g.fillStyle = "#fbf3e6"; g.beginPath(); g.roundRect(W * 0.55, H * 0.08, W * 0.4, H * 0.28, 6); g.fill();
+        g.strokeStyle = "#a3192b"; g.lineWidth = W * 0.008; g.stroke();
         g.fillStyle = "#a3192b"; g.textAlign = "center"; g.textBaseline = "middle"; g.font = `600 ${Math.round(H * 0.09)}px ${serif}`;
         g.fillText("Peanut Butter", W * 0.75, H * 0.17, W * 0.36); g.fillText("Bark", W * 0.75, H * 0.28, W * 0.3);
       });
-      hard(mat(0x6b3f26, "treat"), [0.86, 0.5, 0.08], [0, 0.25, 0]);
+      hard(mat(0x9a6440, "treat"), [0.86, 0.5, 0.08], [0, 0.25, 0]);
       plane(bark, [0.86, 0.5], [0, 0.25, 0.042]);
       box(mat(0xffffff, "cello"), [0.92, 0.56, 0.13], [0, 0.26, 0]);
       return;
     }
     case "fudge": {
-      const color = { penuche: 0xc8894a, pistachio: 0xc6cc8a, chocolate: 0x4a2a1c, caramel: 0x8f5226 }[look.flavor];
+      // Bare squares of fudge stacked on a paper square, as in the catalog photos.
+      const color = { penuche: 0xc8894a, pistachio: 0xc6cc8a, chocolate: 0x4a2a1c, caramel: 0x9a5a2c, chocolateCaramel: 0x553020 }[look.flavor];
       const f = mat(color, "treat");
       hard(mat(0xfbf6ee), [0.98, 0.025, 0.6], [0, 0.012, 0]);
-      box(f, [0.42, 0.38, 0.42], [-0.22, 0.21, 0]);
-      box(f, [0.42, 0.38, 0.42], [0.22, 0.21, 0.04]);
-      box(f, [0.42, 0.38, 0.42], [0, 0.59, 0.02], [0, 0.35, 0]);
-      if (look.flavor === "caramel" || look.flavor === "chocolate") hard(mat(0xd99a52, "treat"), [0.43, 0.06, 0.43], [-0.22, 0.2, 0]);
-      const fleck = look.flavor === "pistachio" ? mat(0x6f9a3c, "treat") : look.flavor === "caramel" ? mat(0xffffff, "gloss") : null;
+      const pieces: [V3, number][] = [[[-0.22, 0.21, 0], 0], [[0.22, 0.21, 0.04], 0], [[0, 0.59, 0.02], 0.35]];
+      for (const [p, turn] of pieces) {
+        box(f, [0.42, 0.38, 0.42], p, [0, turn, 0]);
+        // Only the chocolate sea salt caramel has a caramel layer through the middle.
+        if (look.flavor === "chocolateCaramel") hard(mat(0xd99a52, "treat"), [0.43, 0.06, 0.43], [p[0], p[1] - 0.02, p[2]], [0, turn, 0]);
+      }
+      const salt = look.flavor === "caramel" || look.flavor === "chocolateCaramel";
+      const fleck = look.flavor === "pistachio" ? mat(0x6f9a3c, "treat") : salt ? mat(0xffffff, "gloss") : null;
       if (fleck) for (let k = 0; k < 6; k++) hard(fleck, [0.05, 0.03, 0.05], [-0.12 + (k % 3) * 0.12, 0.79, -0.08 + Math.floor(k / 3) * 0.16], [0, k, 0.3]);
       return;
     }
     case "licorice": {
+      // A loose pile of twisted black licorice ropes lying down (catalog photo), not a standing bundle.
       const rope = paint("licorice", 0.3, 1.1, (g, W, H) => {
-        g.fillStyle = "#121010"; g.fillRect(0, 0, W, H);
-        g.strokeStyle = "#3a3434"; g.lineWidth = W * 0.08;
-        for (let y = -W; y < H + W; y += W * 0.35) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y + W * 0.5); g.stroke(); }
+        g.fillStyle = "#0e0c0c"; g.fillRect(0, 0, W, H);
+        g.strokeStyle = "#4a4242"; g.lineWidth = W * 0.07;
+        for (let y = -W; y < H + W; y += W * 0.32) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y + W * 0.55); g.stroke(); }
       });
-      for (let k = 0; k < 7; k++) {
-        const a = (k / 6) * Math.PI * 2;
-        const r = k === 6 ? 0 : 0.11;
-        cyl(rope, [0.05, 1.05, 0.05], [Math.cos(a) * r, 0.53, Math.sin(a) * r], [0.04 * Math.cos(a), 0, 0.04 * Math.sin(a)]);
-      }
-      cyl(mat(0xa3192b, "satin"), [0.18, 0.07, 0.18], [0, 0.55, 0]);
-      bow(0.55, 0.18, 0.7, mat(0xa3192b, "satin"));
+      // [z, y, yaw]: three ropes on the bottom, two on them, one on top, each a little askew.
+      const ropes: V3[] = [[-0.16, 0.075, 0.06], [0, 0.075, -0.05], [0.16, 0.075, 0.04], [-0.08, 0.2, -0.03], [0.08, 0.2, 0.07], [0, 0.325, -0.04]];
+      ropes.forEach(([z, y, yaw]) => cyl(rope, [0.075, 0.98, 0.075], [0, y, z], [0, yaw, Math.PI / 2]));
       return;
     }
     case "teddy": {
@@ -324,6 +362,18 @@ export function buildLook(look: Look, kit: LookKit) {
       ball(muzzle, [0.13, 0.1, 0.09], [0, 0.93, 0.24]);
       ball(ink, [0.04, 0.03, 0.025], [0, 0.97, 0.32]);
       bow(0.74, 0.26, 1.0, mat(0x7a4a2d, "satin"));
+      return;
+    }
+    case "salami": {
+      // A cured salami log with a paper band; no photo yet, so nothing beyond what a salami looks like.
+      const casing = paint("salami", 1.2, 0.5, (g, W, H) => {
+        g.fillStyle = "#7a2f2a"; g.fillRect(0, 0, W, H);
+        for (let k = 0; k < 140; k++) { g.fillStyle = k % 3 ? "rgba(240,226,214,0.55)" : "rgba(60,20,18,0.5)"; g.beginPath(); g.arc((k * 97) % W, (k * 61) % H, W * 0.006, 0, Math.PI * 2); g.fill(); }
+      });
+      cyl(casing, [0.17, 0.92, 0.17], [0, 0.17, 0], [0, 0, Math.PI / 2]);
+      ball(mat(0x7a2f2a, "treat"), [0.17, 0.17, 0.17], [-0.46, 0.17, 0]);
+      ball(mat(0x7a2f2a, "treat"), [0.17, 0.17, 0.17], [0.46, 0.17, 0]);
+      cyl(mat(0xf5ecdf), [0.175, 0.3, 0.175], [0, 0.17, 0], [0, 0, Math.PI / 2]);
       return;
     }
     case "book": {

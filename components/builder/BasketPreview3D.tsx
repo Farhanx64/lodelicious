@@ -57,7 +57,7 @@ function wickerTexture(): THREE.CanvasTexture {
  * A live 3D picture of the basket being built: the basket grows with the chosen size and each item
  * drops in as a locally modelled product. Decorative only; the list beside it is the record.
  */
-export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: string }) {
+export function BasketPreview3D({ items, size, className = "h-[min(62vh,28rem)] w-full" }: { items: PreviewItem[]; size: string; className?: string }) {
   const mount = useRef<HTMLDivElement>(null);
   const api = useRef<{ setItems: (items: PreviewItem[]) => void; setSize: (s: string) => void } | null>(null);
 
@@ -172,8 +172,10 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
       const jitter = ((i * 37) % 7) / 7 - 0.5;
       return new THREE.Vector3(
         ((i % columns) - (columns - 1) / 2) * (columns === 4 ? 0.92 : 1.02) + jitter * 0.12 + (row % 2) * 0.22,
-        1.36 - row * 0.05 + Math.floor(i / (columns * 4)) * 1.3,
-        -1.05 + row * 0.72,
+        // The front row sits a little higher and further back, so short items (the Dubai bar, licorice)
+        // show above the tissue collar instead of sinking behind it.
+        1.42 - row * 0.02 + Math.floor(i / (columns * 4)) * 1.3,
+        -1.0 + row * 0.64,
       );
     };
 
@@ -197,9 +199,13 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
       });
       // Tall bars and plush gifts at the back, short trays at the front.
       const arranged = [...placed.values()].sort((a, b) => b.userData.height - a.userData.height);
+      const columns = units.length > 12 ? 4 : 3;
+      const across = columns === 4 ? 0.92 : 1.02;
       arranged.forEach((mesh, i) => {
         const p = slot(i, units.length);
-        mesh.scale.setScalar(units.length > 12 ? 1.08 : 1.3);
+        // Full size when it fits its slot; wide or deep items shrink so they don't cut into their neighbours.
+        const { width = 1, depth = 0.5 } = mesh.userData as { width?: number; depth?: number };
+        mesh.scale.setScalar(Math.min(units.length > 12 ? 1.08 : 1.3, (across * 0.92) / width, 0.82 / depth));
         mesh.userData.target = p;
         mesh.rotation.y = p.x * 0.18 + (((i * 53) % 9) / 9 - 0.5) * 0.25;
         if (reduce) mesh.position.copy(p);
@@ -285,5 +291,5 @@ export function BasketPreview3D({ items, size }: { items: PreviewItem[]; size: s
     api.current?.setSize(size);
   }, [size]);
 
-  return <div ref={mount} aria-hidden="true" className="h-[min(62vh,28rem)] w-full cursor-grab touch-pan-y rounded-lg bg-gradient-to-b from-coastal-pale to-cream active:cursor-grabbing" />;
+  return <div ref={mount} aria-hidden="true" className={`${className} cursor-grab touch-pan-y rounded-lg bg-gradient-to-b from-coastal-pale to-cream active:cursor-grabbing`} />;
 }
