@@ -17,6 +17,13 @@ import { useWalletSubmit } from "./ActionForm";
 const MOUNT_ID = "google-pay-button";
 const noSubscribe = () => () => {};
 
+/** Nothing is charged while the total is still being worked out; the sheet closes as failed. */
+function paymentWhilePaused(wallet: { showError(message: string): void } | null, name: string) {
+  const message = `Please wait for the shipping price, then pay with ${name} again. Nothing was charged.`;
+  wallet?.showError(message);
+  return { kind: "error" as const, message };
+}
+
 declare global {
   interface Window {
     google?: Parameters<typeof googlePayReady>[0];
@@ -54,12 +61,15 @@ export function GooglePayButton({
   clover,
   elements,
   amount,
+  paused = false,
   applePayOffered,
   environment,
 }: {
   clover: CloverGooglePay;
   elements: CloverWalletElements;
   amount: ApplePayAmount;
+  /** The total is being worked out (shipping not priced yet): the button stays mounted but can't be used. */
+  paused?: boolean;
   /** Apple Pay is switched on for this page: a device with Apple Pay gets that instead. */
   applePayOffered: boolean;
   environment: "TEST" | "PRODUCTION";
@@ -72,12 +82,14 @@ export function GooglePayButton({
   const wallet = useWalletSubmit();
   const walletRef = useRef(wallet);
   const amountRef = useRef(amount);
+  const pausedRef = useRef(paused);
   const control = useRef<ReturnType<typeof mountGooglePay> | null>(null);
   const [ready, setReady] = useState(false);
   const [removed, setRemoved] = useState(false);
   useEffect(() => {
     walletRef.current = wallet;
     amountRef.current = amount;
+    pausedRef.current = paused;
   });
 
   useEffect(() => {
@@ -92,7 +104,10 @@ export function GooglePayButton({
         elements,
         mountSelector: `#${MOUNT_ID}`,
         amountCents: current(),
-        submit: (payment) => walletRef.current!.submit({ ...payment, wallet: "google_pay" }),
+        submit: (payment) =>
+          pausedRef.current
+            ? Promise.resolve(paymentWhilePaused(walletRef.current, "Google Pay"))
+            : walletRef.current!.submit({ ...payment, wallet: "google_pay" }),
         showError: (message) => walletRef.current?.showError(message),
         onRemoved: () => !cancelled && setRemoved(true),
       });
@@ -129,7 +144,12 @@ export function GooglePayButton({
   // Mounted from the start (Clover's frame needs the div), but with no height until Google says yes.
   return (
     <div className={ready ? "mb-5" : undefined} aria-hidden={ready ? undefined : true} data-google-pay={ready ? "shown" : "waiting"}>
-      <div id={MOUNT_ID} className={ready ? "h-12 w-full overflow-hidden rounded-lg" : "h-0 w-full overflow-hidden"} />
+      <div
+        id={MOUNT_ID}
+        className={ready ? `h-12 w-full overflow-hidden rounded-lg${paused ? " pointer-events-none opacity-40" : ""}` : "h-0 w-full overflow-hidden"}
+        aria-disabled={(ready && paused) || undefined}
+      />
+      {ready && paused && <p className="mt-2 text-sm text-ink-soft">Google Pay is ready once shipping is priced.</p>}
       {ready && (
         <p className="mt-4 flex items-center gap-3 text-sm text-ink-soft" aria-hidden="true">
           <span className="h-px flex-1 bg-line" />

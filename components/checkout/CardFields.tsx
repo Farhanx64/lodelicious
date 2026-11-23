@@ -167,6 +167,14 @@ function CloverCard({
   applePay?: ApplePayAmount;
   googlePay?: ApplePayAmount;
 }) {
+  // A wallet button is mounted once and then kept (2026-11-22). While shipping is being priced the
+  // amount is briefly unknown; unmounting then made Clover create a second Apple Pay element on the
+  // same factory, which failed silently, so the button vanished for good. Keep the last amount and
+  // pause the button instead.
+  const [walletAmount, setWalletAmount] = useState<{ apple?: ApplePayAmount; google?: ApplePayAmount }>({ apple: applePay, google: googlePay });
+  if ((applePay && applePay !== walletAmount.apple) || (googlePay && googlePay !== walletAmount.google)) {
+    setWalletAmount({ apple: applePay ?? walletAmount.apple, google: googlePay ?? walletAmount.google });
+  }
   const clover = useRef<CloverInstance | null>(null);
   // The same Clover instance and the same one elements factory drive the card fields and both wallet buttons.
   const [instance, setInstance] = useState<{ clover: CloverInstance; elements: ReturnType<CloverInstance["elements"]> } | null>(null);
@@ -212,13 +220,16 @@ function CloverCard({
 
   return (
     <>
-      {applePay && instance && config.merchantId && <ApplePayButton clover={instance.clover} elements={instance.elements} sessionIdentifier={config.merchantId} amount={applePay} />}
-      {googlePay && instance && (
+      {walletAmount.apple && instance && config.merchantId && (
+        <ApplePayButton clover={instance.clover} elements={instance.elements} sessionIdentifier={config.merchantId} amount={walletAmount.apple} paused={!applePay} />
+      )}
+      {walletAmount.google && instance && (
         <GooglePayButton
           clover={instance.clover}
           elements={instance.elements}
-          amount={googlePay}
-          applePayOffered={!!applePay}
+          amount={walletAmount.google}
+          paused={!googlePay}
+          applePayOffered={!!walletAmount.apple}
           environment={config.sdkUrl.includes("sandbox") ? "TEST" : "PRODUCTION"}
         />
       )}
