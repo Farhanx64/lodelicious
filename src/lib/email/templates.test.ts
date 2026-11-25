@@ -277,3 +277,21 @@ describe("the tax line follows the ship-to state (D65)", () => {
     expect(customerReservationConfirmation({ ...reservation, taxLabel: "Tax" }).text).toContain("Tax included:");
   });
 });
+
+describe("emails in the shop's look (2026-11-24)", () => {
+  it("shows the Lodelicious logo from the site, linked, with the name as alt text", () => {
+    const html = customerOrderConfirmation({ ...order, store: { ...store, siteUrl: "https://shoplodelicious.com" } }).html;
+    expect(html).toContain('src="https://shoplodelicious.com/brand/logo-email.png"');
+    expect(html).toContain('href="https://shoplodelicious.com"');
+    expect(html).toContain('alt="Souset-Pink Gifts &amp; Sweets"');
+  });
+  it("falls back to the shop's name in text without a site address", () => {
+    const html = customerOrderConfirmation(order).html;
+    expect(html).not.toContain("<img");
+    expect(html).toContain(">Souset-Pink</div>");
+  });
+  it("never puts an unsafe site address into the logo", () => {
+    const html = customerOrderConfirmation({ ...order, store: { ...store, siteUrl: 'javascript:alert(1)"' } }).html;
+    expect(html).not.toContain("javascript:");
+  });
+});

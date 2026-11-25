@@ -1,8 +1,10 @@
 /**
  * Email templates (D44). Pure functions: data in, `{ subject, text, html }` out. Framework-free.
  *
- * Each email is described once as a list of blocks and rendered twice, as plain text and as simple HTML
- * (inline styles, tables for layout, no images, no fonts, no scripts). Every customer-supplied string goes
+ * Each email is described once as a list of blocks and rendered twice, as plain text and as HTML in the
+ * shop's look (2026-11-24): cream page, white card in a gold frame, the round Lodelicious logo, serif
+ * headings, rose pill buttons. Inline styles and tables only (email clients drop stylesheets), no
+ * scripts; the one image is the logo, with the shop's name as text when images are blocked. Every customer-supplied string goes
  * through `escapeHtml` in the HTML and has its line breaks flattened in the subject, so a name like
  * `<script>` or a message with a newline cannot change the markup or the headers.
  *
@@ -22,6 +24,8 @@ export type StoreInfo = {
   /** Opening hours from Store details (D64: shown in the ready-for-pickup email). */
   hoursLabel?: string | null;
   hours?: { days: string; time: string }[] | null;
+  /** The site's https origin, for the logo and the link on it. Without it the header is the name in text. */
+  siteUrl?: string | null;
 };
 
 type Block =
@@ -65,38 +69,67 @@ function renderText(blocks: Block[], footer: string[]): string {
   return [...out, "--", ...footer].join("\n\n") + "\n";
 }
 
-const INK = "#2b2024";
-const MUTED = "#5f5257";
-const RULE = "#e6dcd0";
+// The storefront's palette (app/globals.css).
+const INK = "#3b2f25";
+const MUTED = "#665a4e";
+const GOLD = "#b99870";
+const GOLD_TEXT = "#735a39";
+const ROSE = "#9c4459";
+const BLUSH = "#f8e6e8";
+const CREAM = "#f7f2ee";
+const RULE = "#e3d8cc";
+const SERIF = "'Cormorant Garamond',Georgia,'Times New Roman',serif";
+const SANS = "'Source Sans 3','Helvetica Neue',Helvetica,Arial,sans-serif";
 
-function renderHtml(title: string, blocks: Block[], footer: string[]): string {
+/** "Total paid", "Balance due at pickup": the row the customer looks for, set apart in bold. */
+const isTotal = (label: string) => /^(total|balance due)/i.test(label);
+
+function renderHtml(title: string, blocks: Block[], footer: string[], store?: StoreInfo): string {
   const body = blocks
     .map((b) => {
-      if (b.kind === "heading") return `<h2 style="margin:24px 0 8px;font-size:18px;line-height:1.3;color:${INK};">${escapeHtml(plain(b.text))}</h2>`;
-      if (b.kind === "p") return `<p style="margin:0 0 12px;">${withBreaks(plain(b.text))}</p>`;
+      if (b.kind === "heading")
+        return `<h2 style="margin:28px 0 10px;padding:0 0 8px;border-bottom:1px solid ${GOLD};font-family:${SERIF};font-size:20px;font-weight:600;line-height:1.3;letter-spacing:2px;text-transform:uppercase;color:${GOLD_TEXT};">${escapeHtml(plain(b.text))}</h2>`;
+      if (b.kind === "p") return `<p style="margin:0 0 14px;">${withBreaks(plain(b.text))}</p>`;
       if (b.kind === "rows")
-        return `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 12px;">${b.rows
-          .map(([l, v]) => `<tr><td style="padding:4px 12px 4px 0;color:${MUTED};vertical-align:top;white-space:nowrap;">${escapeHtml(l)}</td><td style="padding:4px 0;vertical-align:top;">${withBreaks(plain(v))}</td></tr>`)
+        return `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 14px;">${b.rows
+          .map(([l, v]) => {
+            const total = isTotal(l);
+            const cell = total ? `border-top:1px solid ${GOLD};padding-top:10px;font-weight:700;color:${INK};` : "";
+            return `<tr><td style="padding:5px 12px 5px 0;color:${MUTED};vertical-align:top;${cell}">${escapeHtml(l)}</td><td style="padding:5px 0;vertical-align:top;text-align:right;${cell}">${withBreaks(plain(v))}</td></tr>`;
+          })
           .join("")}</table>`;
       if (b.kind === "items")
-        return `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 12px;">${b.items
-          .map((i) => `<tr><td style="padding:6px 12px 6px 0;border-bottom:1px solid ${RULE};vertical-align:top;">${withBreaks(plain(i.left))}</td><td style="padding:6px 0;border-bottom:1px solid ${RULE};text-align:right;white-space:nowrap;vertical-align:top;">${escapeHtml(plain(i.right))}</td></tr>`)
+        return `<table role="presentation" cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:100%;margin:0 0 14px;">${b.items
+          .map((i) => `<tr><td style="padding:9px 12px 9px 0;border-bottom:1px solid ${RULE};vertical-align:top;">${withBreaks(plain(i.left))}</td><td style="padding:9px 0;border-bottom:1px solid ${RULE};text-align:right;white-space:nowrap;vertical-align:top;">${escapeHtml(plain(i.right))}</td></tr>`)
           .join("")}</table>`;
       if (b.kind === "link") {
         const url = safeUrl(b.url);
         return url
-          ? `<p style="margin:0 0 12px;"><a href="${escapeHtml(url)}" style="color:#1d4f7a;text-decoration:underline;">${escapeHtml(b.label)}</a><br><span style="font-size:13px;color:${MUTED};word-break:break-all;">${escapeHtml(url)}</span></p>`
+          ? `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:6px 0 8px;"><tr><td style="border-radius:999px;background:${ROSE};"><a href="${escapeHtml(url)}" style="display:inline-block;padding:12px 28px;font-family:${SANS};font-size:15px;font-weight:600;letter-spacing:1px;color:#ffffff;text-decoration:none;border-radius:999px;">${escapeHtml(b.label)}</a></td></tr></table><p style="margin:0 0 14px;font-size:12px;color:${MUTED};word-break:break-all;">${escapeHtml(url)}</p>`
           : "";
       }
-      return `<p style="margin:0 0 12px;"><span style="color:${MUTED};">${escapeHtml(b.label)}</span><br><span style="display:block;margin:4px 0 0;padding:0 0 0 12px;border-left:3px solid ${RULE};">${withBreaks(plain(b.text))}</span></p>`;
+      return `<p style="margin:0 0 14px;"><span style="font-size:13px;letter-spacing:1px;text-transform:uppercase;color:${GOLD_TEXT};">${escapeHtml(b.label)}</span><span style="display:block;margin:6px 0 0;padding:10px 14px;background:${BLUSH};border-left:3px solid ${ROSE};">${withBreaks(plain(b.text))}</span></p>`;
     })
     .join("\n");
-  const foot = footer.map((f) => `<p style="margin:0 0 4px;font-size:13px;color:${MUTED};">${escapeHtml(f)}</p>`).join("");
-  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${escapeHtml(oneLine(title))}</title></head><body style="margin:0;padding:0;background:#ffffff;"><div style="max-width:600px;margin:0 auto;padding:24px 16px;font-family:Georgia,'Times New Roman',serif;font-size:16px;line-height:1.5;color:${INK};">${body}<hr style="border:0;border-top:1px solid ${RULE};margin:24px 0 12px;">${foot}</div></body></html>`;
+
+  const site = store?.siteUrl && safeUrl(store.siteUrl) ? store.siteUrl.replace(/\/+$/, "") : null;
+  const name = escapeHtml(oneLine(store?.name || "Lodelicious"));
+  const wordmark = `<div style="font-family:${SERIF};font-size:30px;letter-spacing:6px;text-transform:uppercase;color:${GOLD_TEXT};">${name}</div>`;
+  const logo = site
+    ? `<a href="${escapeHtml(site)}" style="text-decoration:none;"><img src="${escapeHtml(site)}/brand/logo-email.png" width="120" height="120" alt="${name} Gifts &amp; Sweets" style="display:block;margin:0 auto;width:120px;height:120px;border:0;font-family:${SERIF};font-size:24px;color:${GOLD_TEXT};"></a>`
+    : wordmark;
+  const tagline = `<div style="margin-top:10px;font-family:${SANS};font-size:11px;letter-spacing:4px;text-transform:uppercase;color:${GOLD_TEXT};">Sweets &middot; Chocolates &middot; Gifts</div>`;
+  const heading = `<h1 style="margin:0 0 20px;font-family:${SERIF};font-size:28px;font-weight:600;line-height:1.25;color:${INK};text-align:center;">${escapeHtml(oneLine(title))}</h1>`;
+  const foot = footer
+    .map((f, i) => `<p style="margin:0 0 4px;font-size:13px;color:${MUTED};${i === 0 ? `font-family:${SERIF};font-size:16px;letter-spacing:2px;text-transform:uppercase;color:${GOLD_TEXT};` : ""}">${escapeHtml(f)}</p>`)
+    .join("");
+  const preheader = `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:${CREAM};">${escapeHtml(oneLine(title))}</div>`;
+
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light"><meta name="supported-color-schemes" content="light"><title>${escapeHtml(oneLine(title))}</title><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600&amp;family=Source+Sans+3:wght@400;600&amp;display=swap" rel="stylesheet"></head><body style="margin:0;padding:0;background:${CREAM};">${preheader}<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;background:${CREAM};"><tr><td align="center" style="padding:0;"><div style="height:6px;background:${ROSE};line-height:6px;font-size:0;">&nbsp;</div><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;max-width:600px;"><tr><td align="center" style="padding:28px 16px 22px;">${logo}${tagline}</td></tr><tr><td style="padding:0 12px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:separate;background:#ffffff;border:1px solid ${GOLD};"><tr><td style="padding:4px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-collapse:collapse;border:1px solid ${RULE};"><tr><td style="padding:28px 24px 20px;font-family:${SANS};font-size:16px;line-height:1.55;color:${INK};">${heading}${body}</td></tr></table></td></tr></table></td></tr><tr><td align="center" style="padding:24px 16px 32px;font-family:${SANS};text-align:center;">${foot}<p style="margin:12px 0 0;font-size:12px;color:${MUTED};">Made by hand at our shop &middot; ${site ? `<a href="${escapeHtml(site)}" style="color:${ROSE};text-decoration:underline;">${escapeHtml(site.replace(/^https?:\/\//, ""))}</a>` : name}</p></td></tr></table></td></tr></table></body></html>`;
 }
 
-function build(subject: string, blocks: Block[], footer: string[]): Rendered {
-  return { subject: oneLine(subject).slice(0, 200), text: renderText(blocks, footer), html: renderHtml(subject, blocks, footer) };
+function build(subject: string, blocks: Block[], footer: string[], store?: StoreInfo): Rendered {
+  return { subject: oneLine(subject).slice(0, 200), text: renderText(blocks, footer), html: renderHtml(subject, blocks, footer, store) };
 }
 
 function storeFooter(store: StoreInfo): string[] {
@@ -224,7 +257,7 @@ export function customerOrderConfirmation(d: OrderEmail): Rendered {
   blocks.push({ kind: "heading", text: d.shipTo ? "Our shop" : "Pick up at" }, { kind: "p", text: storeFooter(d.store).join("\n") });
   if (d.link) blocks.push({ kind: "p", text: "You can see your order at any time here. Keep this link private; anyone who has it can see the order." }, { kind: "link", label: "View your order", url: d.link });
   blocks.push({ kind: "p", text: "Questions? Just reply to this email or call us." });
-  return build(`${testPrefix(d.testMode)}Your order ${d.number}${d.staffReview ? ": we are checking your note" : " is confirmed"}`, blocks, storeFooter(d.store));
+  return build(`${testPrefix(d.testMode)}Your order ${d.number}${d.staffReview ? ": we are checking your note" : " is confirmed"}`, blocks, storeFooter(d.store), d.store);
 }
 
 export function customerReservationConfirmation(d: ReservationEmail): Rendered {
@@ -255,7 +288,7 @@ export function customerReservationConfirmation(d: ReservationEmail): Rendered {
   blocks.push({ kind: "heading", text: d.shipTo ? "Our shop" : "Pick up at" }, { kind: "p", text: storeFooter(d.store).join("\n") });
   if (d.link) blocks.push({ kind: "p", text: "You can see your reservation at any time here. Keep this link private; anyone who has it can see it." }, { kind: "link", label: "View your reservation", url: d.link });
   blocks.push({ kind: "p", text: "Questions? Just reply to this email or call us." });
-  return build(`${testPrefix(d.testMode)}Your basket reservation ${d.number}${d.staffReview ? ": we are checking your requests" : " is confirmed"}`, blocks, storeFooter(d.store));
+  return build(`${testPrefix(d.testMode)}Your basket reservation ${d.number}${d.staffReview ? ": we are checking your requests" : " is confirmed"}`, blocks, storeFooter(d.store), d.store);
 }
 
 export function customerInquiryReceipt(d: InquiryEmail): Rendered {
@@ -267,7 +300,7 @@ export function customerInquiryReceipt(d: InquiryEmail): Rendered {
     { kind: "quote", label: "Your message", text: d.message },
     { kind: "p", text: "You can reply to this email if you want to add anything." },
   ];
-  return build(`We received your message (${d.number})`, blocks, storeFooter(d.store));
+  return build(`We received your message (${d.number})`, blocks, storeFooter(d.store), d.store);
 }
 
 // ---------------------------------------------------------------- status emails (D64)
@@ -301,7 +334,7 @@ export function customerReadyForPickup(d: ReadyEmail): Rendered {
   blocks.push(...pickupAtBlocks(d.store));
   blocks.push({ kind: "p", text: `Please bring your ${isOrder ? "order" : "reservation"} number. If you can't come at your pickup time, reply to this email or call us.` });
   if (d.link) blocks.push({ kind: "link", label: isOrder ? "View your order" : "View your reservation", url: d.link });
-  return build(`${testPrefix(d.testMode)}Your ${isOrder ? "order" : "basket reservation"} ${d.number} is ready for pickup`, blocks, storeFooter(d.store));
+  return build(`${testPrefix(d.testMode)}Your ${isOrder ? "order" : "basket reservation"} ${d.number} is ready for pickup`, blocks, storeFooter(d.store), d.store);
 }
 
 export type ShippedEmail = Pick<OrderEmail, "number" | "customerName" | "lines" | "shipTo" | "testMode" | "link" | "store"> & {
@@ -328,7 +361,7 @@ export function customerShipped(d: ShippedEmail): Rendered {
   blocks.push({ kind: "heading", text: "What's in the parcel" }, { kind: "items", items: d.lines.map(lineBlock) });
   if (d.link) blocks.push({ kind: "link", label: "View your order", url: d.link });
   blocks.push({ kind: "p", text: "Questions? Just reply to this email or call us." });
-  return build(`${testPrefix(d.testMode)}Your order ${d.number} has shipped`, blocks, storeFooter(d.store));
+  return build(`${testPrefix(d.testMode)}Your order ${d.number} has shipped`, blocks, storeFooter(d.store), d.store);
 }
 
 // ---------------------------------------------------------------- staff emails
@@ -348,7 +381,7 @@ export function staffNewOrder(d: OrderEmail): Rendered {
   ];
   if (d.notes.trim()) blocks.push({ kind: "quote", label: "Customer note", text: d.notes });
   blocks.push(...adminBlock(d.adminLink));
-  return build(`${testPrefix(d.testMode)}New order ${d.number}${d.staffReview ? " (needs staff review)" : ""}: ${money(d.totalCents)}, ${whereSubject(d)}`, blocks, [oneLine(d.store.name)]);
+  return build(`${testPrefix(d.testMode)}New order ${d.number}${d.staffReview ? " (needs staff review)" : ""}: ${money(d.totalCents)}, ${whereSubject(d)}`, blocks, [oneLine(d.store.name)], d.store);
 }
 
 export function staffNewReservation(d: ReservationEmail): Rendered {
@@ -361,7 +394,7 @@ export function staffNewReservation(d: ReservationEmail): Rendered {
   ];
   if (d.requests.trim()) blocks.push({ kind: "quote", label: "Customer requests", text: d.requests });
   blocks.push(...adminBlock(d.adminLink));
-  return build(`${testPrefix(d.testMode)}New reservation ${d.number}${d.staffReview ? " (needs staff review)" : ""}: ${money(d.paidCents)} paid, ${whereSubject(d)}`, blocks, [oneLine(d.store.name)]);
+  return build(`${testPrefix(d.testMode)}New reservation ${d.number}${d.staffReview ? " (needs staff review)" : ""}: ${money(d.paidCents)} paid, ${whereSubject(d)}`, blocks, [oneLine(d.store.name)], d.store);
 }
 
 export function staffNewInquiry(d: InquiryEmail): Rendered {
@@ -371,7 +404,7 @@ export function staffNewInquiry(d: InquiryEmail): Rendered {
     { kind: "quote", label: "Message", text: d.message },
     ...adminBlock(d.adminLink),
   ];
-  return build(`New inquiry ${d.number}: ${d.topicLabel}`, blocks, [oneLine(d.store.name)]);
+  return build(`New inquiry ${d.number}: ${d.topicLabel}`, blocks, [oneLine(d.store.name)], d.store);
 }
 
 export type AttentionReason = "unknown_payment" | "stock_needs_attention";
@@ -383,7 +416,7 @@ export function staffAttention(d: { kind: "order" | "reservation"; number: strin
       ? `The payment for ${what} ${d.number} has an UNKNOWN result: it may or may not have been charged. Do not pack it. Check with the payment provider, then mark the payment paid or failed in the admin. The customer has not been emailed.`
       : `${what[0].toUpperCase()}${what.slice(1)} ${d.number} is paid, but its stock could not be taken. Check the shelf and the stock counts, fix them, then mark the stock as resolved in the admin.`;
   const blocks: Block[] = [{ kind: "p", text }, ...testNote(d.testMode), ...adminBlock(d.adminLink)];
-  return build(`${testPrefix(d.testMode)}Needs attention: ${what} ${d.number} (${d.reason === "unknown_payment" ? "payment unknown" : "stock"})`, blocks, [oneLine(d.store.name)]);
+  return build(`${testPrefix(d.testMode)}Needs attention: ${what} ${d.number} (${d.reason === "unknown_payment" ? "payment unknown" : "stock"})`, blocks, [oneLine(d.store.name)], d.store);
 }
 
 // ---------------------------------------------------------------- rewards members (D47)
@@ -397,5 +430,5 @@ export function memberPasswordReset(d: MemberResetEmail): Rendered {
     { kind: "link", label: "Choose a new password", url: d.link },
     { kind: "p", text: "If you didn't ask for this, you can ignore this email: your password stays the same." },
   ];
-  return build(`Reset your ${oneLine(d.programName)} password`, blocks, storeFooter(d.store));
+  return build(`Reset your ${oneLine(d.programName)} password`, blocks, storeFooter(d.store), d.store);
 }
