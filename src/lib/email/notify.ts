@@ -52,9 +52,9 @@ export function siteUrl(env: EnvLike): string | null {
 const str = (v: unknown): string => (typeof v === "string" ? v : "");
 const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
 
-function storeInfo(s: StoreSetting): StoreInfo {
+function storeInfo(s: StoreSetting, env: EnvLike): StoreInfo {
   const hours = Array.isArray(s.hours) ? s.hours.map((h) => ({ days: str(h?.days), time: str(h?.time) })) : [];
-  return { name: s.name, street: s.street, locality: s.locality, phone: s.phone, email: s.email, hoursLabel: str(s.hoursLabel) || null, hours };
+  return { name: s.name, street: s.street, locality: s.locality, phone: s.phone, email: s.email, hoursLabel: str(s.hoursLabel) || null, hours, siteUrl: siteUrl(env) };
 }
 
 /** The one-line ship-to address of a shipped record (D54), or null for pickup. */
@@ -90,7 +90,7 @@ function orderData(o: Order, forStaff: boolean, env: EnvLike, store: StoreSettin
     adminLink: base ? `${base}/admin/collections/orders/${o.id}` : null,
     customerEmail: str(o.customer?.email),
     customerPhone: str(o.customer?.phone),
-    store: storeInfo(store),
+    store: storeInfo(store, env),
   };
 }
 
@@ -119,7 +119,7 @@ function reservationData(r: Reservation, forStaff: boolean, env: EnvLike, store:
     adminLink: base ? `${base}/admin/collections/reservations/${r.id}` : null,
     customerEmail: str(r.customer?.email),
     customerPhone: str(r.customer?.phone),
-    store: storeInfo(store),
+    store: storeInfo(store, env),
   };
 }
 
@@ -137,7 +137,7 @@ function inquiryData(i: Inquiry, env: EnvLike, store: StoreSetting): InquiryEmai
     adminLink: base ? `${base}/admin/collections/inquiries/${i.id}` : null,
     customerEmail: str(i.customer?.email),
     customerPhone: str(i.customer?.phone),
-    store: storeInfo(store),
+    store: storeInfo(store, env),
   };
 }
 
@@ -168,7 +168,7 @@ function compose(collection: RecordKind, kind: EmailKind, doc: AnyRecord, env: E
         reason: kind === "staff_unknown" ? "unknown_payment" : "stock_needs_attention",
         testMode: Boolean(r.testMode),
         adminLink: siteUrl(env) ? `${siteUrl(env)}/admin/collections/${collection}/${r.id}` : null,
-        store: storeInfo(store),
+        store: storeInfo(store, env),
       }),
       to: staffTo,
       label: `staff_${kind === "staff_unknown" ? "unknown_payment" : "stock_attention"}_${isOrder ? "order" : "reservation"}`,
