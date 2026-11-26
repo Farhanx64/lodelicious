@@ -295,3 +295,18 @@ describe("emails in the shop's look (2026-11-24)", () => {
     expect(html).not.toContain("javascript:");
   });
 });
+
+describe("emails follow the theme colours in Store details (D49)", () => {
+  it("uses the brand colour for the band and buttons and the button colour for the frame", () => {
+    const html = customerOrderConfirmation({ ...order, store: { ...store, brandColor: "#1f5c4a", buttonColor: "#d4b483" } }).html;
+    expect(html).toContain("background:#1f5c4a");
+    expect(html).toContain("border:1px solid #d4b483");
+    expect(html).not.toContain("#9c4459");
+  });
+  it("falls back to the defaults for an empty or invalid colour, so nothing odd reaches the markup", () => {
+    const html = customerOrderConfirmation({ ...order, store: { ...store, brandColor: 'red;"><script>', buttonColor: "" } }).html;
+    expect(html).toContain("background:#9c4459");
+    expect(html).toContain("border:1px solid #c8a467");
+    expect(html).not.toContain("<script>");
+  });
+});
