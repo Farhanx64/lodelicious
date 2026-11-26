@@ -11,6 +11,7 @@
  * What never goes into an email: a payment card or reference, the access token hash, `staffNotes`, the
  * stock note. The caller passes only the fields below, so there is nothing else to leak.
  */
+import { brandColor, buttonColor } from "../brand-color";
 import { formatCents } from "../money";
 
 export type Rendered = { subject: string; text: string; html: string };
@@ -26,6 +27,9 @@ export type StoreInfo = {
   hours?: { days: string; time: string }[] | null;
   /** The site's https origin, for the logo and the link on it. Without it the header is the name in text. */
   siteUrl?: string | null;
+  /** Store details → Brand colour and Button colour (D49); emails follow them like the website. */
+  brandColor?: string | null;
+  buttonColor?: string | null;
 };
 
 type Block =
@@ -72,19 +76,26 @@ function renderText(blocks: Block[], footer: string[]): string {
 // The storefront's palette (app/globals.css).
 const INK = "#3b2f25";
 const MUTED = "#665a4e";
-const GOLD = "#b99870";
 const GOLD_TEXT = "#735a39";
-const ROSE = "#9c4459";
-const BLUSH = "#f8e6e8";
 const CREAM = "#f7f2ee";
 const RULE = "#e3d8cc";
 const SERIF = "'Cormorant Garamond',Georgia,'Times New Roman',serif";
 const SANS = "'Source Sans 3','Helvetica Neue',Helvetica,Arial,sans-serif";
 
+/** `hex` mixed with white: `amount` 0 is white, 1 is the colour. Inputs are validated #rrggbb. */
+function tint(hex: string, amount: number): string {
+  const mix = (i: number) => Math.round(255 - (255 - parseInt(hex.slice(i, i + 2), 16)) * amount).toString(16).padStart(2, "0");
+  return `#${mix(1)}${mix(3)}${mix(5)}`;
+}
+
 /** "Total paid", "Balance due at pickup": the row the customer looks for, set apart in bold. */
 const isTotal = (label: string) => /^(total|balance due)/i.test(label);
 
 function renderHtml(title: string, blocks: Block[], footer: string[], store?: StoreInfo): string {
+  // Only validated #rrggbb colours reach the markup (brandColor/buttonColor fall back to the defaults).
+  const ROSE = brandColor(store?.brandColor);
+  const BLUSH = tint(ROSE, 0.12);
+  const GOLD = buttonColor(store?.buttonColor);
   const body = blocks
     .map((b) => {
       if (b.kind === "heading")

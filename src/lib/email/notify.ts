@@ -54,7 +54,7 @@ const num = (v: unknown): number => (typeof v === "number" && Number.isFinite(v)
 
 function storeInfo(s: StoreSetting, env: EnvLike): StoreInfo {
   const hours = Array.isArray(s.hours) ? s.hours.map((h) => ({ days: str(h?.days), time: str(h?.time) })) : [];
-  return { name: s.name, street: s.street, locality: s.locality, phone: s.phone, email: s.email, hoursLabel: str(s.hoursLabel) || null, hours, siteUrl: siteUrl(env) };
+  return { name: s.name, street: s.street, locality: s.locality, phone: s.phone, email: s.email, hoursLabel: str(s.hoursLabel) || null, hours, siteUrl: siteUrl(env), brandColor: s.brandColor, buttonColor: s.buttonColor };
 }
 
 /** The one-line ship-to address of a shipped record (D54), or null for pickup. */
