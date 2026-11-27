@@ -1,0 +1,30 @@
+diff --git a/node_modules/payload/dist/auth/strategies/local/generatePasswordSaltHash.js b/node_modules/payload/dist/auth/strategies/local/generatePasswordSaltHash.js
+index 1016b91..aca134f 100644
+--- a/node_modules/payload/dist/auth/strategies/local/generatePasswordSaltHash.js
++++ b/node_modules/payload/dist/auth/strategies/local/generatePasswordSaltHash.js
+@@ -1,4 +1,6 @@
+ import crypto from 'crypto';
++import { pbkdf2Async as __nobleP } from '@noble/hashes/pbkdf2';
++import { sha256 as __nobleS } from '@noble/hashes/sha256';
+ import { InvalidConfiguration, ValidationError } from '../../../errors/index.js';
+ import { password } from '../../../fields/validations.js';
+ // Each supported iteration count has its own fixed prefix, so a stored hash
+@@ -85,7 +87,16 @@ function randomBytes() {
+ // Environments such as Cloudflare Workers reject iteration counts above their limit
+ export const isUnsupportedIterationsError = (err)=>err instanceof Error && err.name === 'NotSupportedError';
+ export function pbkdf2Promisified({ iterations, keyLength, password, salt }) {
+-    return new Promise((resolve, reject)=>crypto.pbkdf2(password, salt, iterations, keyLength, 'sha256', (err, hashRaw)=>err ? reject(err) : resolve(hashRaw)));
++    // Cloudflare Workers cap native PBKDF2 at 100000 iterations; fall back to pure JS (Lodelicious D53).
++    const unsupported = (e)=>e instanceof Error && (e.name === 'NotSupportedError' || /not supported/i.test(String(e.message)));
++    const js = ()=>__nobleP(__nobleS, password, salt, { c: iterations, dkLen: keyLength, asyncTick: 20 }).then((u)=>Buffer.from(u));
++    return new Promise((resolve, reject)=>{
++        try {
++            crypto.pbkdf2(password, salt, iterations, keyLength, 'sha256', (err, hashRaw)=>err ? (unsupported(err) ? js().then(resolve, reject) : reject(err)) : resolve(hashRaw));
++        } catch (err) {
++            if (unsupported(err)) js().then(resolve, reject); else reject(err);
++        }
++    });
+ }
+ 
+ //# sourceMappingURL=generatePasswordSaltHash.js.map
+\ No newline at end of file
