@@ -19,6 +19,9 @@ const nextConfig: NextConfig = {
   // On Cloudflare the Worker entry answers these first (src/lib/edge-redirect.mjs); these rules cover
   // `next start`. The bare root has its own rule: `/:path*` alone sent `/` to a literal "/:path*".
   redirects: async () => [
+    // The admin home is the 3D dashboard (Brand#DashboardRedirect). Redirect before Payload renders its
+    // own home: since Payload 3.94 that home flashed "Failed to load widget" on the way (2026-11-27).
+    { source: "/admin", destination: "/dashboard", permanent: false },
     {
       source: "/",
       has: [{ type: "host", value: "www.shoplodelicious.com" }],
