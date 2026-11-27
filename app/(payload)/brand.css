@@ -127,3 +127,23 @@ html[data-theme="light"] .template-default {
 [data-theme="light"] .table table {
   background: #ffffff;
 }
+
+/* Sidebar reachable to the bottom on phones (owner, 2026-11-27). Payload sizes it 100vh, which on
+   iPhone Safari includes the area behind the bottom toolbar, so the last links and the sign-out
+   control sat out of reach. dvh is the visible height; browsers without it keep Payload's 100vh. */
+.nav {
+  height: 100dvh;
+}
+.nav__scroll {
+  padding-bottom: calc(var(--base) * 2 + env(safe-area-inset-bottom, 0px));
+}
+/* The sign-out control is an icon only; say what it does. */
+.nav__log-out {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+.nav__log-out::after {
+  content: "Sign out";
+}
