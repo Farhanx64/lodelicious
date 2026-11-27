@@ -60,3 +60,19 @@ jobs:
           gzip_kib="$(echo "$output" | sed -n 's/.*gzip: \([0-9.]*\) KiB.*/\1/p' | tail -n 1)"
           if [ -z "$gzip_kib" ]; then echo "::error::Could not read the Worker size from wrangler's output."; exit 1; fi
           if [ "$(printf '%.0f' "$gzip_kib")" -gt 9500 ]; then echo "::error::The Worker is ${gzip_kib} KiB compressed; the limit is 10 MB."; exit 1; fi
+      # The built Worker must actually serve pages (2026-11-26: Next 16.4.6 with OpenNext 1.20.7 built
+      # and passed every check above, then returned 500 on every live page). Runs the Worker in
+      # Cloudflare's local runtime with an empty local D1, migrated; no Cloudflare account needed.
+      - name: Built Worker serves pages
+        run: |
+          printf 'PAYLOAD_SECRET=%s\nAPP_ENV=staging\n' "$PAYLOAD_SECRET" > .dev.vars
+          npm run cf:migrate < /dev/null
+          npx wrangler dev --local --port 8799 > wrangler-dev.log 2>&1 &
+          for i in $(seq 1 90); do curl -s -o /dev/null http://localhost:8799/admin/login && break; sleep 2; done
+          failed=0
+          for p in / /shop /build-a-basket /cart /gift-baskets /admin/login /sitemap.xml; do
+            code="$(curl -s -o /dev/null -w '%{http_code}' -H 'cf-visitor: {"scheme":"https"}' "http://localhost:8799$p")"
+            echo "$p $code"
+            if [ "$code" != "200" ]; then failed=1; fi
+          done
+          if [ "$failed" = "1" ]; then echo "::error::The built Worker did not serve every page."; grep -iE "error|exception" wrangler-dev.log | head -40; exit 1; fi

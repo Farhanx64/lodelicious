@@ -34,7 +34,7 @@
   },
   "dependencies": {
     "@noble/hashes": "^1.8.0",
-    "@opennextjs/cloudflare": "1.20.7",
+    "@opennextjs/cloudflare": "1.20.19",
     "@payloadcms/db-d1-sqlite": "3.90.2",
     "@payloadcms/db-sqlite": "3.90.2",
     "@payloadcms/next": "3.90.2",
