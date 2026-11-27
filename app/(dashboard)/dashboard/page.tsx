@@ -45,6 +45,11 @@ export default async function DashboardPage() {
               {label}
             </Link>
           ))}
+          {/* Payload's sign-out page: ends the session and returns to the login form. Never prefetched,
+              or merely showing the dashboard would sign the person out. */}
+          <Link prefetch={false} className="rounded-full border border-line bg-paper px-4 py-2 text-ink-soft hover:bg-ivory" href="/admin/logout">
+            Sign out
+          </Link>
         </nav>
       </header>
 
