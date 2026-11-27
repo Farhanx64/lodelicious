@@ -36,7 +36,7 @@ import { RewardsSettings } from "./globals/RewardsSettings";
 import { ShippingSettings } from "./globals/ShippingSettings";
 import { StoreSettings } from "./globals/StoreSettings";
 import { emailAdapterFromEnv } from "./src/lib/email/adapter";
-import { csrfOrigins } from "./src/lib/security";
+import { csrfOrigins, liveSiteUrl } from "./src/lib/security";
 
 const filename = fileURLToPath(import.meta.url);
 const dirname = path.dirname(filename);
@@ -51,6 +51,9 @@ const platform =
     : await import("./src/platform/node").then((m) => m.nodePlatform(dirname));
 
 export default buildConfig({
+  // Live only: links Payload writes into emails (staff password reset) use the shop's own https
+  // address, never one built from the request's Host header (security audit 2026-11-26).
+  ...(process.env.APP_ENV === "production" && liveSiteUrl(process.env.NEXT_PUBLIC_SITE_URL) ? { serverURL: liveSiteUrl(process.env.NEXT_PUBLIC_SITE_URL)! } : {}),
   admin: {
     user: Users.slug,
     // Built-in avatar: the default Gravatar lookup would send staff email hashes to a third party.

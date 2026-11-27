@@ -6,6 +6,7 @@
  * See https://opennext.js.org/cloudflare/howtos/custom-worker
  */
 import openNextWorker from "./.open-next/worker.js";
+import { edgeRedirect } from "./src/lib/edge-redirect.mjs";
 
 export { DOQueueHandler, DOShardedTagCache, BucketCachePurge } from "./.open-next/worker.js";
 
@@ -40,7 +41,10 @@ async function runJob(job, env, ctx) {
 }
 
 const worker = {
-  fetch: openNextWorker.fetch,
+  /** http → https and www → apex first (src/lib/edge-redirect.mjs), then the app. */
+  fetch(request, env, ctx) {
+    return edgeRedirect(request) ?? openNextWorker.fetch(request, env, ctx);
+  },
 
   /** @param {{ cron: string }} controller */
   async scheduled(controller, env, ctx) {

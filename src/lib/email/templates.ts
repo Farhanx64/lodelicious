@@ -302,14 +302,19 @@ export function customerReservationConfirmation(d: ReservationEmail): Rendered {
   return build(`${testPrefix(d.testMode)}Your basket reservation ${d.number}${d.staffReview ? ": we are checking your requests" : " is confirmed"}`, blocks, storeFooter(d.store), d.store);
 }
 
+/**
+ * The "we got your message" receipt goes to whatever address was typed into a public form, so it
+ * carries nothing the sender wrote: no name, message or event details (security audit 2026-11-26).
+ * Otherwise anyone could use the shop's address to send their own text to a stranger. The staff
+ * notification still has everything.
+ */
 export function customerInquiryReceipt(d: InquiryEmail): Rendered {
   const blocks: Block[] = [
-    { kind: "p", text: `Hi ${firstName(d.customerName)},` },
+    { kind: "p", text: "Hello," },
     { kind: "p", text: `Thank you for getting in touch. We received your message (reference ${d.number}), and we will reply to you by email or phone.` },
     { kind: "p", text: "Nothing has been booked, reserved or charged. We will confirm details and any price with you first." },
-    { kind: "rows", rows: [["Reference", d.number], ["About", d.itemTitle ? `${d.topicLabel}: ${d.itemTitle}` : d.topicLabel], ...(d.eventSummary ? ([["Event", d.eventSummary]] as [string, string][]) : [])] },
-    { kind: "quote", label: "Your message", text: d.message },
-    { kind: "p", text: "You can reply to this email if you want to add anything." },
+    { kind: "rows", rows: [["Reference", d.number], ["About", d.itemTitle ? `${d.topicLabel}: ${d.itemTitle}` : d.topicLabel]] },
+    { kind: "p", text: "You can reply to this email if you want to add anything. If you didn't send us a message, you can ignore this email." },
   ];
   return build(`We received your message (${d.number})`, blocks, storeFooter(d.store), d.store);
 }

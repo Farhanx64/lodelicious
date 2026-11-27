@@ -153,7 +153,9 @@ describe("customer inquiry receipt", () => {
     expect(mail.subject).toContain("INQ-1001");
     expect(mail.text).toMatch(/we will reply/i);
     expect(mail.text).toMatch(/Nothing has been booked, reserved or charged/);
-    expect(mail.text).toContain("Do you have gluten-free fudge?");
+    // Nothing the sender typed is echoed to the address they gave (security audit 2026-11-26).
+    expect(mail.text).not.toContain("Do you have gluten-free fudge?");
+    expect(mail.text).not.toContain(inquiry.customerName.split(" ")[0]);
     expect(mail.text).not.toMatch(/\$\d/);
   });
 

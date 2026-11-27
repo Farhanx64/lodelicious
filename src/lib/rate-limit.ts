@@ -71,6 +71,8 @@ const MINUTE = 60_000;
  */
 export const ACTION_LIMITS = {
   addToBag: { limit: 30, windowMs: MINUTE },
+  // Changing or removing a bag line (security audit 2026-11-26): each one writes the cart.
+  updateBag: { limit: 30, windowMs: MINUTE },
   checkBasket: { limit: 20, windowMs: MINUTE },
   startReservation: { limit: 20, windowMs: MINUTE },
   submitOrder: { limit: 6, windowMs: MINUTE },

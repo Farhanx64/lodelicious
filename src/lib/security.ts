@@ -25,6 +25,12 @@ export function securityHeaders({ hsts }: { hsts: boolean }): HeaderRule[] {
         { key: "X-Frame-Options", value: "SAMEORIGIN" },
         { key: "X-Content-Type-Options", value: "nosniff" },
         { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        // Security audit 2026-11-26. Features the shop never uses are switched off; `payment` is left
+        // alone because Apple Pay and Google Pay run in Clover's frames.
+        { key: "Permissions-Policy", value: PERMISSIONS_POLICY },
+        // A narrow policy that cannot break scripts, styles or Clover's frames: no plugins, no <base>
+        // hijacking, no framing by other sites, forms only to this site.
+        { key: "Content-Security-Policy", value: CSP },
         ...(hsts ? [{ key: "Strict-Transport-Security", value: HSTS_VALUE }] : []),
       ],
     },
@@ -46,6 +52,9 @@ export function securityHeaders({ hsts }: { hsts: boolean }): HeaderRule[] {
     },
   ];
 }
+
+export const PERMISSIONS_POLICY = "camera=(), microphone=(), geolocation=(), usb=(), browsing-topics=()";
+export const CSP = "object-src 'none'; base-uri 'self'; frame-ancestors 'self'; form-action 'self'";
 
 /** Where Apple fetches the merchant domain association file (no extension, 200, no redirect). */
 export const APPLE_PAY_DOMAIN_FILE = "/.well-known/apple-developer-merchantid-domain-association";
@@ -71,4 +80,10 @@ export function csrfOrigins(env: Record<string, string | undefined>): string[] {
   }
   if (origins.size === 0) console.warn(`NEXT_PUBLIC_SITE_URL is set but is not a valid http(s) URL ("${raw}"), so the CSRF origin allowlist is off.`);
   return [...origins];
+}
+
+/** The first https origin in NEXT_PUBLIC_SITE_URL (comma-separated), or null. Used as Payload's serverURL live. */
+export function liveSiteUrl(raw: string | undefined): string | null {
+  const first = (raw ?? "").split(",")[0]?.trim().replace(/\/+$/, "") ?? "";
+  return /^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(first) ? first : null;
 }
