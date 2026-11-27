@@ -16,7 +16,15 @@ const nextConfig: NextConfig = {
   // One canonical host for search (D68): www. goes to https://shoplodelicious.com. Plain http is not
   // matched here: behind Cloudflare every request reaches the Worker marked http, so a rule on
   // x-forwarded-proto redirects HTTPS to itself (loop, 2026-11-20). HSTS and canonical links cover http.
+  // On Cloudflare the Worker entry answers these first (src/lib/edge-redirect.mjs); these rules cover
+  // `next start`. The bare root has its own rule: `/:path*` alone sent `/` to a literal "/:path*".
   redirects: async () => [
+    {
+      source: "/",
+      has: [{ type: "host", value: "www.shoplodelicious.com" }],
+      destination: "https://shoplodelicious.com/",
+      permanent: true,
+    },
     {
       source: "/:path*",
       has: [{ type: "host", value: "www.shoplodelicious.com" }],

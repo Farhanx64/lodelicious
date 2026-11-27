@@ -1799,3 +1799,30 @@ Not done here: WebP images and page caching (both need hosting changes), reviews
 - The form on every product page is checked again on the server: rating 1–5, name up to 40 characters, review of 10–1500 characters, no links. It has a honeypot and is rate limited to 5 a minute (`review`, on the RATE_LIMIT_5 binding).
 - The Product's JSON-LD gets `aggregateRating` and `review` only when approved reviews of that product exist, and only from them. The Store entity never carries review markup: Google treats reviews a business shows of itself as self-serving. The Google reviews of the shop (D52) stay a separate collection and never feed product ratings.
 - Nothing is seeded, generated or imported.
+
+## D70 — Security audit fixes before release (2026-11-26)
+
+Two audits on `main` at 24fdc3f: a code review (`docs/security-audit-2026-11-26-code.md`) and a
+non-destructive test of the live site (`docs/security-audit-2026-11-26-live.md`). No Critical or High
+findings. Fixed here:
+- **http → https and www → apex** at the Worker's front door (`src/lib/edge-redirect.mjs`), using
+  Cloudflare's `cf-visitor` header, never `x-forwarded-proto` (it looped, D68). The bare
+  `https://www.shoplodelicious.com/` no longer goes to a literal `/:path*`.
+- **Inquiry receipts carry nothing the sender typed** (no name, message or event details), so the
+  public contact form can't send someone else's text from orders@shoplodelicious.com.
+- **Shipping quotes** use Cloudflare's shared rate limiter, not per-isolate memory; bag line changes
+  are rate limited (`updateBag`, 30/min).
+- **Next.js 16.4.6** (advisories up to 16.4.4, one critical).
+- **Order alert email** is staff-only over `/api/globals/store-settings`.
+- **Staff password reset** by email now enforces the 12-character policy; live Payload `serverURL`
+  is the first `NEXT_PUBLIC_SITE_URL` origin, so reset links never come from the Host header.
+- **Permissions-Policy** (camera, microphone, geolocation, usb, browsing-topics off; `payment` left
+  for Clover's wallets) and a narrow **CSP** (`object-src 'none'; base-uri 'self';
+  frame-ancestors 'self'; form-action 'self'`). A full script CSP is not attempted: Clover's SDK,
+  Apple Pay and Payload's admin need careful allowlisting.
+
+Not changed, by decision: card-testing protection (Turnstile, decline wording; owner deferred it),
+fulfillment staff seeing revenue on /dashboard (they already see order totals), postage buying by
+fulfillment (it's their job; a bought label already blocks a second one, only a same-second race
+remains), member email verification, and a Payload 3.94 upgrade for moderate advisories in
+dev/build tooling (separate change).

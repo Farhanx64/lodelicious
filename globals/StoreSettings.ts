@@ -1,6 +1,6 @@
 import type { GlobalConfig } from "payload";
 
-import { anyone, isCommerceManager } from "../src/access/roles";
+import { anyone, isCommerceManager, isStaff } from "../src/access/roles";
 import { BRAND_COLOR_DEFAULT, BUTTON_COLOR_DEFAULT, validateBrandColor, validateButtonColor } from "../src/lib/brand-color";
 import { auditGlobal } from "../src/hooks/audit";
 import { DEFAULT_ORDER_ALERT_EMAIL } from "../src/lib/email/config";
@@ -84,6 +84,9 @@ export const StoreSettings: GlobalConfig = {
               label: "Order alert email",
               type: "email",
               defaultValue: DEFAULT_ORDER_ALERT_EMAIL,
+              // Staff only (security audit 2026-11-26): store settings are public over /api/globals, and this
+              // inbox is not a customer-facing address. Server code reads it with the Local API.
+              access: { read: ({ req }) => isStaff({ req }) },
               admin: {
                 description:
                   "Where staff alerts go: every new paid order and reservation, inquiries, and anything needing attention (D44, D54). Left empty, alerts go to the default order alert address. Nothing is sent until a sending service is approved and connected.",

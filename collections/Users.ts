@@ -1,4 +1,4 @@
-import { APIError, ValidationError, type CollectionBeforeChangeHook, type CollectionBeforeValidateHook, type CollectionConfig } from "payload";
+import { APIError, ValidationError, type CollectionBeforeChangeHook, type CollectionBeforeOperationHook, type CollectionBeforeValidateHook, type CollectionConfig } from "payload";
 
 import { ROLES, canManageCommerce, hasRole, isOwner, isStaff, ownerField } from "../src/access/roles";
 import { isPreviewEnv } from "../src/lib/app-env";
@@ -40,9 +40,8 @@ const onlyExpectedFirstOwner: CollectionBeforeValidateHook = async ({ data, oper
 /**
  * Staff passwords: at least 12 characters and not trivially guessable (audit A23). Runs when a
  * password is set (create, or an owner or user changing it in /admin). Payload's own check allows
- * 3 characters. Limitation: Payload's reset-password-by-email flow does not pass the new password
- * through collection hooks, so it is not covered; that flow needs an email adapter, which the
- * store does not have yet.
+ * 3 characters. The reset-password-by-email flow skips validation hooks, so `resetPasswordPolicy`
+ * below checks that one (security audit 2026-11-26).
  */
 const enforcePasswordPolicy: CollectionBeforeValidateHook = ({ data }) => {
   const password = data?.password;
@@ -50,6 +49,15 @@ const enforcePasswordPolicy: CollectionBeforeValidateHook = ({ data }) => {
   const problem = passwordProblem(password);
   if (problem) throw new ValidationError({ collection: "users", errors: [{ message: problem, path: "password" }] });
   return data;
+};
+
+/** The same policy for a password set through the "forgot password" email link. */
+const resetPasswordPolicy: CollectionBeforeOperationHook = ({ args, operation }) => {
+  if (operation !== "resetPassword") return args;
+  const password = (args as { data?: { password?: unknown } }).data?.password;
+  const problem = typeof password === "string" ? passwordProblem(password) : "Please enter a new password.";
+  if (problem) throw new ValidationError({ collection: "users", errors: [{ message: problem, path: "password" }] });
+  return args;
 };
 
 /**
@@ -83,6 +91,7 @@ export const Users: CollectionConfig = {
     },
   },
   hooks: {
+    beforeOperation: [resetPasswordPolicy],
     beforeValidate: [onlyExpectedFirstOwner, enforcePasswordPolicy],
     beforeChange: [firstUserIsOwner],
     afterChange: [auditCollection(["roles", "email"])],

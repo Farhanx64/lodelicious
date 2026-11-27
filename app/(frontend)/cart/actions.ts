@@ -32,6 +32,7 @@ export async function addToBag(_prev: FormState, form: FormData): Promise<FormSt
 }
 
 export async function updateBagLine(form: FormData): Promise<void> {
+  if (await isRateLimited("updateBag")) return;
   const { payload, ctx } = await checkoutPayload();
   const token = await bagToken();
   if (!token) return;
