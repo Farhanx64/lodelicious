@@ -6,7 +6,7 @@ const local = (f: string) => pathToFileURL(path.resolve("node_modules/payload/di
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // D53: Cloudflare Workers refuse native PBKDF2 above 100000 iterations, and Payload uses 600000.
-// The patched Payload (patches/payload+3.90.2.patch) falls back to a pure-JS PBKDF2 with the same output.
+// The patched Payload (patches/payload+3.94.2.patch) falls back to a pure-JS PBKDF2 with the same output.
 describe("password hashing on Workers", () => {
   afterEach(() => vi.restoreAllMocks());
 
@@ -18,11 +18,14 @@ describe("password hashing on Workers", () => {
     }) as typeof crypto.pbkdf2);
     const { generatePasswordSaltHash } = await import(local("generatePasswordSaltHash.js"));
     const { authenticateLocalStrategy } = await import(local("authenticate.js"));
-    const { hash, salt } = await generatePasswordSaltHash({ password: "a-long-test-passphrase-42", isPasswordAuthenticated: true });
+    const req = { payload: { config: { auth: { passwordHashIterations: 600000 } } } };
+    const { hash, salt } = await generatePasswordSaltHash({ password: "a-long-test-passphrase-42", isPasswordAuthenticated: true, req });
     expect(hash.startsWith("pbkdf2-sha256-v1:")).toBe(true);
+    // Signing in on Workers checks the stored 600000-iteration hash through the same fallback.
+    expect(await authenticateLocalStrategy({ doc: { hash, salt }, password: "a-long-test-passphrase-42", passwordHashIterations: 600000 })).toMatchObject({ shouldUpdatePasswordHash: false });
     vi.restoreAllMocks();
     // Native Node (the dev server) must accept the hash the fallback produced.
-    expect(await authenticateLocalStrategy({ doc: { hash, salt }, password: "a-long-test-passphrase-42" })).toBeTruthy();
-    expect(await authenticateLocalStrategy({ doc: { hash, salt }, password: "wrong" })).toBeNull();
+    expect(await authenticateLocalStrategy({ doc: { hash, salt }, password: "a-long-test-passphrase-42", passwordHashIterations: 600000 })).toBeTruthy();
+    expect(await authenticateLocalStrategy({ doc: { hash, salt }, password: "wrong", passwordHashIterations: 600000 })).toBeNull();
   }, 60000);
 });

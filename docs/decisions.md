@@ -1826,3 +1826,17 @@ fulfillment staff seeing revenue on /dashboard (they already see order totals), 
 fulfillment (it's their job; a bought label already blocks a second one, only a same-second race
 remains), member email verification, and a Payload 3.94 upgrade for moderate advisories in
 dev/build tooling (separate change).
+
+## D71 — Payload 3.94.2, React 19.2.9, sharp 0.35 (2026-11-27)
+
+The Payload upgrade deferred from D70. Payload 3.90.2 → 3.94.2 (all `@payloadcms/*` together),
+React and React DOM 19.2.4 → 19.2.9 (Payload 3.94's peer range), sharp 0.34 → 0.35.5 (libvips
+advisories; used only by the local WebP script and the Node build), plus `npm audit fix` without
+`--force`. No schema change.
+- **Password patch ported** (D53): Payload 3.94 now hashes through one `pbkdf2Promisified`, so
+  `patches/payload+3.94.2.patch` adds the pure-JS fallback there. Live staff hashes are 600000
+  iterations (Payload's default, unchanged), which Workers can't compute natively.
+  `tests/workers-password-hash.test.ts` covers hashing and signing in through the fallback.
+- **Left:** `happy-dom` (high) inside `@payloadcms/richtext-lexical`'s server-side Lexical
+  conversion, with no fixed Payload release yet; drizzle-kit/esbuild (moderate) in migration
+  tooling that never runs on the Worker.
